@@ -5,3 +5,4 @@ streamlit>=1.30
 plotly>=5.18
 anthropic>=0.18
 openai>=1.0
+reportlab>=4.0

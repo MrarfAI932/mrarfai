@@ -24,6 +24,7 @@ from industry_benchmark import IndustryBenchmark, generate_benchmark_section
 from forecast_engine import ForecastEngine, generate_forecast_section
 from ai_narrator import AINarrator, generate_narrative_section
 from chat_tab import render_chat_tab
+from pdf_report import render_report_section
 
 MONTHS = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月']
 
@@ -663,6 +664,12 @@ with tabs[10]:
 # ---- Tab 11: 导出 ----
 with tabs[11]:
     st.markdown('<div class="section-header"><div class="icon">📥</div> 报告导出</div>', unsafe_allow_html=True)
+
+    # PDF报告 + 邮件推送
+    render_report_section(data, results, benchmark, forecast)
+
+    st.markdown("")
+    st.markdown("#### 其他格式")
     gen = ReportGeneratorV2(data, results)
     base_report = gen.generate()
     bench_section = generate_benchmark_section(benchmark)
