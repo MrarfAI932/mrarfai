@@ -25,6 +25,8 @@ from forecast_engine import ForecastEngine, generate_forecast_section
 from ai_narrator import AINarrator, generate_narrative_section
 from chat_tab import render_chat_tab
 from pdf_report import render_report_section
+from health_score import render_health_dashboard
+from wechat_notify import render_notification_settings
 
 MONTHS = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月']
 
@@ -268,7 +270,8 @@ st.markdown(f"""
 tabs = st.tabs([
     "🧠 Agent", "📊 总览", "👥 客户分析", "💰 价量分解", "🚨 预警中心",
     "📈 增长机会", "🏭 产品结构", "🌍 区域分析",
-    "🌐 行业对标", "🔮 预测", "✍️ CEO备忘录", "📥 导出",
+    "🌐 行业对标", "🔮 预测", "✍️ CEO备忘录",
+    "❤️ 健康评分", "🔔 通知推送", "📥 导出",
 ])
 
 # ---- Tab 0: Agent ----
@@ -661,8 +664,19 @@ with tabs[10]:
     with st.expander("📄 内置战略备忘录", expanded=not ai_enabled):
         st.markdown(memo)
 
-# ---- Tab 11: 导出 ----
+# ---- Tab 11: 健康评分 ----
 with tabs[11]:
+    st.markdown('<div class="section-header"><div class="icon">❤️</div> 客户健康评分</div>', unsafe_allow_html=True)
+    health_scores = render_health_dashboard(data, results)
+
+# ---- Tab 12: 通知推送 ----
+with tabs[12]:
+    st.markdown('<div class="section-header"><div class="icon">🔔</div> 通知推送</div>', unsafe_allow_html=True)
+    _hs = health_scores if 'health_scores' in dir() and health_scores else None
+    render_notification_settings(results, _hs)
+
+# ---- Tab 13: 导出 ----
+with tabs[13]:
     st.markdown('<div class="section-header"><div class="icon">📥</div> 报告导出</div>', unsafe_allow_html=True)
 
     # PDF报告 + 邮件推送
