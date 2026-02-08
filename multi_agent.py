@@ -430,6 +430,10 @@ def ask_multi_agent(
     if not HAS_CREWAI:
         return _ask_fallback(question, data, results, benchmark, forecast, provider, api_key, memory)
     
+    # CrewAI框架开销太大，默认用简化版（同样4专家，直接调LLM，快10倍）
+    # 如需启用CrewAI原生模式，将下面这行注释掉
+    return ask_multi_agent_simple(question, data, results, benchmark, forecast, provider, api_key, memory)
+    
     if not api_key:
         return {"answer": "⚠️ 请先配置API Key", "agents_used": [], "thinking": [], 
                 "expert_outputs": {}, "hitl_triggers": []}
