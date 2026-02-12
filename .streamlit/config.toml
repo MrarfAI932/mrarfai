@@ -2,7 +2,6 @@
 # 品牌配色: Neon Green #00FF88 · 蓝叶 #00A0C8 · 红叶 #D94040
 
 [server]
-port = 8501
 address = "0.0.0.0"
 headless = true
 enableCORS = false

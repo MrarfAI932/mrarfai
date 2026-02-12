@@ -66,9 +66,9 @@ RUN chown -R mrarfai:mrarfai /app
 USER mrarfai
 
 # 环境变量（敏感信息运行时通过 --env-file 或平台 Secrets 注入）
+# 注意：不设 STREAMLIT_SERVER_PORT，由 CMD 参数 --server.port=$PORT 控制
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    STREAMLIT_SERVER_PORT=8501 \
     STREAMLIT_SERVER_ADDRESS=0.0.0.0 \
     STREAMLIT_SERVER_HEADLESS=true \
     STREAMLIT_BROWSER_GATHER_USAGE_STATS=false
