@@ -687,7 +687,7 @@ with _fc:
         ai_enabled = st.toggle("AI 叙事", value=False, key="ai_toggle")
     with _b2:
         _have = len(uploaded_files) if uploaded_files else 0
-        st.caption(f"请上传金额报表 + 数量报表（已选 {_have}/2，自动识别类型）")
+        st.caption(f"上传 2 个 Excel 文件（已选 {_have}/2，系统自动识别）")
     with _b3:
         use_multi = st.toggle("Multi-Agent", value=False, key="use_multi_agent")
 
