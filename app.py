@@ -96,6 +96,12 @@ def fmt(v, unit="万"):
 # ============================================================
 st.set_page_config(page_title="Sprocomm AI · MRARFAI v9.0", page_icon="🌿", layout="wide", initial_sidebar_state="expanded")
 
+# ============================================================
+# 登录门禁
+# ============================================================
+from auth import require_login, get_current_user, logout, is_admin
+require_login()  # 未登录 → 显示登录页 → st.stop()
+
 
 # ============================================================
 # 内联主题 — Command Center (完整版)
@@ -233,6 +239,7 @@ components.html("""
 # ============================================================
 with st.sidebar:
     # Command Center Logo
+    _user = get_current_user()
     st.markdown(f"""
     <div style="padding:6px 0 14px 0;">
         <div style="display:flex; align-items:center; gap:10px;">
@@ -251,6 +258,19 @@ with st.sidebar:
         </div>
     </div>
     """, unsafe_allow_html=True)
+
+    # 用户信息 + 登出
+    _ucol1, _ucol2 = st.columns([3, 1])
+    with _ucol1:
+        st.markdown(f"""<div style="font-family:'JetBrains Mono',monospace; font-size:0.55rem;
+             color:#6a6a6a; letter-spacing:0.05em;">
+            👤 {_user['display_name']} · <span style="color:{SP_GREEN};">{_user['role'].upper()}</span>
+        </div>""", unsafe_allow_html=True)
+    with _ucol2:
+        if st.button("登出", key="logout_btn", type="secondary"):
+            logout()
+            st.rerun()
+
     st.divider()
 
     # Data section
@@ -409,7 +429,39 @@ def run_full_analysis(rev_bytes, qty_bytes):
     return data, results, bench, forecast
 
 with st.spinner("🌿 数据加载 + 深度分析中..."):
-    data, results, benchmark, forecast = run_full_analysis(rev_file.read(), qty_file.read())
+    try:
+        data, results, benchmark, forecast = run_full_analysis(rev_file.read(), qty_file.read())
+    except ValueError as e:
+        err_msg = str(e)
+        if "Worksheet named" in err_msg:
+            sheet_name = err_msg.split("'")[1] if "'" in err_msg else "未知"
+            st.error(f"📊 Excel 格式不匹配")
+            st.markdown(f"""
+            <div style="font-family:'JetBrains Mono',monospace; font-size:0.7rem;
+                 color:#8a8a8a; padding:12px; border:1px solid rgba(217,64,64,0.15);
+                 background:rgba(217,64,64,0.04); margin-top:8px;">
+                <p>找不到工作表 "<strong style="color:#D94040;">{sheet_name}</strong>"</p>
+                <p style="margin-top:8px;">可能原因:</p>
+                <p>· 金额报表和数量报表上传位置反了</p>
+                <p>· Excel 文件中的 Sheet 名称已更改</p>
+                <p style="margin-top:8px;">请检查文件后重新上传。</p>
+            </div>
+            """, unsafe_allow_html=True)
+        else:
+            st.error(f"⚠️ 数据格式错误: {err_msg}")
+        st.stop()
+    except Exception as e:
+        st.error("⚠️ 数据加载失败")
+        st.markdown(f"""
+        <div style="font-family:'JetBrains Mono',monospace; font-size:0.65rem;
+             color:#6a6a6a; padding:12px; border:1px solid rgba(138,138,138,0.15);
+             background:rgba(138,138,138,0.04); margin-top:8px;">
+            <p>错误类型: <strong>{type(e).__name__}</strong></p>
+            <p>详情: {str(e)[:200]}</p>
+            <p style="margin-top:8px; color:#8a8a8a;">请检查 Excel 文件格式是否正确，或联系管理员。</p>
+        </div>
+        """, unsafe_allow_html=True)
+        st.stop()
 
 active = sum(1 for c in data['客户金额'] if c['年度金额'] > 0)
 st.markdown(f"""

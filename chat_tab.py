@@ -909,9 +909,33 @@ def render_chat_tab(data, results: dict, benchmark: dict = None, forecast: dict 
                 "v8_eval": result.get("v8_eval"),
                 "v8_enhanced": result.get("v8_enhanced", False),
                 "v8_status": result.get("v8_status"),
+                "v9_modules": result.get("v9_modules"),
+                "v9_activity": result.get("v9_activity"),
             })
 
         except Exception as e:
-            st.error(f"Agent 执行出错: {str(e)}")
+            err_str = str(e)
+            err_type = type(e).__name__
+
+            # 分类友好错误信息
+            if "api_key" in err_str.lower() or "authentication" in err_str.lower() or "401" in err_str:
+                friendly = "🔑 API Key 无效或已过期，请在左侧重新输入"
+            elif "rate_limit" in err_str.lower() or "429" in err_str:
+                friendly = "⏳ API 请求过于频繁，请稍等30秒后重试"
+            elif "timeout" in err_str.lower() or "timed out" in err_str.lower():
+                friendly = "⏱️ 请求超时，请稍后重试（可能是网络问题）"
+            elif "connection" in err_str.lower() or "network" in err_str.lower():
+                friendly = "🌐 网络连接失败，请检查网络后重试"
+            elif "insufficient_quota" in err_str.lower() or "402" in err_str:
+                friendly = "💳 API 额度不足，请充值后重试"
+            elif "model" in err_str.lower() and "not found" in err_str.lower():
+                friendly = "🤖 模型不可用，请切换其他模型重试"
+            else:
+                friendly = f"⚠️ 分析过程中出现错误，请重试"
+
+            st.error(friendly)
+            with st.expander("🔧 技术详情", expanded=False):
+                st.code(f"Error: {err_type}\n{err_str[:500]}", language="text")
+
             st.session_state.chat_history.append({"role": "user", "content": question})
-            st.session_state.chat_history.append({"role": "assistant", "content": f"⚠️ 执行出错: {str(e)}"})
+            st.session_state.chat_history.append({"role": "assistant", "content": friendly})
