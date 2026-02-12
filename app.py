@@ -126,10 +126,11 @@ st.markdown("""<style>
 
 #MainMenu, footer, .stDeployButton,
 [data-testid="stToolbar"], [data-testid="stDecoration"],
-[data-testid="stStatusWidget"] { display: none !important; }
+[data-testid="stStatusWidget"],
+[data-testid="stHeader"] { display: none !important; }
 
 .stApp { background: var(--bg-deep) !important; }
-.block-container { padding: 1.5rem 2rem 3rem !important; max-width: 1600px; }
+.block-container { padding: 1rem 2rem 3rem !important; max-width: 1600px; }
 /* Solid background for chat messages */
 [data-testid="stChatMessage"] { background: #0C0C0C !important; }
 .stChatMessage { background: #0C0C0C !important; }
