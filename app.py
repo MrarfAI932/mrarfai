@@ -608,29 +608,22 @@ with _bar2:
         logout()
         st.rerun()
 
-# ── Data upload — inline with labels ──
-rev_file = None
-qty_file = None
-
-_d1, _d2, _d3, _d4 = st.columns([2, 2, 1.5, 1.5])
-with _d1:
-    st.markdown(f'<div style="font-family:\'JetBrains Mono\',monospace;font-size:0.55rem;font-weight:700;color:{SP_GREEN};letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;">📊 金额报表</div>', unsafe_allow_html=True)
-    rev_file = st.file_uploader("金额报表", type=['xlsx'], key='rev', label_visibility="collapsed")
-    if rev_file:
-        st.caption(f"✓ {rev_file.name}")
-with _d2:
-    st.markdown(f'<div style="font-family:\'JetBrains Mono\',monospace;font-size:0.55rem;font-weight:700;color:{SP_BLUE};letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;">📦 数量报表</div>', unsafe_allow_html=True)
-    qty_file = st.file_uploader("数量报表", type=['xlsx'], key='qty', label_visibility="collapsed")
-    if qty_file:
-        st.caption(f"✓ {qty_file.name}")
-with _d3:
+# ── 单一文件上传 + 开关 ──
+_u1, _u2, _u3 = st.columns([3, 1.5, 1.5])
+with _u1:
+    uploaded_files = st.file_uploader(
+        "上传 Excel 报表（金额 + 数量）", type=['xlsx'],
+        accept_multiple_files=True, key='files',
+        label_visibility="collapsed"
+    )
+with _u2:
     ai_enabled = st.toggle("AI 叙事", value=False, key="ai_toggle")
     if ai_enabled:
         ai_provider = st.selectbox("模型", ['DeepSeek', 'Claude'], label_visibility="collapsed", key="ai_prov")
         api_key = st.text_input("Key", type="password", label_visibility="collapsed", placeholder="sk-...", key="ai_key")
     else:
         ai_provider, api_key = 'DeepSeek', None
-with _d4:
+with _u3:
     use_multi = st.toggle("Multi-Agent", value=False, key="use_multi_agent")
     if use_multi:
         st.markdown(f"""
@@ -643,92 +636,6 @@ with _d4:
 
 st.session_state["ai_provider"] = ai_provider
 st.session_state["api_key"] = api_key or ""
-
-
-# ============================================================
-# 欢迎页 (未上传数据时)
-# ============================================================
-if not rev_file or not qty_file:
-    _missing = []
-    if not rev_file:
-        _missing.append(f'<strong style="color:{SP_GREEN};">金额报表</strong>')
-    if not qty_file:
-        _missing.append(f'<strong style="color:{SP_BLUE};">数量报表</strong>')
-    _missing_text = " & ".join(_missing)
-
-    # ── 提示信息 ──
-    st.markdown(f"""
-    <div style="text-align:center; padding:20px 0 12px 0;">
-        <div style="font-family:'JetBrains Mono',monospace;font-size:0.7rem;
-             color:#6a6a6a;letter-spacing:0.02em;">
-            ↑ 请在上方上传 {_missing_text} 开始分析
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    st.markdown("---")
-
-    # ── 功能概览卡片 ──
-    _fc1, _fc2, _fc3 = st.columns(3)
-    with _fc1:
-        st.markdown(f"""<div style="background:#0C0C0C;border:1px solid rgba(255,255,255,0.06);
-            border-left:3px solid {SP_GREEN};padding:16px 18px;">
-            <div style="font-family:'JetBrains Mono',monospace;font-size:0.55rem;font-weight:700;
-                 color:{SP_GREEN};letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px;">
-                ◈ 智能分析引擎
-            </div>
-            <div style="font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:#8a8a8a;line-height:1.7;">
-                · 客户营收 & 出货量分析<br>
-                · 价量分解 & 月度趋势<br>
-                · 产品结构 & 区域分布<br>
-                · 行业对标 & 预测模型
-            </div>
-        </div>""", unsafe_allow_html=True)
-    with _fc2:
-        st.markdown(f"""<div style="background:#0C0C0C;border:1px solid rgba(255,255,255,0.06);
-            border-left:3px solid {SP_RED};padding:16px 18px;">
-            <div style="font-family:'JetBrains Mono',monospace;font-size:0.55rem;font-weight:700;
-                 color:{SP_RED};letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px;">
-                ◆ 风险预警系统
-            </div>
-            <div style="font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:#8a8a8a;line-height:1.7;">
-                · 客户流失早期预警<br>
-                · 异常检测 & 自动告警<br>
-                · 5层安全护栏<br>
-                · 健康评分实时监控
-            </div>
-        </div>""", unsafe_allow_html=True)
-    with _fc3:
-        st.markdown(f"""<div style="background:#0C0C0C;border:1px solid rgba(255,255,255,0.06);
-            border-left:3px solid {SP_BLUE};padding:16px 18px;">
-            <div style="font-family:'JetBrains Mono',monospace;font-size:0.55rem;font-weight:700;
-                 color:{SP_BLUE};letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px;">
-                ◇ Multi-Agent AI
-            </div>
-            <div style="font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:#8a8a8a;line-height:1.7;">
-                · 多智能体协作分析<br>
-                · RLM 递归语言模型<br>
-                · 500K+ 上下文窗口<br>
-                · 自然语言问答对话
-            </div>
-        </div>""", unsafe_allow_html=True)
-
-    # ── 文件格式说明 ──
-    st.markdown(f"""
-    <div style="margin-top:20px;padding:12px 16px;background:rgba(138,138,138,0.04);
-         border:1px solid rgba(138,138,138,0.08);">
-        <div style="font-family:'JetBrains Mono',monospace;font-size:0.55rem;font-weight:700;
-             color:#6a6a6a;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px;">
-            📋 支持的文件格式
-        </div>
-        <div style="font-family:'JetBrains Mono',monospace;font-size:0.62rem;color:#5a5a5a;line-height:1.8;">
-            <span style="color:{SP_GREEN};">金额报表</span> — Sprocomm 销售金额 Excel（含 "2025数据"、"与年度目标对比" 等 Sheet）<br>
-            <span style="color:{SP_BLUE};">数量报表</span> — Sprocomm 出货数量 Excel（含 "数量汇总" Sheet）<br>
-            <span style="color:#4a4a4a;">⚡ 系统会自动识别文件类型，上传顺序错了也会自动纠正</span>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-    st.stop()
 
 
 # ============================================================
@@ -790,61 +697,121 @@ def run_full_analysis(rev_bytes, qty_bytes):
     return data, results, bench, forecast
 
 
-# ── 智能检测：文件是否上传反了 / 文件类型是否正确 ──
-_rev_bytes = rev_file.read()
-_qty_bytes = qty_file.read()
-rev_file.seek(0)
-qty_file.seek(0)
-
-_type1 = _detect_file_type(_rev_bytes)
-_type2 = _detect_file_type(_qty_bytes)
-
-_swapped = False
-_file_error = False
-
-# 两个都是 unknown → 文件格式不对
-if _type1 == 'unknown' and _type2 == 'unknown':
-    _file_error = True
-# 金额位上传了数量文件，数量位上传了金额文件 → 自动交换
-elif _type1 == 'quantity' and _type2 == 'revenue':
-    _rev_bytes, _qty_bytes = _qty_bytes, _rev_bytes
-    _swapped = True
-# 金额位正确，数量位不是数量文件
-elif _type1 == 'revenue' and _type2 not in ('quantity', 'unknown'):
-    pass  # 正常
-elif _type1 not in ('revenue', 'unknown') and _type2 == 'quantity':
-    pass  # 第一个不确定但第二个是数量 → 假设第一个是金额
-# 两个都是金额 或 两个都是数量
-elif _type1 == _type2 and _type1 != 'unknown':
-    _file_error = True
-
-if _file_error:
+# ── 等待上传文件 ──
+if not uploaded_files or len(uploaded_files) < 2:
+    _need = 2 - len(uploaded_files) if uploaded_files else 2
     st.markdown(f"""
-    <div style="font-family:'JetBrains Mono',monospace; font-size:0.72rem;
-         color:#D94040; padding:16px 20px; margin:8px 0;
-         border:1px solid rgba(217,64,64,0.2); background:rgba(217,64,64,0.04);">
-        <div style="font-weight:700; margin-bottom:8px; font-size:0.8rem;">
-            ⚠ 文件格式不匹配
+    <div style="text-align:center; padding:20px 0 12px 0;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:0.7rem;
+             color:#6a6a6a;letter-spacing:0.02em;">
+            ↑ 请上传 <strong style="color:{SP_GREEN};">金额报表</strong> 和
+            <strong style="color:{SP_BLUE};">数量报表</strong> 两个 Excel 文件
+            {"（还需 " + str(_need) + " 个文件）" if uploaded_files else ""}
         </div>
-        <p style="color:#8a8a8a; margin:4px 0;">上传的文件不是预期的销售报表格式。请确保上传：</p>
-        <p style="margin:4px 0;">· <strong style="color:{SP_GREEN};">金额报表</strong> — 包含客户营收、Sheet 名如 "2025数据" "与年度目标对比"</p>
-        <p style="margin:4px 0;">· <strong style="color:{SP_BLUE};">数量报表</strong> — 包含出货数量、Sheet 名如 "数量汇总"</p>
-        <p style="color:#6a6a6a; margin:8px 0 0 0; font-size:0.6rem;">
-            FILE 1: {rev_file.name} → 检测为 {_type1.upper()}<br>
-            FILE 2: {qty_file.name} → 检测为 {_type2.upper()}
-        </p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # ── 功能概览 ──
+    st.markdown("---")
+    _fc1, _fc2, _fc3 = st.columns(3)
+    with _fc1:
+        st.markdown(f"""<div style="background:#0C0C0C;border:1px solid rgba(255,255,255,0.06);
+            border-left:3px solid {SP_GREEN};padding:14px 16px;">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:0.55rem;font-weight:700;
+                 color:{SP_GREEN};letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px;">
+                ◈ 12维深度分析</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:0.62rem;color:#6a6a6a;line-height:1.7;">
+                客户·价量·产品·区域·趋势·对标</div>
+        </div>""", unsafe_allow_html=True)
+    with _fc2:
+        st.markdown(f"""<div style="background:#0C0C0C;border:1px solid rgba(255,255,255,0.06);
+            border-left:3px solid {SP_RED};padding:14px 16px;">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:0.55rem;font-weight:700;
+                 color:{SP_RED};letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px;">
+                ◆ 风险预警</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:0.62rem;color:#6a6a6a;line-height:1.7;">
+                流失预警·异常检测·健康评分</div>
+        </div>""", unsafe_allow_html=True)
+    with _fc3:
+        st.markdown(f"""<div style="background:#0C0C0C;border:1px solid rgba(255,255,255,0.06);
+            border-left:3px solid {SP_BLUE};padding:14px 16px;">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:0.55rem;font-weight:700;
+                 color:{SP_BLUE};letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px;">
+                ◇ AI 智能体</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:0.62rem;color:#6a6a6a;line-height:1.7;">
+                多Agent协作·自然语言问答</div>
+        </div>""", unsafe_allow_html=True)
+
+    st.markdown(f"""
+    <div style="margin-top:16px;padding:10px 14px;background:rgba(138,138,138,0.03);
+         border:1px solid rgba(138,138,138,0.06);">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:0.58rem;color:#4a4a4a;line-height:1.8;">
+            ⚡ 系统自动识别金额/数量报表，无需区分上传顺序
+        </div>
     </div>
     """, unsafe_allow_html=True)
     st.stop()
 
-if _swapped:
+# ── 智能文件分类 ──
+_rev_bytes = None
+_qty_bytes = None
+_file_names = {}
+
+# 检测每个文件的类型
+_detections = []
+for f in uploaded_files[:2]:  # 最多处理2个文件
+    fbytes = f.read()
+    f.seek(0)
+    ftype = _detect_file_type(fbytes)
+    _detections.append((f.name, ftype, fbytes))
+
+# 分配文件
+_rev_found = None
+_qty_found = None
+_unknown_files = []
+
+for name, ftype, fbytes in _detections:
+    if ftype == 'revenue' and _rev_found is None:
+        _rev_found = (name, fbytes)
+    elif ftype == 'quantity' and _qty_found is None:
+        _qty_found = (name, fbytes)
+    else:
+        _unknown_files.append((name, ftype, fbytes))
+
+# 如果还有未分配的文件，尝试补位
+for name, ftype, fbytes in _unknown_files:
+    if _rev_found is None:
+        _rev_found = (name, fbytes)
+    elif _qty_found is None:
+        _qty_found = (name, fbytes)
+
+# 检查是否两个都找到了
+if not _rev_found or not _qty_found:
+    _detected_info = " / ".join([f"{n} → {t.upper()}" for n, t, _ in _detections])
     st.markdown(f"""
-    <div style="font-family:'JetBrains Mono',monospace; font-size:0.65rem;
-         color:{SP_GREEN}; padding:8px 14px; margin:4px 0;
-         border:1px solid rgba(0,255,136,0.15); background:rgba(0,255,136,0.04);">
-        🔄 已自动识别并交换文件顺序（金额 ↔ 数量）
+    <div style="font-family:'JetBrains Mono',monospace; font-size:0.72rem;
+         color:#D94040; padding:14px 18px; margin:8px 0;
+         border:1px solid rgba(217,64,64,0.2); background:rgba(217,64,64,0.04);">
+        <div style="font-weight:700; margin-bottom:6px;">⚠ 无法识别文件类型</div>
+        <p style="color:#8a8a8a; margin:4px 0;">需要一个<strong style="color:{SP_GREEN};">金额报表</strong>和一个<strong style="color:{SP_BLUE};">数量报表</strong></p>
+        <p style="color:#5a5a5a; margin:4px 0; font-size:0.6rem;">检测结果: {_detected_info}</p>
     </div>
     """, unsafe_allow_html=True)
+    st.stop()
+
+_rev_bytes = _rev_found[1]
+_qty_bytes = _qty_found[1]
+
+# 显示识别结果
+st.markdown(f"""
+<div style="font-family:'JetBrains Mono',monospace; font-size:0.6rem;
+     padding:6px 12px; margin:4px 0;
+     border:1px solid rgba(0,255,136,0.12); background:rgba(0,255,136,0.03);">
+    <span style="color:{SP_GREEN};">✓ 金额</span> {_rev_found[0]}
+    <span style="margin:0 8px;color:#2f2f2f;">|</span>
+    <span style="color:{SP_BLUE};">✓ 数量</span> {_qty_found[0]}
+</div>
+""", unsafe_allow_html=True)
 
 with st.spinner("🌿 数据加载 + 深度分析中..."):
     try:
