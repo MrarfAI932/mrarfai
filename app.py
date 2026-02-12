@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
 """
-MRARFAI v4.0 — Sales Intelligence Agent
-========================================
-全面升级UI：参考 ChatGPT / Perplexity / Linear 设计语言
-Agent-first · 自包含 · 无额外依赖
+MRARFAI v9.0 — Sprocomm 禾苗 Sales Intelligence
+================================================
+V9.0 核心升级:
+  - RLM (Recursive Language Models) 数据上下文 5K→500K+
+  - LangGraph StateGraph + HITL + Reflection
+  - 全新 Command Center UI (内联主题)
+  - real_pipeline.py 数据管线
+
+品牌配色: 🟢 Neon Green #00FF88  🔵 蓝叶 #00A0C8  🔴 红叶 #D94040
+字体: Space Grotesk (标题) + JetBrains Mono (数据)
 """
 
 import streamlit as st
@@ -19,45 +25,60 @@ try:
 except ImportError:
     HAS_PLOTLY = False
 
-from analyze_clients_v2 import SprocommDataLoaderV2, DeepAnalyzer, ReportGeneratorV2
+# ── 数据管线: 优先 real_pipeline, 回退 analyze_clients_v2 ──
+try:
+    from real_pipeline import SprocommDataLoaderV2, DeepAnalyzer, ReportGeneratorV2
+except ImportError:
+    from analyze_clients_v2 import SprocommDataLoaderV2, DeepAnalyzer, ReportGeneratorV2
+
 from industry_benchmark import IndustryBenchmark, generate_benchmark_section
 from forecast_engine import ForecastEngine, generate_forecast_section
 from ai_narrator import AINarrator, generate_narrative_section
 from chat_tab import render_chat_tab
 from pdf_report import render_report_section
 from health_score import render_health_dashboard
-from wechat_notify import render_notification_settings
 from anomaly_detector import render_anomaly_dashboard
 from brand_config import render_brand_settings, get_brand
+
+# ── 微信通知 (可选) ──
+try:
+    from wechat_notify import render_notification_settings
+    HAS_WECHAT = True
+except ImportError:
+    HAS_WECHAT = False
 
 MONTHS = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月']
 
 # ============================================================
-# 配色（全部内置，不需要 theme.py）
+# Sprocomm 禾苗配色系统 — Command Center
 # ============================================================
-ACCENT = "#6366f1"
-CYAN = "#22d3ee"
-GREEN = "#10b981"
-RED = "#ef4444"
-ORANGE = "#f59e0b"
-PURPLE = "#a855f7"
-TEXT1 = "#f1f5f9"
-TEXT2 = "#94a3b8"
-COLORS = [ACCENT, CYAN, GREEN, ORANGE, PURPLE, RED, "#ec4899", "#14b8a6"]
+SP_GREEN = "#00FF88"   # ⚡ Neon Green — 主色/活跃/CTA
+SP_BLUE  = "#00A0C8"   # 🔵 蓝叶 — 信息/分析/数据
+SP_RED   = "#D94040"   # 🔴 红叶 — 风险/预警/危险
+BRAND_GREEN = "#8CBF3F" # 原始品牌绿
+ACCENT = SP_GREEN
+CYAN   = SP_BLUE
+GREEN  = SP_GREEN
+RED    = SP_RED
+ORANGE = "#FF8800"
+PURPLE = "#8b5cf6"
+TEXT1  = "#FFFFFF"
+TEXT2  = "#8a8a8a"
+CHART_COLORS = [SP_GREEN, SP_BLUE, "#3b82f6", ORANGE, SP_RED, "#ec4899", PURPLE, "#06b6d4"]
 PLOT_BG = "rgba(0,0,0,0)"
 PAPER_BG = "rgba(0,0,0,0)"
-GRID_COLOR = "rgba(99,102,241,0.08)"
+GRID_COLOR = "rgba(255,255,255,0.04)"
 
 def plotly_layout(title="", height=400, showlegend=True):
     return dict(
-        title=dict(text=title, font=dict(size=14, color=TEXT2), x=0),
+        title=dict(text=title, font=dict(size=11, color=TEXT2, family="JetBrains Mono"), x=0),
         paper_bgcolor=PAPER_BG, plot_bgcolor=PLOT_BG,
-        font=dict(color=TEXT2, size=12),
+        font=dict(color=TEXT2, size=11, family="JetBrains Mono"),
         height=height, showlegend=showlegend,
-        legend=dict(bgcolor="rgba(0,0,0,0)", font=dict(size=11)),
-        margin=dict(l=50, r=20, t=40, b=40),
-        xaxis=dict(gridcolor=GRID_COLOR, showgrid=True, tickfont=dict(size=11), zeroline=False),
-        yaxis=dict(gridcolor=GRID_COLOR, showgrid=True, tickfont=dict(size=11), zeroline=False),
+        legend=dict(bgcolor="rgba(0,0,0,0)", font=dict(size=10, family="JetBrains Mono")),
+        margin=dict(l=50, r=20, t=36, b=40),
+        xaxis=dict(gridcolor=GRID_COLOR, showgrid=True, tickfont=dict(size=10, family="JetBrains Mono"), zeroline=False),
+        yaxis=dict(gridcolor=GRID_COLOR, showgrid=True, tickfont=dict(size=10, family="JetBrains Mono"), zeroline=False),
     )
 
 def fmt(v, unit="万"):
@@ -69,117 +90,132 @@ def fmt(v, unit="万"):
         else: return f"{v:.2f}{unit}"
     except: return str(v)
 
+
 # ============================================================
 # 页面配置
 # ============================================================
-st.set_page_config(page_title="MRARFAI · Sales Agent", page_icon="🧠", layout="wide")
+st.set_page_config(page_title="Sprocomm AI · MRARFAI v9.0", page_icon="🌿", layout="wide")
+
 
 # ============================================================
-# 全局样式
+# 内联主题 — Command Center (替代 ui_theme.py)
 # ============================================================
-st.markdown("""
-<style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-    html, body, [class*="css"] { font-family: 'Inter', -apple-system, sans-serif; }
-    .block-container { padding-top: 1rem; max-width: 1440px; }
+st.markdown("""<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
-    div[data-testid="stMetric"] {
-        background: linear-gradient(135deg, rgba(99,102,241,0.06), rgba(139,92,246,0.04));
-        padding: 20px 24px; border-radius: 16px;
-        border: 1px solid rgba(99,102,241,0.1);
-        transition: all 0.3s;
-    }
-    div[data-testid="stMetric"]:hover {
-        transform: translateY(-3px);
-        border-color: rgba(99,102,241,0.25);
-        box-shadow: 0 12px 40px rgba(99,102,241,0.08);
-    }
-    div[data-testid="stMetric"] label {
-        color: #64748b !important; font-size: 0.8rem; font-weight: 500;
-        letter-spacing: 0.5px; text-transform: uppercase;
-    }
-    div[data-testid="stMetric"] [data-testid="stMetricValue"] {
-        color: #f1f5f9 !important; font-weight: 700; font-size: 1.7rem;
-    }
-    div[data-testid="stMetric"] [data-testid="stMetricDelta"] { font-size: 0.82rem; }
+:root {
+    --bg-deep: #0C0C0C; --bg-base: #080808; --bg-elevated: #111111;
+    --bg-overlay: #1a1a1a; --bg-glass: rgba(12,12,12,0.85);
+    --border-subtle: #2f2f2f; --border-default: #2f2f2f;
+    --border-hover: rgba(0,255,136,0.30);
+    --text-1: #FFFFFF; --text-2: #8a8a8a; --text-3: #6a6a6a;
+    --neon: #00FF88; --sp-green: #00FF88; --sp-blue: #00A0C8; --sp-red: #D94040;
+    --warn: #FF8800; --radius-sm: 0px; --radius-md: 0px; --radius-lg: 0px;
+    --font-sans: 'Space Grotesk', -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
+}
 
-    section[data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #0c0c18, #111127);
-        border-right: 1px solid rgba(99,102,241,0.08);
-    }
-    section[data-testid="stSidebar"] * { color: #94a3b8; }
+#MainMenu, footer, header, .stDeployButton,
+[data-testid="stToolbar"], [data-testid="stDecoration"],
+[data-testid="stStatusWidget"] { display: none !important; }
 
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 2px; background: rgba(99,102,241,0.04);
-        border-radius: 12px; padding: 4px;
-    }
-    .stTabs [data-baseweb="tab"] {
-        border-radius: 10px; padding: 8px 18px;
-        font-size: 0.82rem; font-weight: 500; color: #64748b;
-    }
-    .stTabs [data-baseweb="tab"]:hover { background: rgba(99,102,241,0.08); color: #a5b4fc; }
-    .stTabs [aria-selected="true"] {
-        background: rgba(99,102,241,0.15) !important;
-        color: #a5b4fc !important; font-weight: 600;
-    }
+.stApp { background: var(--bg-deep) !important; }
+.block-container { padding: 1.5rem 2rem 3rem !important; max-width: 1600px; }
 
-    .stDataFrame { border-radius: 12px; overflow: hidden; }
-    .streamlit-expanderHeader { font-weight: 600; font-size: 0.9rem; border-radius: 10px; }
-    hr { border-color: rgba(99,102,241,0.08) !important; }
+[data-testid="stSidebar"] { background: var(--bg-base) !important; border-right: 1px solid var(--border-subtle) !important; }
+[data-testid="stSidebar"] .stMarkdown p, [data-testid="stSidebar"] .stMarkdown span {
+    font-family: var(--font-mono) !important; color: var(--text-2) !important; font-size: 0.78rem !important;
+}
+.sidebar-label {
+    font-family: var(--font-mono) !important; font-size: 0.6rem !important; font-weight: 700 !important;
+    letter-spacing: 0.15em !important; text-transform: uppercase !important; color: var(--text-3) !important;
+    padding: 1.2rem 0 0.4rem !important; border-top: 1px solid var(--border-subtle); margin-top: 0.8rem;
+}
 
-    .agent-card {
-        background: linear-gradient(135deg, rgba(99,102,241,0.06), rgba(139,92,246,0.03));
-        border: 1px solid rgba(99,102,241,0.1);
-        border-radius: 16px; padding: 20px 24px; margin: 8px 0;
-        transition: all 0.3s;
-    }
-    .agent-card:hover { border-color: rgba(99,102,241,0.25); transform: translateY(-2px); }
-    .agent-card h4 { color: #a5b4fc; margin: 0 0 8px 0; font-size: 0.92rem; font-weight: 600; }
-    .agent-card p { color: #94a3b8; margin: 0; font-size: 0.85rem; line-height: 1.7; }
+.stMarkdown p { font-family: var(--font-mono) !important; color: var(--text-1) !important; line-height: 1.65 !important; font-size: 0.85rem !important; }
+h1, h2, h3 { font-family: var(--font-sans) !important; font-weight: 700 !important; letter-spacing: -0.5px !important; }
 
-    .hero-badge {
-        display: inline-flex; align-items: center; gap: 6px;
-        padding: 4px 14px; border-radius: 20px;
-        background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.15);
-        font-size: 0.75rem; color: #a5b4fc; font-weight: 500;
-    }
-    .section-header {
-        font-size: 1.1rem; font-weight: 700; color: #e2e8f0;
-        margin: 24px 0 16px 0; display: flex; align-items: center; gap: 10px;
-    }
-    .section-header .icon {
-        width: 32px; height: 32px; border-radius: 10px;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 1rem; background: rgba(99,102,241,0.1);
-    }
-    .stButton button { border-radius: 10px; font-weight: 500; border: 1px solid rgba(99,102,241,0.15); }
-    .stButton button:hover { border-color: rgba(99,102,241,0.4); }
-    .stDownloadButton button {
-        background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.15); border-radius: 12px;
-    }
-</style>
-""", unsafe_allow_html=True)
+.stTabs [data-baseweb="tab-list"] { background: var(--bg-base) !important; gap: 0 !important; border-bottom: 1px solid var(--border-subtle) !important; padding: 0 !important; overflow-x: auto; scrollbar-width: none; }
+.stTabs [data-baseweb="tab-list"]::-webkit-scrollbar { display: none; }
+.stTabs [data-baseweb="tab"] {
+    background: transparent !important; color: var(--text-3) !important; border: none !important;
+    border-bottom: 2px solid transparent !important; border-radius: 0 !important; padding: 0.65rem 1rem !important;
+    font-family: var(--font-mono) !important; font-size: 0.7rem !important; font-weight: 500 !important;
+    letter-spacing: 0.05em !important; text-transform: uppercase !important; white-space: nowrap !important;
+}
+.stTabs [data-baseweb="tab"]:hover { color: var(--text-2) !important; background: rgba(255,255,255,0.03) !important; }
+.stTabs [data-baseweb="tab"][aria-selected="true"] { color: var(--neon) !important; border-bottom-color: var(--neon) !important; background: var(--bg-deep) !important; }
+
+.stButton > button {
+    background: var(--bg-elevated) !important; color: var(--text-1) !important; border: 1px solid var(--border-default) !important;
+    border-radius: 0 !important; font-family: var(--font-mono) !important; font-size: 0.75rem !important;
+    font-weight: 600 !important; letter-spacing: 0.05em !important; text-transform: uppercase !important;
+}
+.stButton > button:hover { border-color: var(--neon) !important; background: rgba(0,255,136,0.06) !important; color: var(--neon) !important; }
+
+.stTextInput input, .stTextArea textarea, .stSelectbox > div > div, .stNumberInput input {
+    background: var(--bg-elevated) !important; color: var(--text-1) !important;
+    border: 1px solid var(--border-default) !important; border-radius: 0 !important;
+    font-family: var(--font-mono) !important; font-size: 0.82rem !important;
+}
+.stTextInput input:focus, .stTextArea textarea:focus { border-color: var(--neon) !important; box-shadow: 0 0 0 2px rgba(0,255,136,0.10) !important; }
+
+[data-testid="stMetric"] { background: var(--bg-elevated) !important; border: 1px solid var(--border-subtle) !important; padding: 0.8rem 1rem !important; }
+[data-testid="stMetric"] label { font-family: var(--font-mono) !important; font-size: 0.6rem !important; letter-spacing: 0.1em !important; text-transform: uppercase !important; color: var(--text-3) !important; }
+[data-testid="stMetric"] [data-testid="stMetricValue"] { font-family: var(--font-sans) !important; font-weight: 700 !important; color: var(--text-1) !important; }
+
+[data-testid="stExpander"] { background: var(--bg-elevated) !important; border: 1px solid var(--border-subtle) !important; border-radius: 0 !important; }
+[data-testid="stExpander"] summary { font-family: var(--font-mono) !important; font-size: 0.78rem !important; }
+
+[data-testid="stDataFrame"] { border: 1px solid var(--border-subtle) !important; border-radius: 0 !important; }
+.stDataFrame th { background: var(--bg-elevated) !important; }
+
+[data-testid="stChatInput"] { background: var(--bg-base) !important; border-top: 1px solid var(--border-subtle) !important; }
+[data-testid="stChatInput"] textarea { background: var(--bg-elevated) !important; color: var(--text-1) !important; border: 1px solid var(--border-default) !important; border-radius: 0 !important; font-family: var(--font-mono) !important; }
+[data-testid="stChatInput"] textarea:focus { border-color: var(--neon) !important; box-shadow: 0 0 0 2px rgba(0,255,136,0.10), 0 0 30px rgba(0,255,136,0.08) !important; }
+[data-testid="stChatMessage"] { background: transparent !important; border: none !important; padding: 0.8rem 0 !important; }
+
+.section-header { font-family: var(--font-mono); font-size: 0.58rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-3); padding-bottom: 0.4rem; border-bottom: 1px solid var(--border-subtle); margin: 1.5rem 0 0.5rem; }
+.status-bar { display: flex; align-items: center; gap: 10px; padding: 10px 18px; background: rgba(0,255,136,0.04); border: 1px solid rgba(0,255,136,0.15); margin-bottom: 14px; }
+.status-bar .status-dot { width: 6px; height: 6px; background: var(--neon); border-radius: 50%; animation: neon-pulse 2s ease-in-out infinite; }
+.status-bar .status-text { font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; color: var(--neon); letter-spacing: 0.08em; }
+.status-bar .status-meta { font-family: var(--font-mono); font-size: 0.62rem; color: var(--text-3); margin-left: auto; }
+
+.agent-card { background: var(--bg-elevated); border: 1px solid var(--border-subtle); padding: 0.8rem 1rem; margin: 0.3rem 0; transition: border-color 0.15s; }
+.agent-card:hover { border-color: rgba(0,255,136,0.25); }
+
+@keyframes neon-pulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+</style>""", unsafe_allow_html=True)
+
 
 # ============================================================
 # 侧边栏
 # ============================================================
 with st.sidebar:
-    st.markdown("""
-    <div style="padding:8px 0 16px 0;">
+    # Command Center Logo
+    st.markdown(f"""
+    <div style="padding:6px 0 14px 0;">
         <div style="display:flex; align-items:center; gap:10px;">
-            <div style="width:36px; height:36px; border-radius:10px;
-                 background:linear-gradient(135deg, #6366f1, #8b5cf6);
-                 display:flex; align-items:center; justify-content:center; font-size:1.2rem;">🧠</div>
+            <div style="width:32px; height:32px; background:{SP_GREEN}; display:flex;
+                 align-items:center; justify-content:center; flex-shrink:0;">
+                <span style="font-family:'Space Grotesk',sans-serif; font-weight:700;
+                      font-size:0.85rem; color:#0C0C0C;">S</span>
+            </div>
             <div>
-                <div style="font-size:1.05rem; font-weight:700; color:#f1f5f9;">MRARFAI</div>
-                <div style="font-size:0.7rem; color:#64748b;">Sales Intelligence Agent</div>
+                <div style="font-size:0.88rem; font-weight:700; color:#FFFFFF;
+                     letter-spacing:0.1em; font-family:'Space Grotesk',sans-serif;
+                     text-transform:uppercase;">SPROCOMM</div>
+                <div style="font-size:0.5rem; color:#6a6a6a; font-family:'JetBrains Mono',monospace;
+                     letter-spacing:0.1em; text-transform:uppercase;">MRARFAI v9.0 · RLM Engine</div>
             </div>
         </div>
     </div>
     """, unsafe_allow_html=True)
     st.divider()
 
-    st.markdown('<p style="font-size:0.75rem; color:#64748b; font-weight:600; text-transform:uppercase; letter-spacing:1px;">📁 数据上传</p>', unsafe_allow_html=True)
+    # Data section
+    st.markdown('<div class="sidebar-label">DATA</div>', unsafe_allow_html=True)
     rev_file = st.file_uploader("金额报表 (.xlsx)", type=['xlsx'], key='rev', label_visibility="collapsed")
     if rev_file: st.caption(f"✓ {rev_file.name}")
     else: st.caption("拖入金额报表 .xlsx")
@@ -189,7 +225,9 @@ with st.sidebar:
     else: st.caption("拖入数量报表 .xlsx")
 
     st.divider()
-    st.markdown('<p style="font-size:0.75rem; color:#64748b; font-weight:600; text-transform:uppercase; letter-spacing:1px;">🤖 AI 引擎</p>', unsafe_allow_html=True)
+
+    # AI Engine section
+    st.markdown('<div class="sidebar-label">AI ENGINE</div>', unsafe_allow_html=True)
     ai_enabled = st.toggle("启用 AI 叙事", value=False)
     if ai_enabled:
         ai_provider = st.selectbox("模型", ['DeepSeek', 'Claude'], label_visibility="collapsed")
@@ -197,42 +235,121 @@ with st.sidebar:
     else:
         ai_provider, api_key = 'DeepSeek', None
 
-    st.markdown("""
-    <div style="text-align:center; opacity:0.3; font-size:0.7rem; color:#64748b; margin-top:40px;">
-        Sprocomm 禾苗通讯 · 01401.HK<br>Powered by MRARFAI v4.0
+    st.session_state["ai_provider"] = ai_provider
+    st.session_state["api_key"] = api_key or ""
+
+    st.divider()
+
+    # Multi-Agent section
+    st.markdown('<div class="sidebar-label">MULTI-AGENT</div>', unsafe_allow_html=True)
+    use_multi = st.toggle("启用 Multi-Agent", value=False, key="use_multi_agent")
+    if use_multi:
+        st.markdown(f"""
+        <div style="display:flex; align-items:center; gap:6px; padding:6px 10px;
+             background:rgba(0,255,136,0.06); border:1px solid rgba(0,255,136,0.15);
+             margin-top:4px;">
+            <div style="width:5px; height:5px; border-radius:50%; background:{SP_GREEN};
+                 animation:neon-pulse 2s ease-in-out infinite;"></div>
+            <span style="font-family:'JetBrains Mono',monospace; font-size:0.58rem;
+                  color:#6a6a6a; letter-spacing:0.05em;">V9 AGENTS [ACTIVE] · RLM · HITL</span>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # Footer
+    st.markdown(f"""
+    <div style="text-align:center; opacity:0.3; font-size:0.5rem; color:#6a6a6a;
+         margin-top:40px; font-family:'JetBrains Mono',monospace;
+         letter-spacing:0.1em; text-transform:uppercase;">
+        SPROCOMM · 01401.HK<br>MRARFAI v9.0 · 36K+ lines
     </div>
     """, unsafe_allow_html=True)
 
+
 # ============================================================
-# 欢迎页
+# 欢迎页 (未上传数据时)
 # ============================================================
 if not rev_file or not qty_file:
-    st.markdown("""
-    <div style="text-align:center; padding:80px 0 40px 0;">
+    st.markdown(f"""
+    <div style="text-align:center; padding:50px 0 28px 0;">
         <div style="margin-bottom:20px;">
-            <span class="hero-badge">✨ v4.0 · Agent-Powered Analytics</span>
+            <span style="display:inline-flex; align-items:center; gap:8px;
+                padding:6px 16px;
+                background:rgba(0,255,136,0.06); border:1px solid rgba(0,255,136,0.25);
+                font-size:0.62rem; color:{SP_GREEN}; font-weight:700;
+                letter-spacing:0.1em; font-family:'JetBrains Mono',monospace;
+                text-transform:uppercase;">
+                <span style="width:6px;height:6px;border-radius:50%;background:{SP_GREEN};"></span>
+                V9.0 · RLM MULTI-AGENT INTELLIGENCE
+            </span>
         </div>
-        <h1 style="font-size:2.8rem; font-weight:800; color:#f1f5f9; letter-spacing:-1px; margin:0; line-height:1.2;">
-            Sales Intelligence<br>
-            <span style="background:linear-gradient(135deg, #6366f1, #a855f7, #22d3ee);
-                 -webkit-background-clip:text; -webkit-text-fill-color:transparent;">Agent</span>
+        <h1 style="font-size:3rem; font-weight:700; color:{SP_GREEN}; letter-spacing:-2px;
+            margin:0; line-height:1.1; font-family:'Space Grotesk',sans-serif;">
+            SPROCOMM
         </h1>
-        <p style="color:#64748b; font-size:1.05rem; margin-top:16px; max-width:500px; margin-left:auto; margin-right:auto; line-height:1.6;">
-            上传禾苗通讯销售数据，用自然语言对话<br>获取深度洞察与战略建议
+        <h1 style="font-size:3rem; font-weight:700; color:#FFFFFF; letter-spacing:-2px;
+            margin:0; line-height:1.1; font-family:'Space Grotesk',sans-serif;">
+            SALES INTELLIGENCE
+        </h1>
+        <p style="color:#8a8a8a; font-size:0.82rem; margin-top:16px; max-width:500px;
+           margin-left:auto; margin-right:auto; line-height:1.6;
+           font-family:'JetBrains Mono',monospace;">
+            // 多智能体协作 · RLM递归语言模型 · 500K+上下文 · 实时预警系统
         </p>
     </div>
     """, unsafe_allow_html=True)
 
     c1, c2, c3 = st.columns(3)
     with c1:
-        st.markdown('<div class="agent-card"><h4>🧠 对话式分析</h4><p>用中文提问，Agent 自动选择分析工具，理解数据含义，给出专业建议</p></div>', unsafe_allow_html=True)
+        st.markdown(f"""<div class="agent-card" style="border-left:2px solid {SP_GREEN};
+            display:block; text-align:left; padding:1.2rem;">
+            <div style="width:36px;height:36px;background:rgba(0,255,136,0.08);
+                 display:flex;align-items:center;justify-content:center;margin-bottom:12px;">
+                <span style="color:{SP_GREEN};font-size:1.1rem;">◈</span>
+            </div>
+            <h4 style="color:#FFFFFF;font-family:'Space Grotesk',sans-serif;font-size:0.9rem;
+                letter-spacing:0.03em;margin:0 0 8px 0;">RLM MULTI-AGENT</h4>
+            <p style="font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:#8a8a8a;
+               line-height:1.5;margin:0;">Route → Experts → Synthesize → Reflect → HITL</p>
+            <p style="font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:rgba(0,255,136,0.5);
+               margin:8px 0 0 0;letter-spacing:0.03em;">// 36,000+ LINES · 26 MODULES</p>
+        </div>""", unsafe_allow_html=True)
     with c2:
-        st.markdown('<div class="agent-card"><h4>📊 12维深度分析</h4><p>客户分级 · 流失预警 · 价量分解 · 行业对标 · 预测引擎 · CEO备忘录</p></div>', unsafe_allow_html=True)
+        st.markdown(f"""<div class="agent-card" style="border-left:2px solid {SP_BLUE};
+            display:block; text-align:left; padding:1.2rem;">
+            <div style="width:36px;height:36px;background:rgba(0,160,200,0.08);
+                 display:flex;align-items:center;justify-content:center;margin-bottom:12px;">
+                <span style="color:{SP_BLUE};font-size:1.1rem;">◇</span>
+            </div>
+            <h4 style="color:#FFFFFF;font-family:'Space Grotesk',sans-serif;font-size:0.9rem;
+                letter-spacing:0.03em;margin:0 0 8px 0;">12-DIMENSION ANALYTICS</h4>
+            <p style="font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:#8a8a8a;
+               line-height:1.5;margin:0;">客户·价量·预警·增长·产品·区域</p>
+            <p style="font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:rgba(0,160,200,0.5);
+               margin:8px 0 0 0;letter-spacing:0.03em;">// CONTEXT WINDOW 500K+ CHARS</p>
+        </div>""", unsafe_allow_html=True)
     with c3:
-        st.markdown('<div class="agent-card"><h4>🔮 智能预测</h4><p>Q1 2026 营收预测 · 情景分析 · 客户级别预测 · AI 战略叙事</p></div>', unsafe_allow_html=True)
+        st.markdown(f"""<div class="agent-card" style="border-left:2px solid {SP_RED};
+            display:block; text-align:left; padding:1.2rem;">
+            <div style="width:36px;height:36px;background:rgba(217,64,64,0.08);
+                 display:flex;align-items:center;justify-content:center;margin-bottom:12px;">
+                <span style="color:{SP_RED};font-size:1.1rem;">◆</span>
+            </div>
+            <h4 style="color:#FFFFFF;font-family:'Space Grotesk',sans-serif;font-size:0.9rem;
+                letter-spacing:0.03em;margin:0 0 8px 0;">5-LAYER GUARDRAILS</h4>
+            <p style="font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:#8a8a8a;
+               line-height:1.5;margin:0;">输入过滤·Prompt注入·幻觉检测</p>
+            <p style="font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:rgba(217,64,64,0.5);
+               margin:8px 0 0 0;letter-spacing:0.03em;">// 99.5% SECURITY PASS</p>
+        </div>""", unsafe_allow_html=True)
 
-    st.markdown('<div style="text-align:center; margin-top:40px;"><p style="color:#475569; font-size:0.88rem;">👈 在左侧上传<strong style="color:#a5b4fc;">金额报表</strong>和<strong style="color:#a5b4fc;">数量报表</strong>开始分析</p></div>', unsafe_allow_html=True)
+    st.markdown(f"""<div style="text-align:center; margin-top:28px;">
+        <p style="color:#6a6a6a; font-size:0.75rem; font-family:'JetBrains Mono',monospace;">
+            ← UPLOAD <strong style="color:{SP_GREEN};">金额报表</strong> &
+            <strong style="color:{SP_BLUE};">数量报表</strong> TO BEGIN
+        </p>
+    </div>""", unsafe_allow_html=True)
     st.stop()
+
 
 # ============================================================
 # 数据加载
@@ -252,33 +369,34 @@ def run_full_analysis(rev_bytes, qty_bytes):
     os.unlink(rp); os.unlink(qp)
     return data, results, bench, forecast
 
-with st.spinner("⚡ 数据加载 + 深度分析中..."):
+with st.spinner("🌿 数据加载 + 深度分析中..."):
     data, results, benchmark, forecast = run_full_analysis(rev_file.read(), qty_file.read())
 
 active = sum(1 for c in data['客户金额'] if c['年度金额'] > 0)
 st.markdown(f"""
-<div style="display:flex; align-items:center; gap:10px; padding:12px 20px;
-     background:rgba(16,185,129,0.06); border:1px solid rgba(16,185,129,0.12);
-     border-radius:12px; margin-bottom:16px;">
-    <span style="font-size:1.1rem;">✅</span>
-    <span style="color:#10b981; font-weight:600; font-size:0.88rem;">v4.0 全套分析完成</span>
-    <span style="color:#475569; font-size:0.8rem; margin-left:auto;">{active}家活跃客户 · 12维分析</span>
+<div class="status-bar">
+    <div class="status-dot"></div>
+    <span class="status-text">DATA LOADED</span>
+    <span class="status-meta">{active} clients · 12 dimensions · V9.0 RLM · {datetime.now().strftime('%H:%M:%S')}</span>
 </div>
 """, unsafe_allow_html=True)
 
+
 # ============================================================
-# Tabs
+# Tabs — V9.0 布局
 # ============================================================
 tabs = st.tabs([
     "🧠 Agent", "📊 总览", "👥 客户分析", "💰 价量分解", "🚨 预警中心",
     "📈 增长机会", "🏭 产品结构", "🌍 区域分析",
-    "🌐 行业对标", "🔮 预测", "✍️ CEO备忘录",
+    "🌐 行业对标", "🔮 预测", "✏️ CEO备忘录",
     "❤️ 健康评分", "🔬 异常检测", "🔔 通知推送", "🎨 品牌设置", "📥 导出",
 ])
 
-# ---- Tab 0: Agent ----
+
+# ---- Tab 0: Agent Chat ----
 with tabs[0]:
-    render_chat_tab(data, results, benchmark, forecast)
+    render_chat_tab(data, results, benchmark, forecast, ai_provider, api_key)
+
 
 # ---- Tab 1: 总览 ----
 with tabs[1]:
@@ -296,7 +414,7 @@ with tabs[1]:
 
     st.markdown("")
     findings = results['核心发现']
-    st.markdown('<div class="section-header"><div class="icon">💡</div> 核心发现</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-header">KEY FINDINGS</div>', unsafe_allow_html=True)
     fcols = st.columns(min(len(findings), 3))
     for i, f in enumerate(findings):
         with fcols[i % len(fcols)]:
@@ -310,26 +428,22 @@ with tabs[1]:
             fig = go.Figure()
             fig.add_trace(go.Bar(
                 x=MONTHS, y=m_data,
-                marker=dict(color=[ACCENT if v == max(m_data) else "rgba(99,102,241,0.35)" for v in m_data]),
+                marker=dict(color=[SP_GREEN if v == max(m_data) else "rgba(140,191,63,0.30)" for v in m_data]),
                 text=[f"{v:,.0f}" for v in m_data], textposition="outside", textfont=dict(size=10, color=TEXT2),
             ))
             fig.update_layout(**plotly_layout("月度营收趋势（万元）", 380, False))
             st.plotly_chart(fig, use_container_width=True)
-        else:
-            st.bar_chart(pd.DataFrame({'月份': MONTHS, '金额': m_data}).set_index('月份'))
     with col2:
         if HAS_PLOTLY:
             cat_data = results['类别趋势']
             fig = go.Figure()
             fig.add_trace(go.Bar(x=[c['类别'] for c in cat_data], y=[c['2025金额'] for c in cat_data],
-                name="2025", marker_color=ACCENT, text=[f"{c['2025金额']:,.0f}" for c in cat_data],
+                name="2025", marker_color=SP_GREEN, text=[f"{c['2025金额']:,.0f}" for c in cat_data],
                 textposition="outside", textfont=dict(size=10)))
             fig.add_trace(go.Bar(x=[c['类别'] for c in cat_data], y=[c['2024金额'] for c in cat_data],
                 name="2024", marker_color="rgba(100,116,139,0.3)"))
             fig.update_layout(**plotly_layout("业务类别 YoY", 380), barmode='group')
             st.plotly_chart(fig, use_container_width=True)
-        else:
-            st.bar_chart(pd.DataFrame(results['类别趋势'])[['类别','2025金额','2024金额']].set_index('类别'))
 
     q = [sum(m_data[i:i+3]) for i in range(0, 12, 3)]
     qc1, qc2, qc3, qc4 = st.columns(4)
@@ -347,6 +461,7 @@ with tabs[1]:
             column_config={'2025金额': st.column_config.NumberColumn(format="%,d"),
                 '2024金额': st.column_config.NumberColumn(format="%,d"),
                 '增长额': st.column_config.NumberColumn(format="%,d")})
+
 
 # ---- Tab 2: 客户分析 ----
 with tabs[2]:
@@ -371,184 +486,96 @@ with tabs[2]:
             'H1': st.column_config.NumberColumn(format="%,d"),
             'H2': st.column_config.NumberColumn(format="%,d")})
 
-    st.markdown("")
-    st.markdown('<div class="section-header"><div class="icon">📈</div> 集中度曲线</div>', unsafe_allow_html=True)
     if HAS_PLOTLY:
-        top15 = tiers[:15]
+        st.markdown('<div class="section-header">CONCENTRATION CURVE</div>', unsafe_allow_html=True)
+        cum = [t['累计占比'] for t in tiers]
         fig = go.Figure()
         fig.add_trace(go.Scatter(
-            x=[t['客户'] for t in top15], y=[t['累计占比'] for t in top15],
-            mode='lines+markers+text', text=[f"{t['累计占比']}%" for t in top15],
-            textposition="top center", textfont=dict(size=9, color=TEXT2),
-            line=dict(color=ACCENT, width=2.5),
-            marker=dict(size=8, color=ACCENT, line=dict(width=2, color='white')),
-            fill='tozeroy', fillcolor='rgba(99,102,241,0.05)'))
-        fig.add_hline(y=80, line_dash="dash", line_color=ORANGE, annotation_text="80%线")
-        fig.update_layout(**plotly_layout("Top15 累计营收占比", 360, False))
-        fig.update_yaxes(range=[0, 105])
+            x=list(range(1, len(cum)+1)), y=cum, mode='lines+markers',
+            line=dict(color=SP_GREEN, width=2), marker=dict(size=5, color=SP_GREEN),
+            fill='tozeroy', fillcolor='rgba(0,255,136,0.06)'))
+        fig.add_hline(y=80, line_dash="dash", line_color=ORANGE,
+            annotation_text="80% 帕累托线", annotation_font=dict(size=10, color=ORANGE))
+        fig.update_layout(**plotly_layout("客户集中度曲线", 350, False))
+        fig.update_xaxes(title_text="客户排名")
+        fig.update_yaxes(title_text="累计占比 (%)")
         st.plotly_chart(fig, use_container_width=True)
 
-    st.markdown("")
-    st.markdown('<div class="section-header"><div class="icon">🔍</div> 单客户趋势</div>', unsafe_allow_html=True)
-    selected = st.selectbox("选择客户", [t['客户'] for t in tiers[:20]])
-    sel_data = next((c for c in data['客户金额'] if c['客户'] == selected), None)
-    if sel_data and HAS_PLOTLY:
-        vals = sel_data['月度金额']
-        fig = go.Figure()
-        fig.add_trace(go.Bar(x=MONTHS, y=vals,
-            marker=dict(color=[ACCENT if v == max(vals) else "rgba(99,102,241,0.35)" for v in vals]),
-            text=[f"{v:,.0f}" for v in vals], textposition="outside", textfont=dict(size=10)))
-        fig.update_layout(**plotly_layout(f"{selected} · 月度营收（万元）", 350, False))
-        st.plotly_chart(fig, use_container_width=True)
 
 # ---- Tab 3: 价量分解 ----
 with tabs[3]:
-    st.markdown('<div class="section-header"><div class="icon">💰</div> 价量分解</div>', unsafe_allow_html=True)
-    st.caption("单价 = 出货金额 ÷ 出货数量 → 判断增长质量")
     pv = results['价量分解']
-    if not pv:
-        st.warning("无法计算（需要金额+数量匹配）")
-    else:
-        quality_map = {}
+    if pv:
+        # 统计
+        quality_counts = {}
         for p in pv:
-            q = p['质量评估']
-            if '优质' in q: k = '✅ 优质增长'
-            elif '以价补量' in q: k = '⚠️ 以价补量'
-            elif '量换价' in q: k = '⚠️ 以量换价'
-            elif '齐跌' in q: k = '❌ 量价齐跌'
-            else: k = '→ 价格稳定'
-            quality_map[k] = quality_map.get(k, 0) + 1
-        cols = st.columns(len(quality_map))
-        for i, (k, v) in enumerate(quality_map.items()):
-            cols[i].metric(k, f"{v}家")
+            q = p.get('质量评估', '未知')
+            quality_counts[q] = quality_counts.get(q, 0) + 1
 
-        st.markdown("")
+        st.markdown('<div class="section-header">PRICE-VOLUME DECOMPOSITION</div>', unsafe_allow_html=True)
         pv_df = pd.DataFrame(pv)
-        for col in ['年度金额', '年度数量', '均价(元)', 'H1均价', 'H2均价']:
-            if col in pv_df.columns:
-                pv_df[col] = pd.to_numeric(pv_df[col], errors='coerce').round(1)
-        display_cols = [c for c in ['客户','年度金额','年度数量','均价(元)','H1均价','H2均价','价格变动','质量评估'] if c in pv_df.columns]
-        st.dataframe(pv_df[display_cols], use_container_width=True, hide_index=True,
-            column_config={'年度金额': st.column_config.NumberColumn(format="%,.0f"),
-                '年度数量': st.column_config.NumberColumn(format="%,.0f"),
-                '均价(元)': st.column_config.NumberColumn(format="%,.1f"),
-                'H1均价': st.column_config.NumberColumn(format="%,.1f"),
-                'H2均价': st.column_config.NumberColumn(format="%,.1f")})
+        st.dataframe(pv_df, use_container_width=True, hide_index=True)
 
-        st.markdown("")
-        st.markdown('<div class="section-header"><div class="icon">📉</div> Top5 单价趋势</div>', unsafe_allow_html=True)
         if HAS_PLOTLY:
             fig = go.Figure()
-            for idx, p in enumerate(pv[:5]):
-                prices = p.get('月度单价', [])
-                if len(prices) == 12:
-                    clean = [v if v and v > 0 else None for v in prices]
-                    fig.add_trace(go.Scatter(x=MONTHS, y=clean, name=p['客户'],
-                        mode='lines+markers', line=dict(color=COLORS[idx], width=2), marker=dict(size=5)))
-            fig.update_layout(**plotly_layout("月度单价走势（元/台）", 380))
+            for i, p in enumerate(pv[:10]):
+                color = SP_GREEN if '优质' in p.get('质量评估', '') else (SP_RED if '齐跌' in p.get('质量评估', '') else SP_BLUE)
+                fig.add_trace(go.Bar(
+                    name=p['客户'], x=[p['客户']], y=[p.get('年度金额', 0)],
+                    marker_color=color, showlegend=False,
+                    text=[f"{p.get('年度金额', 0):,.0f}"], textposition="outside"))
+            fig.update_layout(**plotly_layout("客户价量分布", 380, False))
             st.plotly_chart(fig, use_container_width=True)
+
 
 # ---- Tab 4: 预警中心 ----
 with tabs[4]:
     alerts = results['流失预警']
-    anomalies = results['MoM异常']
-    if alerts:
-        total_risk = sum(a['年度金额'] for a in alerts)
-        high_alerts = [a for a in alerts if '高' in a['风险']]
-        c1, c2, c3, c4 = st.columns(4)
-        c1.metric("预警客户", f"{len(alerts)}家")
-        c2.metric("🔴 高风险", f"{len(high_alerts)}家", "需立即关注")
-        c3.metric("风险金额", f"{total_risk:,.0f}万")
-        c4.metric("占总营收", f"{total_risk/data['总营收']*100:.1f}%")
+    high_risk = [a for a in alerts if '高' in a['风险']]
+    med_risk = [a for a in alerts if '中' in a['风险']]
 
-        st.markdown("")
-        st.markdown('<div class="section-header"><div class="icon">🔴</div> 流失风险排名</div>', unsafe_allow_html=True)
-        alert_df = pd.DataFrame(alerts)
-        display_cols = [c for c in ['客户', '风险', '得分', '年度金额', '原因'] if c in alert_df.columns]
-        if '年度金额' in alert_df.columns:
-            alert_df['年度金额'] = pd.to_numeric(alert_df['年度金额'], errors='coerce').round(0)
-        st.dataframe(alert_df[display_cols], use_container_width=True, hide_index=True,
-            column_config={'年度金额': st.column_config.NumberColumn(format="%,.0f"),
-                '得分': st.column_config.ProgressColumn(min_value=0, max_value=120, format="%d")})
+    c1, c2, c3 = st.columns(3)
+    c1.metric("🔴 高风险", f"{len(high_risk)}家", f"涉及 {sum(a['年度金额'] for a in high_risk):,.0f}万")
+    c2.metric("🟡 中风险", f"{len(med_risk)}家")
+    c3.metric("总预警", f"{len(alerts)}家")
 
-        st.markdown("")
-        sel_alert = st.selectbox("预警客户走势", [a['客户'] for a in alerts], key='alert_sel')
-        a_data = next((a for a in alerts if a['客户'] == sel_alert), None)
-        if a_data and '月度趋势' in a_data and HAS_PLOTLY:
-            vals = a_data['月度趋势']
-            fig = go.Figure()
-            fig.add_trace(go.Bar(x=MONTHS, y=vals,
-                marker_color=[RED if v > 0 else "rgba(239,68,68,0.2)" for v in vals],
-                text=[f"{v:,.0f}" if v > 0 else "" for v in vals],
-                textposition="outside", textfont=dict(size=10)))
-            fig.update_layout(**plotly_layout(f"{sel_alert} · 月度走势", 350, False))
-            st.plotly_chart(fig, use_container_width=True)
-    else:
-        st.success("🎉 无高风险预警")
+    st.markdown('<div class="section-header">HIGH RISK CLIENTS</div>', unsafe_allow_html=True)
+    for a in high_risk:
+        st.error(f"🔴 **{a['客户']}** — ¥{a['年度金额']:,.0f}万 — {a.get('原因', a.get('风险', ''))}")
+    for a in med_risk:
+        st.warning(f"🟡 **{a['客户']}** — ¥{a['年度金额']:,.0f}万 — {a.get('原因', a.get('风险', ''))}")
 
-    with st.expander("⚡ 月度异常检测"):
-        if anomalies:
-            anom_df = pd.DataFrame(anomalies[:20])
-            for col in ['当月', '上月', '月均']:
-                if col in anom_df.columns:
-                    anom_df[col] = pd.to_numeric(anom_df[col], errors='coerce').round(0)
-            st.dataframe(anom_df, use_container_width=True, hide_index=True)
-        else:
-            st.info("无显著异常")
 
 # ---- Tab 5: 增长机会 ----
 with tabs[5]:
     growth = results['增长机会']
-    if growth:
-        types = sorted(set(g['类型'] for g in growth))
-        cols = st.columns(len(types))
-        for i, t in enumerate(types):
-            cols[i].metric(t, f"{sum(1 for g in growth if g['类型'] == t)}个")
-        st.markdown("")
-        g_df = pd.DataFrame(growth)
-        if '金额' in g_df.columns:
-            g_df['金额'] = pd.to_numeric(g_df['金额'], errors='coerce').round(0)
-        st.dataframe(g_df, use_container_width=True, hide_index=True,
-            column_config={'金额': st.column_config.NumberColumn(format="%,.0f")})
-    else:
-        st.info("暂无显著增长信号")
+    st.markdown(f'<div class="section-header">GROWTH OPPORTUNITIES · {len(growth)} FOUND</div>', unsafe_allow_html=True)
+    for g in growth:
+        with st.expander(f"📈 **{g.get('客户', '未知')}** — {g.get('类型', '')} — {g.get('说明', '')}", expanded=False):
+            for k, v in g.items():
+                if k not in ('客户',):
+                    st.markdown(f"**{k}**: {v}")
+
 
 # ---- Tab 6: 产品结构 ----
 with tabs[6]:
-    col1, col2 = st.columns(2)
-    with col1:
-        st.markdown('<div class="section-header"><div class="icon">📱</div> 产品类型</div>', unsafe_allow_html=True)
-        prod = results['产品结构']
-        if prod:
-            st.dataframe(pd.DataFrame(prod), use_container_width=True, hide_index=True)
-            if HAS_PLOTLY:
-                fig = go.Figure(data=[go.Pie(labels=[p['类型'] for p in prod], values=[p['全年实际'] for p in prod],
-                    hole=0.5, marker_colors=[ACCENT, PURPLE, CYAN], textinfo='label+percent')])
-                fig.update_layout(**plotly_layout("", 320, False))
-                st.plotly_chart(fig, use_container_width=True)
-    with col2:
-        st.markdown('<div class="section-header"><div class="icon">📦</div> 订单模式</div>', unsafe_allow_html=True)
-        order = results['订单模式']
-        if order:
-            st.dataframe(pd.DataFrame(order), use_container_width=True, hide_index=True)
-            if HAS_PLOTLY:
-                fig = go.Figure(data=[go.Pie(labels=[o['模式'] for o in order], values=[o['全年数量'] for o in order],
-                    hole=0.5, marker_colors=[ORANGE, ACCENT, PURPLE], textinfo='label+percent')])
-                fig.update_layout(**plotly_layout("", 320, False))
-                st.plotly_chart(fig, use_container_width=True)
+    pm = data.get('产品结构', data.get('类别YoY', []))
+    if pm:
+        st.markdown('<div class="section-header">PRODUCT MIX</div>', unsafe_allow_html=True)
+        pm_df = pd.DataFrame(pm)
+        st.dataframe(pm_df, use_container_width=True, hide_index=True)
 
-    st.markdown("")
-    st.markdown('<div class="section-header"><div class="icon">📊</div> 计划 vs 实际</div>', unsafe_allow_html=True)
-    qs = data['数量汇总']
-    if HAS_PLOTLY:
-        fig = go.Figure()
-        fig.add_trace(go.Scatter(x=MONTHS, y=qs['月度计划'], name="计划",
-            line=dict(color="rgba(100,116,139,0.4)", width=2, dash='dash'), mode='lines'))
-        fig.add_trace(go.Scatter(x=MONTHS, y=qs['月度实际'], name="实际",
-            line=dict(color=GREEN, width=2.5), mode='lines+markers', marker=dict(size=6),
-            fill='tonexty', fillcolor='rgba(16,185,129,0.06)'))
-        fig.update_layout(**plotly_layout("月度出货：计划 vs 实际", 380))
-        st.plotly_chart(fig, use_container_width=True)
+        if HAS_PLOTLY:
+            fig = go.Figure()
+            for i, p in enumerate(pm):
+                fig.add_trace(go.Bar(
+                    x=[p['类别']], y=[p['2025金额']],
+                    marker_color=CHART_COLORS[i % len(CHART_COLORS)],
+                    name=p['类别'],
+                    text=[f"{p['2025金额']:,.0f}"], textposition="outside"))
+            fig.update_layout(**plotly_layout("2025 产品结构（万元）", 380))
+            st.plotly_chart(fig, use_container_width=True)
+
 
 # ---- Tab 7: 区域分析 ----
 with tabs[7]:
@@ -564,14 +591,14 @@ with tabs[7]:
         regions = reg['详细']
         fig = go.Figure()
         fig.add_trace(go.Bar(x=[r['区域'] for r in regions], y=[r['金额'] for r in regions],
-            marker_color=[ACCENT if i == 0 else "rgba(99,102,241,0.3)" for i in range(len(regions))],
+            marker_color=[SP_GREEN if i == 0 else "rgba(140,191,63,0.25)" for i in range(len(regions))],
             text=[f"{r['金额']:,.0f}" for r in regions], textposition="outside", textfont=dict(size=10)))
         fig.update_layout(**plotly_layout("区域出货分布（万元）", 380, False))
         st.plotly_chart(fig, use_container_width=True)
 
+
 # ---- Tab 8: 行业对标 ----
 with tabs[8]:
-    st.markdown('<div class="section-header"><div class="icon">🌐</div> 行业基准对标</div>', unsafe_allow_html=True)
     st.caption("数据来源：IDC / Counterpoint / 公司年报")
     mp = benchmark['市场定位']
     for k, v in mp.items():
@@ -607,9 +634,9 @@ with tabs[8]:
                 st.markdown(f"**行业**：{o['行业']}")
                 st.success(f"→ {o['行动']}")
 
+
 # ---- Tab 9: 预测 ----
 with tabs[9]:
-    st.markdown('<div class="section-header"><div class="icon">🔮</div> 2026年前瞻预测</div>', unsafe_allow_html=True)
     t = forecast['总营收预测']
     c1, c2, c3 = st.columns(3)
     c1.metric("Q1 乐观", f"{t['置信区间']['乐观(+15%)']:,.0f}万")
@@ -617,7 +644,7 @@ with tabs[9]:
     c3.metric("Q1 悲观", f"{t['置信区间']['悲观(-15%)']:,.0f}万")
     st.caption(f"参考：Q1 2025 {t['参考']['Q1_2025实际']:,.0f}万 | Q4 2025 {t['参考']['Q4_2025实际']:,.0f}万")
 
-    with st.expander("📐 预测方法"):
+    with st.expander("🔍 预测方法"):
         for k, v in t['方法说明'].items():
             st.markdown(f"- **{k}**：{v}")
 
@@ -640,7 +667,7 @@ with tabs[9]:
         values = [scenarios[n]['全年预测'] for n in names]
         fig = go.Figure()
         fig.add_trace(go.Bar(x=[n.split('(')[0] for n in names], y=values,
-            marker_color=[GREEN, ACCENT, ORANGE, RED],
+            marker_color=[SP_GREEN, SP_BLUE, ORANGE, SP_RED],
             text=[f"{v/10000:.1f}亿" for v in values],
             textposition="outside", textfont=dict(size=13, color=TEXT2)))
         fig.update_layout(**plotly_layout("2026 情景预测", 400, False))
@@ -651,9 +678,9 @@ with tabs[9]:
             st.metric(name.split('(')[0], f"{sc['全年预测']/10000:.1f}亿")
             st.caption(sc['假设'])
 
+
 # ---- Tab 10: CEO备忘录 ----
 with tabs[10]:
-    st.markdown('<div class="section-header"><div class="icon">✍️</div> 管理层战略备忘录</div>', unsafe_allow_html=True)
     if ai_enabled and api_key:
         if st.button("🧠 用AI生成深度叙事", type="primary", use_container_width=True):
             narrator = AINarrator(data, results, benchmark, forecast)
@@ -666,32 +693,34 @@ with tabs[10]:
     with st.expander("📄 内置战略备忘录", expanded=not ai_enabled):
         st.markdown(memo)
 
+
 # ---- Tab 11: 健康评分 ----
 with tabs[11]:
-    st.markdown('<div class="section-header"><div class="icon">❤️</div> 客户健康评分</div>', unsafe_allow_html=True)
     health_scores = render_health_dashboard(data, results)
+
 
 # ---- Tab 12: 异常检测 ----
 with tabs[12]:
-    st.markdown('<div class="section-header"><div class="icon">🔬</div> 智能异常检测</div>', unsafe_allow_html=True)
     st.caption("基于统计模型 (Z-Score · IQR · 趋势断裂 · 波动率 · 系统性风险)")
     render_anomaly_dashboard(data, results)
 
+
 # ---- Tab 13: 通知推送 ----
 with tabs[13]:
-    st.markdown('<div class="section-header"><div class="icon">🔔</div> 通知推送</div>', unsafe_allow_html=True)
-    _hs = health_scores if 'health_scores' in dir() and health_scores else None
-    render_notification_settings(results, _hs)
+    if HAS_WECHAT:
+        _hs = health_scores if 'health_scores' in dir() and health_scores else None
+        render_notification_settings(results, _hs)
+    else:
+        st.info("微信通知模块未加载 — 请确保 wechat_notify.py 在项目目录中")
+
 
 # ---- Tab 14: 品牌设置 ----
 with tabs[14]:
     render_brand_settings()
 
+
 # ---- Tab 15: 导出 ----
 with tabs[15]:
-    st.markdown('<div class="section-header"><div class="icon">📥</div> 报告导出</div>', unsafe_allow_html=True)
-
-    # PDF报告 + 邮件推送
     render_report_section(data, results, benchmark, forecast)
 
     st.markdown("")
@@ -708,7 +737,8 @@ with tabs[15]:
         full = parts[0] + bench_section + forecast_section + memo + footer + parts[1]
     else:
         full = base_report + bench_section + forecast_section + memo
-    full = full.replace("Agent v2.0", "Agent v4.0").replace("智能分析系统 v2.0", "智能分析系统 v4.0")
+    full = full.replace("Agent v2.0", "Agent v9.0").replace("智能分析系统 v2.0", "智能分析系统 v9.0")
+    full = full.replace("Agent v4.0", "Agent v9.0").replace("Agent v8.0", "Agent v9.0")
     now = datetime.now().strftime('%Y%m%d')
     c1, c2, c3 = st.columns(3)
     with c1:

@@ -1,0 +1,41 @@
+# ============================================
+# MRARFAI v7.0 — 2026 前沿技术栈
+# ============================================
+
+# --- 核心依赖（v5.0 保留）---
+pandas>=2.0
+openpyxl>=3.1
+numpy>=1.24
+streamlit>=1.30
+plotly>=5.18
+anthropic>=0.40          # 升级: 支持最新 tool_use + MCP
+openai>=1.50             # 升级: 支持 GPT-4.1 + Responses API
+reportlab>=4.0
+requests>=2.28
+
+# --- v7.0 新增: Agent 编排 ---
+langgraph>=0.3           # ★ 核心: LangGraph StateGraph 替代自建编排
+langchain-core>=0.3      # LangGraph 依赖
+langchain-anthropic>=0.3 # Claude 集成
+
+# --- v7.0 新增: 可观测性 ---
+langfuse>=3.0            # ★ 升级: Langfuse v3 OTEL 原生
+opentelemetry-api>=1.20  # OTEL 标准
+opentelemetry-sdk>=1.20
+
+# --- v7.0 新增: MCP 协议 ---
+mcp>=1.0                 # ★ 官方 MCP Python SDK (替代自建 JSON-RPC)
+
+# --- v7.0 新增: 知识图谱 (Phase 2) ---
+# neo4j>=5.0             # Neo4j GraphRAG (中期升级)
+# langchain-neo4j>=0.1   # LangChain Neo4j 集成
+
+# --- v7.0 新增: 向量数据库 (Phase 2) ---
+# chromadb>=0.5          # ChromaDB 向量存储
+# sentence-transformers  # Embedding 模型
+
+# --- v7.0 新增: 持久化执行 (Phase 3) ---
+# temporalio>=1.7        # Temporal 持久化工作流
+
+# --- 移除 ---
+# crewai>=0.80           # 已被 LangGraph 替代

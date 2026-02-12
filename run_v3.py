@@ -1,12 +1,26 @@
 #!/usr/bin/env python3
 """MRARFAI v3.0 CLI"""
-import os, sys, json, argparse
+import os, sys, json, argparse, glob, unicodedata
+import glob, unicodedata
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from analyze_clients_v2 import SprocommDataLoaderV2, DeepAnalyzer, ReportGeneratorV2
 from industry_benchmark import IndustryBenchmark, generate_benchmark_section
 from forecast_engine import ForecastEngine, generate_forecast_section
 from ai_narrator import AINarrator
+
+
+def _find_file(*keywords):
+    """自动在 uploads 目录找包含关键字的 xlsx"""
+    import unicodedata
+    d = '/mnt/user-data/uploads'
+    if not os.path.isdir(d):
+        return None
+    for f in os.listdir(d):
+        fn = unicodedata.normalize('NFC', f)
+        if fn.endswith('.xlsx') and any(k in fn for k in keywords):
+            return os.path.join(d, f)
+    return None
 
 def main():
     p = argparse.ArgumentParser()

@@ -1,353 +1,817 @@
-#!/usr/bin/env python3
 """
-MRARFAI Chat Tab v5.2 — Multi-Agent + Memory + HITL
-=====================================================
+MRARFAI v8 — Agent Chat Tab (Sprocomm 禾苗品牌版)
+Agent colors mapped to Sprocomm leaf palette:
+  🟢 Atlas (分析师) — Sprocomm Green
+  🔵 Shield (风控) — Sprocomm Blue
+  🔴 Nova (策略师) — Sprocomm Red
+  📝 Quill (报告) — blend
+  ⚡ V8.0 — Adaptive Gate + Context Eng + Meta-Memory + Self-Evolution
 """
 
 import streamlit as st
-from agent import ask_agent, SUGGESTED_QUESTIONS
+import time
+import re
+from typing import Optional
 
-# Multi-Agent
+# V8.0 Import
 try:
-    from multi_agent import (
-        ask_multi_agent, ask_multi_agent_simple, AGENT_PROFILES,
-        AgentMemory, get_memory, set_memory,
+    from v8_patch import (
+        v8_pre_process, v8_post_process, v8_get_stats,
+        v8_build_telos_from_results, get_v8_status,
+        HAS_V8_GATE, HAS_V8_CTX, HAS_V8_MEM, HAS_V8_EVO,
     )
-    HAS_MULTI_AGENT = True
+    HAS_V8 = True
 except ImportError:
-    HAS_MULTI_AGENT = False
+    HAS_V8 = False
 
-# CrewAI
-try:
-    from crewai import Agent as _TestAgent
-    HAS_CREWAI = True
-except ImportError:
-    HAS_CREWAI = False
+# ── Command Center palette ──────────────────────────────────────
+SP_GREEN = "#00FF88"       # Neon green — command center accent
+SP_BLUE  = "#00A0C8"
+SP_RED   = "#D94040"
+BRAND_GREEN = "#8CBF3F"    # Original Sprocomm green
+C_TEXT_MUTED = "#6a6a6a"
+C_TEXT_SEC   = "#8a8a8a"
+C_SUCCESS    = SP_GREEN
+C_WARNING    = "#FF8800"
+
+# ── Agent Registry — mapped to Sprocomm 三叶 ───────────────────
+AGENTS = {
+    "📊 数据分析师": {
+        "name": "数据分析师",
+        "role": "DATA ANALYST",
+        "color": SP_GREEN,
+        "bg": "rgba(0,255,136,0.08)",
+        "border": "rgba(0,255,136,0.20)",
+        "icon": "📊",
+    },
+    "🛡️ 风控专家": {
+        "name": "风控专家",
+        "role": "RISK CONTROL",
+        "color": SP_RED,
+        "bg": "rgba(217,64,64,0.08)",
+        "border": "rgba(217,64,64,0.20)",
+        "icon": "🛡️",
+    },
+    "💡 策略师": {
+        "name": "策略师",
+        "role": "STRATEGIST",
+        "color": SP_BLUE,
+        "bg": "rgba(0,160,200,0.08)",
+        "border": "rgba(0,160,200,0.20)",
+        "icon": "💡",
+    },
+    "🖊️ 报告员": {
+        "name": "报告员",
+        "role": "REPORTER",
+        "color": "#8a8a8a",
+        "bg": "rgba(138,138,138,0.08)",
+        "border": "rgba(138,138,138,0.20)",
+        "icon": "🖊️",
+    },
+    "🔍 质量审查": {
+        "name": "质量审查",
+        "role": "QUALITY REVIEW",
+        "color": SP_GREEN,
+        "bg": "rgba(0,255,136,0.06)",
+        "border": "rgba(0,255,136,0.18)",
+        "icon": "🔍",
+    },
+}
+
+SUGGESTIONS = [
+    "今年总营收和去年比怎么样？",
+    "哪些客户有流失风险？",
+    "CEO 本月该关注什么？",
+    "各区域增长排名",
+]
 
 
-def _get_session_memory() -> 'AgentMemory':
-    """从session_state获取或创建记忆"""
-    if 'agent_memory' not in st.session_state:
-        st.session_state['agent_memory'] = AgentMemory() if HAS_MULTI_AGENT else None
-    mem = st.session_state['agent_memory']
-    if mem and HAS_MULTI_AGENT:
-        set_memory(mem)
-    return mem
+# ════════════════════════════════════════════════════════════════
+#  v4.0 STREAMING HELPERS
+# ════════════════════════════════════════════════════════════════
 
-
-def _render_hitl_panel(triggers: list, memory):
-    """渲染Human-in-the-loop确认面板"""
-    if not triggers:
+def _update_agent_progress(container, active: dict, completed: set):
+    """Live agent progress display during streaming — command center style."""
+    if not active and not completed:
         return
-    
+
+    html = '<div style="display:flex;gap:0.4rem;flex-wrap:wrap;margin:0.3rem 0;">'
+    for name in completed:
+        a = AGENTS.get(name, {"icon": "✅", "color": SP_GREEN})
+        html += (
+            f'<span style="background:rgba(0,255,136,0.08);border:1px solid rgba(0,255,136,0.25);'
+            f'padding:0.15rem 0.5rem;font-size:0.68rem;color:{SP_GREEN};'
+            f'font-family:\'JetBrains Mono\',monospace;font-weight:600;letter-spacing:0.03em;">'
+            f'✓ {name}</span>'
+        )
+    for name, status in active.items():
+        a = AGENTS.get(name, {"icon": "⏳", "color": C_TEXT_MUTED})
+        html += (
+            f'<span style="background:rgba(138,138,138,0.06);border:1px solid rgba(138,138,138,0.20);'
+            f'padding:0.15rem 0.5rem;font-size:0.68rem;color:{C_TEXT_MUTED};'
+            f'font-family:\'JetBrains Mono\',monospace;font-weight:600;letter-spacing:0.03em;">'
+            f'⏳ {name}</span>'
+        )
+    html += '</div>'
+    container.markdown(html, unsafe_allow_html=True)
+
+
+def _render_v4_badges(result: dict):
+    """v4.0 feature status badges — command center style."""
+    badges = []
+    if result.get("tool_use_enabled"):
+        badges.append(f'<span style="background:rgba(0,255,136,0.06);color:{SP_GREEN};'
+                      f'border:1px solid rgba(0,255,136,0.20);'
+                      f'padding:0.1rem 0.4rem;font-size:0.58rem;font-weight:700;'
+                      f'letter-spacing:0.05em;font-family:\'JetBrains Mono\',monospace;">TOOL USE</span>')
+    if result.get("guardrails_enabled"):
+        badges.append(f'<span style="background:rgba(0,160,200,0.06);color:{SP_BLUE};'
+                      f'border:1px solid rgba(0,160,200,0.20);'
+                      f'padding:0.1rem 0.4rem;font-size:0.58rem;font-weight:700;'
+                      f'letter-spacing:0.05em;font-family:\'JetBrains Mono\',monospace;">GUARDRAILS</span>')
+    if result.get("streaming_enabled"):
+        badges.append(f'<span style="background:rgba(138,138,138,0.06);color:#8a8a8a;'
+                      f'border:1px solid rgba(138,138,138,0.20);'
+                      f'padding:0.1rem 0.4rem;font-size:0.58rem;font-weight:700;'
+                      f'letter-spacing:0.05em;font-family:\'JetBrains Mono\',monospace;">STREAMING</span>')
+    if result.get("from_cache"):
+        badges.append(f'<span style="background:rgba(255,136,0,0.06);color:{C_WARNING};'
+                      f'border:1px solid rgba(255,136,0,0.20);'
+                      f'padding:0.1rem 0.4rem;font-size:0.58rem;font-weight:700;'
+                      f'letter-spacing:0.05em;font-family:\'JetBrains Mono\',monospace;">CACHED</span>')
+
+    budget = result.get("budget_status")
+    if budget and budget.get("level") != "normal":
+        level_color = {
+            "caution": C_WARNING,
+            "warning": SP_RED,
+            "critical": SP_RED,
+        }.get(budget["level"], C_TEXT_MUTED)
+        badges.append(
+            f'<span style="background:rgba(217,64,64,0.06);color:{level_color};'
+            f'border:1px solid rgba(217,64,64,0.20);'
+            f'padding:0.1rem 0.4rem;font-size:0.58rem;font-weight:700;'
+            f'letter-spacing:0.05em;font-family:\'JetBrains Mono\',monospace;">'
+            f'{budget["usage_pct"]:.0f}% BUDGET</span>'
+        )
+
+    if badges:
+        st.markdown(
+            f'<div style="display:flex;gap:0.3rem;flex-wrap:wrap;margin:0.4rem 0 0.2rem;">{"".join(badges)}</div>',
+            unsafe_allow_html=True
+        )
+
+
+# ════════════════════════════════════════════════════════════════
+#  V8.0 RENDERING — Gate / Review / Eval / Memory
+# ════════════════════════════════════════════════════════════════
+
+V8_ORANGE = "#FF6B35"
+V8_PURPLE = "#A855F7"
+V8_CYAN   = "#06B6D4"
+
+def _badge_html(label: str, color: str) -> str:
+    """Generate a V8 badge span."""
+    r, g, b = int(color[1:3], 16), int(color[3:5], 16), int(color[5:7], 16)
+    return (
+        f'<span style="background:rgba({r},{g},{b},0.06);color:{color};'
+        f'border:1px solid rgba({r},{g},{b},0.20);'
+        f'padding:0.1rem 0.4rem;font-size:0.58rem;font-weight:700;'
+        f"letter-spacing:0.05em;font-family:'JetBrains Mono',monospace;"
+        f'">{label}</span>'
+    )
+
+
+def _render_v8_badges(result: dict):
+    """V8.0 feature badges — gate level + review + memory."""
+    if not result.get("v8_enhanced"):
+        return
+
+    badges = []
+    gate = result.get("v8_gate", {})
+    level = gate.get("level", "full")
+
+    # Gate level badge
+    gate_colors = {"skip": SP_GREEN, "light": V8_ORANGE, "full": V8_PURPLE}
+    gate_labels = {"skip": "⚡ SKIP", "light": "🔀 LIGHT", "full": "🔥 FULL"}
+    badges.append(_badge_html(gate_labels.get(level, level.upper()), gate_colors.get(level, V8_PURPLE)))
+
+    # Gate score
+    score = gate.get("score", 0)
+    badges.append(_badge_html(f"GATE {score:.2f}", C_TEXT_MUTED))
+
+    # Review badge
+    review = result.get("v8_review")
+    if review:
+        rv_score = review.get("score", 0)
+        rv_passed = review.get("passed", False)
+        rv_color = SP_GREEN if rv_passed else SP_RED
+        rv_label = f"{'✅' if rv_passed else '❌'} REVIEW {rv_score:.1f}"
+        badges.append(_badge_html(rv_label, rv_color))
+
+    # Eval trend badge
+    v8_eval = result.get("v8_eval")
+    if v8_eval:
+        trend = v8_eval.get("trend", "stable")
+        trend_icons = {"improving": "📈", "stable": "➡️", "declining": "📉"}
+        badges.append(_badge_html(f"{trend_icons.get(trend, '➡️')} {trend.upper()}", V8_CYAN))
+
+    # Skills badge
+    skills = result.get("v8_skills", [])
+    if skills:
+        badges.append(_badge_html(f"🎯 {len(skills)} SKILLS", V8_ORANGE))
+
+    # V8 status modules
+    status = result.get("v8_status", {})
+    active_count = sum(1 for v in status.values() if v)
+    badges.append(_badge_html(f"V8 {active_count}/4", V8_PURPLE))
+
+    if badges:
+        st.markdown(
+            f'<div style="display:flex;gap:0.3rem;flex-wrap:wrap;margin:0.3rem 0 0.1rem;">{"".join(badges)}</div>',
+            unsafe_allow_html=True
+        )
+
+
+def _render_v8_gate_card(result: dict):
+    """V8.0 gate routing detail card."""
+    gate = result.get("v8_gate", {})
+    if not gate:
+        return
+
+    level = gate.get("level", "full")
+    score = gate.get("score", 0)
+    agents = gate.get("agents", [])
+    reason = gate.get("reason", "")
+
+    level_colors = {"skip": "rgba(0,255,136,0.06)", "light": "rgba(255,107,53,0.06)", "full": "rgba(168,85,247,0.06)"}
+    level_borders = {"skip": "rgba(0,255,136,0.15)", "light": "rgba(255,107,53,0.15)", "full": "rgba(168,85,247,0.15)"}
+    level_icons = {"skip": "⚡", "light": "🔀", "full": "🔥"}
+
+    agents_str = " → ".join(agents) if agents else "SQL直查"
+
     st.markdown(f"""
-    <div style="padding:14px 18px; margin:12px 0;
-         background:rgba(239,68,68,0.06); border:1px solid rgba(239,68,68,0.2);
-         border-radius:12px;">
-        <div style="font-size:0.85rem; font-weight:700; color:#fca5a5; margin-bottom:10px;">
-            ⚠️ 需要您确认 — 风控Agent检测到 {len(triggers)} 个高风险
+    <div style="background:{level_colors.get(level, 'rgba(138,138,138,0.06)')};
+         border:1px solid {level_borders.get(level, 'rgba(138,138,138,0.15)')};
+         padding:8px 12px; margin:4px 0;">
+        <div style="font-family:'JetBrains Mono',monospace; font-size:0.6rem;
+             color:#6a6a6a; letter-spacing:0.05em; margin-bottom:4px;">
+            {level_icons.get(level, '🔥')} V8 GATE · {level.upper()} · score={score:.2f}
+        </div>
+        <div style="font-size:0.72rem; color:#ccc;">
+            {agents_str}
+        </div>
+        <div style="font-size:0.58rem; color:#555; margin-top:2px;">
+            {reason}
         </div>
     </div>
     """, unsafe_allow_html=True)
-    
-    for i, t in enumerate(triggers):
-        confirmed_key = f"hitl_{t['customer']}_{i}"
-        already = st.session_state.get(confirmed_key)
-        
-        col1, col2, col3 = st.columns([3, 1, 1])
-        with col1:
-            st.markdown(
-                f"**{t['risk_level']}** · **{t['customer']}** · "
-                f"¥{t['amount']:,.0f}万\n\n"
-                f"<span style='font-size:0.8rem; color:#94a3b8;'>"
-                f"{t['reason']}</span>",
-                unsafe_allow_html=True
-            )
-        with col2:
-            if already != 'confirmed':
-                if st.button("✅ 确认关注", key=f"confirm_{confirmed_key}", 
-                            use_container_width=True):
-                    st.session_state[confirmed_key] = 'confirmed'
-                    if memory:
-                        memory.add_risk_confirmation(t['customer'], True)
-                    st.rerun()
-            else:
-                st.success("已确认", icon="✅")
-        with col3:
-            if already != 'dismissed':
-                if st.button("➖ 暂不处理", key=f"dismiss_{confirmed_key}",
-                            use_container_width=True):
-                    st.session_state[confirmed_key] = 'dismissed'
-                    if memory:
-                        memory.add_risk_confirmation(t['customer'], False)
-                    st.rerun()
-            else:
-                st.caption("已跳过")
-        
-        if i < len(triggers) - 1:
-            st.markdown("<hr style='border-color:rgba(239,68,68,0.1); margin:6px 0;'>", 
-                       unsafe_allow_html=True)
 
 
-def render_chat_tab(data: dict, results: dict,
-                     benchmark: dict = None, forecast: dict = None):
-    """渲染Agent对话界面"""
+def _render_v8_review_card(result: dict):
+    """V8.0 structured review card."""
+    review = result.get("v8_review")
+    if not review:
+        return
 
-    # 获取记忆
-    memory = _get_session_memory() if HAS_MULTI_AGENT else None
+    score = review.get("score", 0)
+    passed = review.get("passed", False)
+    checks = review.get("checks", {})
+    blockers = review.get("blockers", [])
 
-    # ---- 头部 ----
-    active_clients = sum(1 for c in data['客户金额'] if c['年度金额'] > 0)
-    st.markdown("""
-    <div style="display:flex; align-items:center; gap:14px; margin-bottom:6px;">
-        <div style="width:40px; height:40px; border-radius:12px;
-             background:linear-gradient(135deg, #7c3aed, #06b6d4);
-             display:flex; align-items:center; justify-content:center;
-             font-size:1.2rem; box-shadow:0 4px 16px rgba(124,58,237,0.15);">🧠</div>
-        <div>
-            <div style="font-size:1.15rem; font-weight:700; color:#fafafa;">Sales Agent</div>
-            <div style="font-size:0.72rem; color:#71717a; display:flex; align-items:center; gap:6px;">
-                <span style="width:6px;height:6px;border-radius:50%;background:#10b981;display:inline-block;"></span>
-                已加载 · {c}家客户 · {d}维分析就绪{mem}
+    bar_color = SP_GREEN if passed else SP_RED
+    bar_width = min(score * 10, 100)
+
+    checks_html = ""
+    for check_name, check_data in checks.items():
+        c_score = check_data.get("score", 0)
+        c_passed = check_data.get("passed", True)
+        icon = "✅" if c_passed else "❌"
+        checks_html += f'<span style="font-size:0.55rem;color:#888;margin-right:8px;">{icon} {check_name}: {c_score:.1f}</span>'
+
+    blockers_html = ""
+    if blockers:
+        for b in blockers:
+            blockers_html += f'<div style="font-size:0.55rem;color:{SP_RED};margin-top:2px;">🚫 {b}</div>'
+
+    st.markdown(f"""
+    <div style="background:rgba(138,138,138,0.04); border:1px solid rgba(138,138,138,0.10);
+         padding:8px 12px; margin:4px 0;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-family:'JetBrains Mono',monospace; font-size:0.6rem;
+                 color:#6a6a6a; letter-spacing:0.05em;">
+                📝 V8 REVIEW · {"PASS" if passed else "FAIL"}
+            </span>
+            <span style="font-size:0.7rem; font-weight:700; color:{bar_color};">{score:.1f}/10</span>
+        </div>
+        <div style="background:rgba(138,138,138,0.10); height:3px; margin:4px 0; border-radius:2px;">
+            <div style="background:{bar_color}; width:{bar_width}%; height:100%; border-radius:2px;"></div>
+        </div>
+        <div style="display:flex; flex-wrap:wrap; gap:4px; margin-top:4px;">
+            {checks_html}
+        </div>
+        {blockers_html}
+    </div>
+    """, unsafe_allow_html=True)
+
+
+# ════════════════════════════════════════════════════════════════
+#  RENDERING
+# ════════════════════════════════════════════════════════════════
+
+def _render_agent_cards(agents_used: list, agent_outputs: dict = None):
+    """Cursor 2.0 style agent status cards with Sprocomm colors."""
+    if not agents_used:
+        return
+
+    cards_html = ""
+    for agent_key in agents_used:
+        a = AGENTS.get(agent_key, {
+            "name": agent_key, "role": "AGENT", "color": SP_GREEN,
+            "bg": "rgba(140,191,63,0.10)", "border": "rgba(140,191,63,0.22)", "icon": "🤖",
+        })
+
+        # All agents in agents_used list have completed
+        status = '<span class="agent-status status-complete">DONE</span>'
+
+        cards_html += f"""
+        <div class="agent-card" style="border-left:2px solid {a['color']};">
+            <div class="agent-avatar" style="background:{a['bg']};border:1px solid {a['border']};">{a['icon']}</div>
+            <div style="flex:1;min-width:0;">
+                <div class="agent-name">{a['name']}</div>
+                <div class="agent-role">{a['role']}</div>
             </div>
+            {status}
+        </div>"""
+
+    st.markdown(cards_html, unsafe_allow_html=True)
+
+
+def _render_thinking_timeline(thinking_log: str, total_time: float = 0):
+    """Collapsible thinking timeline with color-coded steps."""
+    if not thinking_log:
+        return
+
+    lines = [l.strip() for l in thinking_log.strip().split("\n") if l.strip()]
+    if not lines:
+        return
+
+    steps_html = ""
+    for line in lines:
+        # Color mapping using Sprocomm palette
+        if any(k in line for k in ["✅", "完成", "通过"]):
+            dot = SP_GREEN
+        elif any(k in line for k in ["⚠️", "警告", "未通过", "需改进"]):
+            dot = C_WARNING
+        elif any(k in line for k in ["❌", "错误", "失败"]):
+            dot = SP_RED
+        elif any(k in line for k in ["🔍", "审查", "质量"]):
+            dot = SP_GREEN
+        elif any(k in line for k in ["🎯", "HITL", "置信"]):
+            dot = SP_BLUE
+        elif any(k in line for k in ["🧠", "记忆"]):
+            dot = SP_BLUE
+        elif any(k in line for k in ["📊", "分析", "Atlas"]):
+            dot = SP_GREEN
+        elif any(k in line for k in ["🛡️", "风控", "Shield"]):
+            dot = SP_RED
+        elif any(k in line for k in ["💡", "策略", "Nova"]):
+            dot = SP_BLUE
+        else:
+            dot = C_TEXT_MUTED
+
+        time_m = re.search(r'(\d+\.?\d*)\s*[sS秒]', line)
+        time_str = f'{time_m.group(1)}s' if time_m else ""
+        clean = line.replace("<", "&lt;").replace(">", "&gt;")
+
+        steps_html += f"""
+        <div class="thinking-step">
+            <div class="step-dot" style="background:{dot};"></div>
+            <div class="step-text">{clean}</div>
+            {f'<div class="step-meta">{time_str}</div>' if time_str else ''}
+        </div>"""
+
+    t_label = f"· {total_time:.1f}s" if total_time > 0 else ""
+
+    with st.expander(f"🧠 推理过程 {t_label} · {len(lines)} 步骤", expanded=False):
+        st.markdown(f'<div class="thinking-timeline" style="border:none;padding:0;">{steps_html}</div>',
+                    unsafe_allow_html=True)
+
+
+def _render_quality_badge(critique: dict):
+    """Quality badge with dimension scores."""
+    if not critique:
+        return
+
+    score = critique.get("overall_score", 0)
+    passed = critique.get("pass_threshold", score >= 7.0)
+    iters = critique.get("iterations", 1)
+    imp = critique.get("improvement", 0)
+
+    dims = critique.get("dimension_scores", {})
+    abbr_map = {"completeness":"COM","accuracy":"ACC","actionability":"ACT","clarity":"CLA","consistency":"CON"}
+    dim_text = " · ".join(f"{abbr_map.get(k,k[:3].upper())}:{v}" for k, v in dims.items()) if dims else ""
+
+    cls = "quality-pass" if passed else "quality-fail"
+    icon = "✓" if passed else "!"
+    label = "PASS" if passed else "REVIEW"
+
+    imp_html = f'<span style="color:{SP_GREEN};margin-left:0.3rem;">↑{imp:.1f}</span>' if imp and imp > 0 else ""
+    iter_html = f'<span style="color:{C_TEXT_MUTED};margin-left:0.3rem;">×{iters}</span>' if iters and iters > 1 else ""
+    dim_html = f'<span style="font-size:0.58rem;color:{C_TEXT_MUTED};margin-left:0.4rem;">{dim_text}</span>' if dim_text else ""
+
+    st.markdown(f"""
+    <div class="quality-badge {cls}">
+        <span style="font-size:0.8rem;">{icon}</span>
+        <span>{label}</span>
+        <span style="font-weight:700;">{score:.1f}</span>
+        <span style="color:{C_TEXT_MUTED};">/10</span>
+        {imp_html}{iter_html}{dim_html}
+    </div>""", unsafe_allow_html=True)
+
+
+def _render_hitl_card(hitl_decision: dict):
+    """HITL confidence card — green/yellow/red gauge."""
+    if not hitl_decision:
+        return
+
+    score = hitl_decision.get("confidence_score", 0)
+    level = hitl_decision.get("confidence_level", "unknown")
+    action = hitl_decision.get("action", "unknown")
+    triggers = hitl_decision.get("triggers", [])
+
+    pct = int(score * 100)
+
+    level_map = {
+        "high":   ("hitl-high",   SP_GREEN, "HIGH CONFIDENCE",   "自动执行"),
+        "medium": ("hitl-medium", C_WARNING, "MEDIUM CONFIDENCE", "建议确认"),
+        "low":    ("hitl-low",    SP_RED,   "LOW CONFIDENCE",    "需人工审查"),
+    }
+    gauge_cls, color, label, act_text = level_map.get(level, ("hitl-medium", C_WARNING, level.upper(), action))
+
+    action_map = {
+        "auto_execute": "自动执行", "suggest_confirmation": "建议确认",
+        "require_approval": "需人工审查", "escalate": "升级处理",
+    }
+    act_text = action_map.get(action, act_text)
+
+    trig_html = ""
+    if triggers:
+        items = []
+        for t in triggers[:3]:
+            if isinstance(t, dict):
+                items.append(f"• {t.get('message', t.get('reason', str(t)))}")
+            else:
+                items.append(f"• {t}")
+        trig_html = f'<div class="hitl-triggers">{"<br>".join(items)}</div>'
+
+    st.markdown(f"""
+    <div class="hitl-card">
+        <div class="hitl-gauge {gauge_cls}">{pct}</div>
+        <div class="hitl-info">
+            <div class="hitl-level" style="color:{color};">{label}</div>
+            <div class="hitl-action">{act_text}</div>
+        </div>
+        {trig_html}
+    </div>""", unsafe_allow_html=True)
+
+
+def _render_trace_bar(trace_id: str = "", obs_summary: dict = None):
+    """Compact trace info bar — adapted to multi_agent.py obs_summary format."""
+    items = []
+    if trace_id:
+        items.append(f'<span class="trace-item">TRACE <span class="trace-value">{trace_id[:8]}</span></span>')
+    if obs_summary:
+        # Latency
+        lb = obs_summary.get("latency_breakdown", {})
+        total_ms = lb.get("total_ms", 0)
+        if total_ms:
+            items.append(f'<span class="trace-item">LATENCY <span class="trace-value">{total_ms/1000:.1f}s</span></span>')
+        # Tokens
+        tokens = obs_summary.get("total_tokens", 0)
+        if tokens:
+            items.append(f'<span class="trace-item">TOKENS <span class="trace-value">{tokens:,}</span></span>')
+        # Cost
+        cost = obs_summary.get("total_cost_usd", 0)
+        if cost:
+            items.append(f'<span class="trace-item">COST <span class="trace-value">${cost:.4f}</span></span>')
+        # LLM calls
+        calls = obs_summary.get("total_llm_calls", 0)
+        if calls:
+            items.append(f'<span class="trace-item">CALLS <span class="trace-value">{calls}</span></span>')
+
+    if items:
+        st.markdown(f'<div class="trace-bar">{"".join(items)}</div>', unsafe_allow_html=True)
+
+
+def _render_suggestion_chips():
+    """Quick-start suggestion buttons."""
+    cols = st.columns(len(SUGGESTIONS))
+    for i, s in enumerate(SUGGESTIONS):
+        with cols[i]:
+            if st.button(s, key=f"suggest_{i}", use_container_width=True):
+                st.session_state["pending_question"] = s
+                st.rerun()
+
+
+def _render_welcome():
+    """Welcome state — command center terminal style."""
+    st.markdown(f"""
+    <div class="hero-section">
+        <div class="hero-badge">
+            <span style="width:6px;height:6px;border-radius:50%;background:{SP_GREEN};display:inline-block;"></span>
+            AGENT TERMINAL · v5
+        </div>
+        <div class="hero-title">
+            <span style="color:{SP_GREEN};">SPROCOMM</span><br>
+            <span style="color:#FFFFFF;">SALES INTELLIGENCE</span>
+        </div>
+        <div class="hero-sub">
+            // 多智能体协作 · 12维深度分析 · 实时预警系统
         </div>
     </div>
-    """.format(
-        c=active_clients, d=len(results),
-        mem=f" · 🧠{len(memory.conversation_history)}轮记忆" if memory and memory.conversation_history else "",
-    ), unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
-    st.markdown("")
+    # Agent roster — command center style
+    cols = st.columns(3)
+    roster = [
+        ("◈", "数据分析师", "DATA ANALYST", SP_GREEN, "rgba(0,255,136,0.06)", "rgba(0,255,136,0.20)"),
+        ("◆", "风控专家", "RISK CONTROL", SP_RED, "rgba(217,64,64,0.06)", "rgba(217,64,64,0.20)"),
+        ("◇", "策略师", "STRATEGIST", SP_BLUE, "rgba(0,160,200,0.06)", "rgba(0,160,200,0.20)"),
+    ]
+    for i, (icon, name, role, color, bg, border) in enumerate(roster):
+        with cols[i]:
+            st.markdown(f"""
+            <div style="background:{bg};border:1px solid {border};
+                        padding:1.2rem;text-align:center;">
+                <div style="font-size:1.4rem;margin-bottom:0.4rem;color:{color};">{icon}</div>
+                <div style="font-family:var(--font-mono);font-size:0.82rem;font-weight:700;color:{color};
+                     letter-spacing:0.05em;">{name}</div>
+                <div style="font-family:var(--font-mono);font-size:0.52rem;color:{C_TEXT_MUTED};
+                            text-transform:uppercase;letter-spacing:0.1em;margin-top:0.15rem;">{role}</div>
+            </div>""", unsafe_allow_html=True)
 
-    # ---- AI配置 ----
-    with st.expander("⚙️ AI 引擎配置", expanded=False):
-        col1, col2 = st.columns([1, 2])
-        with col1:
-            provider = st.selectbox("引擎", ["deepseek", "claude"], index=0,
-                help="DeepSeek：国内可用 | Claude：更强，需翻墙")
-        with col2:
-            key_label = "DeepSeek" if provider == "deepseek" else "Claude"
-            api_key = st.text_input(
-                f"{key_label} API Key", type="password",
-                value=st.session_state.get(f'{provider}_key', ''),
-                placeholder="sk-..." if provider == "deepseek" else "sk-ant-...",
-            )
-            if api_key:
-                st.session_state[f'{provider}_key'] = api_key
 
-        st.markdown("")
-        col_m1, col_m2, col_m3 = st.columns([1, 1, 1])
-        with col_m1:
-            agent_mode = st.toggle(
-                "🤖 Multi-Agent",
-                value=st.session_state.get('multi_agent_mode', False),
-                help="4个专家Agent协作")
-            st.session_state['multi_agent_mode'] = agent_mode
-        with col_m2:
-            if agent_mode:
-                if HAS_CREWAI:
-                    st.caption("✅ CrewAI + 记忆 + HITL")
-                elif HAS_MULTI_AGENT:
-                    st.caption("⚡ 简化模式 + 记忆")
-                else:
-                    st.caption("⚠️ pip install crewai")
+# ════════════════════════════════════════════════════════════════
+#  MAIN
+# ════════════════════════════════════════════════════════════════
+
+def render_chat_tab(data, results: dict, benchmark: dict = None, forecast: dict = None,
+                    provider: str = "deepseek", api_key: str = None):
+    """Render the Agent chat tab with Sprocomm branding."""
+
+    if "chat_history" not in st.session_state:
+        st.session_state.chat_history = []
+
+    use_multi = st.session_state.get("use_multi_agent", False)
+    has_data = data is not None and not (hasattr(data, "empty") and data.empty)
+
+    if not has_data:
+        _render_welcome()
+        st.info("请先在左侧上传数据文件")
+        return
+
+    if not use_multi:
+        _render_welcome()
+        st.warning("请在左侧打开 Multi-Agent 开关")
+        return
+
+    # ── Chat history ────────────────────────────────────────
+    if not st.session_state.chat_history:
+        _render_welcome()
+        st.markdown("---")
+        _render_suggestion_chips()
+    else:
+        for msg in st.session_state.chat_history:
+            if msg["role"] == "user":
+                with st.chat_message("user"):
+                    st.markdown(msg["content"])
             else:
-                st.caption("单Agent · 快速")
-        with col_m3:
-            if memory and memory.conversation_history:
-                if st.button("🧹 清除记忆", use_container_width=True):
-                    memory.clear()
-                    st.toast("记忆已清除")
+                with st.chat_message("assistant", avatar="🌿"):
+                    st.markdown(msg["content"])
+                    if msg.get("agents_used"):
+                        _render_agent_cards(msg["agents_used"], msg.get("expert_outputs"))
+                    if msg.get("thinking_log"):
+                        _render_thinking_timeline(msg["thinking_log"], msg.get("total_time", 0))
+                    # v4.0 feature badges (from history)
+                    v4f = msg.get("v4_features", {})
+                    if v4f:
+                        _render_v4_badges({
+                            "tool_use_enabled": v4f.get("tool_use"),
+                            "guardrails_enabled": v4f.get("guardrails"),
+                            "streaming_enabled": v4f.get("streaming"),
+                            "from_cache": v4f.get("from_cache"),
+                        })
+                    if msg.get("critique"):
+                        _render_quality_badge(msg["critique"])
+                    if msg.get("hitl_decision"):
+                        _render_hitl_card(msg["hitl_decision"])
+                    if msg.get("trace_id") or msg.get("obs_summary"):
+                        _render_trace_bar(msg.get("trace_id", ""), msg.get("obs_summary"))
+                    # V8.0 badges from history
+                    if msg.get("v8_enhanced"):
+                        _render_v8_badges(msg)
 
-        if agent_mode and HAS_MULTI_AGENT:
-            st.markdown("""
-            <div style="padding:10px 14px; background:rgba(99,102,241,0.06);
-                 border:1px solid rgba(99,102,241,0.1); border-radius:10px; margin-top:8px;">
-                <div style="font-size:0.75rem; color:#a5b4fc; font-weight:600; margin-bottom:6px;">
-                    🏛️ 专家团队 · 内置记忆 · Human-in-the-Loop
-                </div>
-                <div style="display:flex; gap:10px; flex-wrap:wrap; font-size:0.72rem; color:#94a3b8;">
-                    <span>📊 <b style="color:#e2e8f0;">分析师</b></span>
-                    <span>🛡️ <b style="color:#e2e8f0;">风控</b></span>
-                    <span>💡 <b style="color:#e2e8f0;">策略师</b></span>
-                    <span>🖊️ <b style="color:#e2e8f0;">报告员</b></span>
-                    <span>🧠 <b style="color:#e2e8f0;">记忆</b></span>
-                    <span>⚠️ <b style="color:#e2e8f0;">HITL</b></span>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-
-    # ---- 对话历史初始化 ----
-    if 'chat_history' not in st.session_state:
-        st.session_state['chat_history'] = []
-
-    # ---- 空状态 ----
-    if not st.session_state['chat_history']:
-        st.markdown("""
-        <div style="text-align:center; padding:32px 0 20px;">
-            <div style="font-size:1.4rem; margin-bottom:8px;">👋</div>
-            <div style="color:#a1a1aa; font-size:0.92rem; font-weight:500;">
-                有什么想了解的？直接问我。</div>
-            <div style="color:#71717a; font-size:0.78rem; margin-top:4px;">
-                我可以分析客户、预测趋势、发现风险和机会</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-        questions_display = SUGGESTED_QUESTIONS[:6]
-        for row in [questions_display[:3], questions_display[3:6]]:
-            cols = st.columns(len(row))
-            for i, q in enumerate(row):
-                with cols[i]:
-                    if st.button(q, key=f"sq_{q[:8]}", use_container_width=True):
-                        st.session_state['pending_question'] = q
-                        st.rerun()
-
-        st.markdown("")
-        c1, c2, c3 = st.columns(3)
-        with c1:
-            st.markdown('<div class="v5-card"><h4>📊 数据问答</h4><p>"今年总营收多少？"</p></div>', unsafe_allow_html=True)
-        with c2:
-            st.markdown('<div class="v5-card"><h4>🚨 风险预警</h4><p>"哪些客户可能流失？"</p></div>', unsafe_allow_html=True)
-        with c3:
-            st.markdown('<div class="v5-card"><h4>💡 战略建议</h4><p>"CEO该关注什么？"</p></div>', unsafe_allow_html=True)
-
-    # ---- 历史显示 ----
-    for msg in st.session_state['chat_history']:
-        if msg['role'] == 'user':
-            st.chat_message("user", avatar="👤").markdown(msg['content'])
-        else:
-            with st.chat_message("assistant", avatar="🧠"):
-                st.markdown(msg['content'])
-                if msg.get('tools'):
-                    tool_html = " ".join(f'<span class="tool-chip">{t}</span>' for t in msg['tools'])
-                    st.markdown(f'<div style="margin-top:8px;">{tool_html}</div>', unsafe_allow_html=True)
-                if msg.get('expert_outputs'):
-                    with st.expander("🏛️ 各专家原始意见", expanded=False):
-                        for en, eo in msg['expert_outputs'].items():
-                            st.markdown(f"**{en}**"); st.markdown(eo); st.markdown("---")
-                if msg.get('hitl_triggers'):
-                    _render_hitl_panel(msg['hitl_triggers'], memory)
-
-    # ---- 输入处理 ----
-    pending = st.session_state.pop('pending_question', None)
-    user_input = st.chat_input("输入问题...")
+    # ── Input ───────────────────────────────────────────────
+    pending = st.session_state.pop("pending_question", None)
+    user_input = st.chat_input("问一个关于销售数据的问题...")
     question = pending or user_input
+    if not question:
+        return
 
-    if question:
-        st.chat_message("user", avatar="👤").markdown(question)
-        st.session_state['chat_history'].append({'role': 'user', 'content': question})
+    with st.chat_message("user"):
+        st.markdown(question)
 
-        current_key = st.session_state.get(f'{provider}_key', '')
-        use_multi = st.session_state.get('multi_agent_mode', False) and HAS_MULTI_AGENT
+    with st.chat_message("assistant", avatar="🌿"):
+        # v4.0: Pre-create streaming containers
+        status = st.status(f"分析中: {question[:40]}...", expanded=True)
+        agent_progress = st.empty()  # for live agent status
 
-        with st.chat_message("assistant", avatar="🧠"):
-            ph = st.empty()
+        try:
+            from multi_agent import ask_multi_agent
 
-            if use_multi:
-                ph.markdown("""
-                <div class="agent-thinking">
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                        <circle cx="8" cy="8" r="6" stroke="#7c3aed" stroke-width="2" stroke-dasharray="4 4">
-                            <animateTransform attributeName="transform" type="rotate"
-                                from="0 8 8" to="360 8 8" dur="1.5s" repeatCount="indefinite"/>
-                        </circle>
-                    </svg>
-                    🏛️ Multi-Agent 协作中...
-                </div>""", unsafe_allow_html=True)
+            # v4.0: Import streaming
+            try:
+                from streaming import StreamCallback, EventType
+                has_streaming = True
+            except ImportError:
+                has_streaming = False
 
-                if HAS_CREWAI:
-                    result = ask_multi_agent(
-                        question=question, data=data, results=results,
-                        benchmark=benchmark, forecast=forecast,
-                        provider=provider, api_key=current_key, memory=memory,
+            # Fallback: read from session_state if not passed as params
+            _provider = provider or st.session_state.get("ai_provider", "deepseek")
+            _api_key = api_key or st.session_state.get("api_key", "")
+
+            if not _api_key:
+                st.warning("⚠️ 请先在左侧配置 API Key")
+                st.session_state.chat_history.append({"role": "user", "content": question})
+                st.session_state.chat_history.append({"role": "assistant", "content": "⚠️ 请先在左侧 AI ENGINE 中配置 API Key"})
+                return
+
+            # v4.0: Create streaming callback
+            stream_cb = StreamCallback() if has_streaming else None
+
+            with status:
+                # ════ V8.0 PRE-PROCESSING ════
+                v8_pre = None
+                if HAS_V8:
+                    st.write("⚡ V8.0 门控评估...")
+                    try:
+                        v8_pre = v8_pre_process(
+                            question, data if isinstance(data, dict) else {},
+                            results or {}, _provider.lower()
+                        )
+                        gate_level = v8_pre.get("gate_level", "full")
+                        gate_score = v8_pre.get("gate_score", 0)
+                        gate_icons = {"skip": "⚡", "light": "🔀", "full": "🔥"}
+                        st.write(f"{gate_icons.get(gate_level, '🔥')} 门控: {gate_level.upper()} (score={gate_score:.2f})")
+                        for t in v8_pre.get("v8_thinking", []):
+                            st.write(t)
+                    except Exception as e:
+                        st.write(f"⚠️ V8前处理异常: {e}")
+                        v8_pre = None
+
+                st.write("🌿 连接禾苗智能体网络...")
+
+                # v4.0: Run with streaming — use threading for live updates
+                import threading
+                result_holder = [None]
+                error_holder = [None]
+
+                def _run_agents():
+                    try:
+                        result_holder[0] = ask_multi_agent(
+                            question=question,
+                            data=data,
+                            results=results,
+                            benchmark=benchmark,
+                            forecast=forecast,
+                            provider=_provider.lower(),
+                            api_key=_api_key,
+                            stream_callback=stream_cb,
+                        )
+                    except Exception as e:
+                        error_holder[0] = e
+
+                t0 = time.time()
+                thread = threading.Thread(target=_run_agents, daemon=True)
+                thread.start()
+
+                # v4.0: Poll streaming events for live updates
+                active_agents = {}
+                completed_agents = set()
+                stage_log = []
+
+                while thread.is_alive():
+                    if stream_cb:
+                        events = stream_cb.drain()
+                        for evt in events:
+                            if evt.type == EventType.STAGE_START:
+                                label = evt.data.get("label", "")
+                                st.write(label)
+                                stage_log.append(label)
+                            elif evt.type == EventType.AGENT_START:
+                                name = evt.data.get("name", "")
+                                active_agents[name] = "⏳ 分析中..."
+                                _update_agent_progress(agent_progress, active_agents, completed_agents)
+                            elif evt.type == EventType.AGENT_DONE:
+                                name = evt.data.get("name", "")
+                                elapsed_ms = evt.data.get("elapsed_ms", 0)
+                                active_agents.pop(name, None)
+                                completed_agents.add(name)
+                                st.write(f"✅ {name} 完成 ({elapsed_ms/1000:.1f}s)")
+                                _update_agent_progress(agent_progress, active_agents, completed_agents)
+                            elif evt.type == EventType.TOOL_CALL:
+                                tool = evt.data.get("tool", "")
+                                agent = evt.data.get("agent", "")
+                                st.write(f"🔧 {agent} → {tool}")
+                            elif evt.type == EventType.STAGE_END:
+                                stage = evt.data.get("stage", "")
+                                if stage == "complete":
+                                    break
+
+                    import time as _t
+                    _t.sleep(0.05)
+
+                thread.join(timeout=60)
+                elapsed = time.time() - t0
+
+                if error_holder[0]:
+                    raise error_holder[0]
+
+                st.write(f"✅ 完成 · {elapsed:.1f}s")
+
+            result = result_holder[0]
+            if result is None:
+                st.error("Agent 返回空结果")
+                return
+
+            # ════ V8.0 POST-PROCESSING ════
+            if HAS_V8 and v8_pre is not None:
+                try:
+                    result = v8_post_process(
+                        result, question,
+                        data if isinstance(data, dict) else {},
+                        results or {},
+                        v8_pre
                     )
-                else:
-                    result = ask_multi_agent_simple(
-                        question=question, data=data, results=results,
-                        benchmark=benchmark, forecast=forecast,
-                        provider=provider, api_key=current_key, memory=memory,
-                    )
+                except Exception:
+                    pass
 
-                ph.empty()
+            answer = result.get("answer", "抱歉，暂时无法回答。")
+            agents_used = result.get("agents_used", [])
+            agent_outputs = result.get("expert_outputs", {})
+            thinking_list = result.get("thinking", [])
+            thinking_log = "\n".join(thinking_list) if isinstance(thinking_list, list) else str(thinking_list)
+            trace_id = result.get("trace_id", "")
+            obs_summary = result.get("obs_summary", {})
+            critique = result.get("critique", {})
+            hitl_decision = result.get("hitl_decision", {})
 
-                # 调度日志
-                if result.get('thinking'):
-                    th_html = "<br>".join(
-                        f'<span style="font-size:0.73rem; color:#71717a;">{t}</span>'
-                        for t in result['thinking']
-                    )
-                    st.markdown(f"""
-                    <div style="padding:8px 12px; margin-bottom:10px;
-                         background:rgba(99,102,241,0.04); border-radius:8px;
-                         border:1px solid rgba(99,102,241,0.08);">
-                        <span style="font-size:0.68rem; color:#6366f1; font-weight:600;">🏛️ 调度日志</span><br>
-                        {th_html}
-                    </div>""", unsafe_allow_html=True)
+            st.markdown(answer)
+            if agents_used: _render_agent_cards(agents_used, agent_outputs)
+            if thinking_log: _render_thinking_timeline(thinking_log, elapsed)
 
-                st.markdown(result['answer'])
+            # v4.0: Feature badges
+            _render_v4_badges(result)
 
-                if result.get('agents_used'):
-                    ah = " ".join(f'<span class="tool-chip">{a}</span>' for a in result['agents_used'])
-                    st.markdown(f'<div style="margin-top:8px;">{ah}</div>', unsafe_allow_html=True)
+            # v8.0: V8 badges + gate card + review card
+            if result.get("v8_enhanced"):
+                _render_v8_badges(result)
+                with st.expander("🔬 V8.0 Details", expanded=False):
+                    _render_v8_gate_card(result)
+                    _render_v8_review_card(result)
+                    # Contract issues
+                    issues = result.get("v8_contract_issues", {})
+                    if issues:
+                        for agent_name, issue_list in issues.items():
+                            for iss in issue_list:
+                                st.caption(f"⚠️ [{agent_name}] {iss}")
 
-                if result.get('expert_outputs'):
-                    with st.expander("🏛️ 各专家原始意见", expanded=False):
-                        for en, eo in result['expert_outputs'].items():
-                            st.markdown(f"**{en}**"); st.markdown(eo); st.markdown("---")
+            if critique: _render_quality_badge(critique)
+            if hitl_decision: _render_hitl_card(hitl_decision)
+            if trace_id or obs_summary: _render_trace_bar(trace_id, obs_summary)
 
-                # HITL
-                hitl = result.get('hitl_triggers', [])
-                if hitl:
-                    _render_hitl_panel(hitl, memory)
+            st.session_state.chat_history.append({"role": "user", "content": question})
+            st.session_state.chat_history.append({
+                "role": "assistant", "content": answer,
+                "agents_used": agents_used, "expert_outputs": agent_outputs,
+                "thinking_log": thinking_log, "total_time": elapsed,
+                "trace_id": trace_id, "obs_summary": obs_summary,
+                "critique": critique, "hitl_decision": hitl_decision,
+                "v4_features": {
+                    "tool_use": result.get("tool_use_enabled", False),
+                    "guardrails": result.get("guardrails_enabled", False),
+                    "streaming": result.get("streaming_enabled", False),
+                    "from_cache": result.get("from_cache", False),
+                },
+                "v8_gate": result.get("v8_gate"),
+                "v8_review": result.get("v8_review"),
+                "v8_eval": result.get("v8_eval"),
+                "v8_enhanced": result.get("v8_enhanced", False),
+                "v8_status": result.get("v8_status"),
+            })
 
-                st.session_state['chat_history'].append({
-                    'role': 'assistant',
-                    'content': result['answer'],
-                    'tools': result.get('agents_used', []),
-                    'expert_outputs': result.get('expert_outputs', {}),
-                    'hitl_triggers': hitl,
-                })
-
-            else:
-                # 单Agent
-                ph.markdown("""
-                <div class="agent-thinking">
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                        <circle cx="8" cy="8" r="6" stroke="#7c3aed" stroke-width="2" stroke-dasharray="4 4">
-                            <animateTransform attributeName="transform" type="rotate"
-                                from="0 8 8" to="360 8 8" dur="1.5s" repeatCount="indefinite"/>
-                        </circle>
-                    </svg>
-                    分析中...
-                </div>""", unsafe_allow_html=True)
-
-                result = ask_agent(
-                    question=question, data=data, results=results,
-                    benchmark=benchmark, forecast=forecast,
-                    provider=provider, api_key=current_key,
-                )
-                ph.empty()
-                st.markdown(result['answer'])
-                if result['tools_used']:
-                    th = " ".join(f'<span class="tool-chip">🔧 {t}</span>' for t in result['tools_used'])
-                    st.markdown(f'<div style="margin-top:8px;">{th}</div>', unsafe_allow_html=True)
-
-                st.session_state['chat_history'].append({
-                    'role': 'assistant', 'content': result['answer'],
-                    'tools': result['tools_used'],
-                })
-
-    # ---- 底部 ----
-    if st.session_state['chat_history']:
-        st.markdown("")
-        c1, c2, c3 = st.columns([1, 1, 4])
-        with c1:
-            if st.button("🗑️ 清空对话", use_container_width=True):
-                st.session_state['chat_history'] = []
-                st.rerun()
-        with c2:
-            chat_text = "\n\n".join(
-                f"{'Q' if m['role']=='user' else 'A'}: {m['content']}"
-                for m in st.session_state['chat_history']
-            )
-            st.download_button("📥 导出对话", chat_text, "agent_chat.txt", use_container_width=True)
+        except Exception as e:
+            st.error(f"Agent 执行出错: {str(e)}")
+            st.session_state.chat_history.append({"role": "user", "content": question})
+            st.session_state.chat_history.append({"role": "assistant", "content": f"⚠️ 执行出错: {str(e)}"})

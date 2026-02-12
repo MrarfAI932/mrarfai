@@ -1,0 +1,56 @@
+# ============================================================
+# MRARFAI .dockerignore — 排除不需要的文件
+# ============================================================
+
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.egg-info
+.eggs
+dist
+build
+*.egg
+
+# Virtual environments
+venv
+.venv
+env
+.env.local
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Docs & tests (不需要进入生产镜像)
+*.md
+DEPLOY.md
+README.md
+OBS_UPGRADE_GUIDE.md
+MRARFAI_商业计划书_V3_0.pdf
+
+# Test files
+test_*.py
+
+# Data (通过 volume 挂载)
+data/
+logs/
+db/
+*.db
+*.sqlite
+
+# Misc
+.DS_Store
+*.log

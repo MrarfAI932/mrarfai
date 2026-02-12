@@ -1,12 +1,20 @@
-[server]
-maxUploadSize = 50
+# MRARFAI v5 — Sprocomm 禾苗品牌主题
+# 三叶色系: 红 #D94040 · 蓝 #00A0C8 · 绿 #8CBF3F
 
 [theme]
-primaryColor = "#00d4ff"
-backgroundColor = "#0a0a1a"
-secondaryBackgroundColor = "#0f0f2d"
-textColor = "#ccccee"
+base = "dark"
+primaryColor = "#8CBF3F"
+backgroundColor = "#0a1014"
+secondaryBackgroundColor = "#111a1f"
+textColor = "#e2e8f0"
 font = "sans serif"
+baseRadius = "md"
+showSidebarBorder = false
 
-[browser]
-gatherUsageStats = false
+[[theme.fontFaces]]
+family = "DM Sans"
+url = "https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap"
+
+[[theme.fontFaces]]
+family = "JetBrains Mono"
+url = "https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap"

@@ -1,0 +1,311 @@
+{
+  "total": 40,
+  "passed": 40,
+  "failed": 0,
+  "avg_score": 0.995,
+  "elapsed_sec": 0.782888650894165,
+  "by_category": {
+    "tools": {
+      "total": 15,
+      "passed": 15,
+      "score": 0.9866666666666667
+    },
+    "mcp": {
+      "total": 9,
+      "passed": 9,
+      "score": 1.0
+    },
+    "guardrails": {
+      "total": 7,
+      "passed": 7,
+      "score": 1.0
+    },
+    "rag": {
+      "total": 9,
+      "passed": 9,
+      "score": 1.0
+    }
+  },
+  "results": [
+    {
+      "case_id": "T01",
+      "passed": true,
+      "score": 1.0,
+      "details": "OK",
+      "elapsed_ms": 0.014543533325195312
+    },
+    {
+      "case_id": "T02",
+      "passed": true,
+      "score": 1.0,
+      "details": "OK",
+      "elapsed_ms": 0.007152557373046875
+    },
+    {
+      "case_id": "T03",
+      "passed": true,
+      "score": 1.0,
+      "details": "Special case handled",
+      "elapsed_ms": 0.014781951904296875
+    },
+    {
+      "case_id": "T04",
+      "passed": true,
+      "score": 1.0,
+      "details": "OK",
+      "elapsed_ms": 0.03170967102050781
+    },
+    {
+      "case_id": "T05",
+      "passed": true,
+      "score": 1.0,
+      "details": "OK",
+      "elapsed_ms": 0.015735626220703125
+    },
+    {
+      "case_id": "T06",
+      "passed": true,
+      "score": 1.0,
+      "details": "OK",
+      "elapsed_ms": 0.027179718017578125
+    },
+    {
+      "case_id": "T07",
+      "passed": true,
+      "score": 1.0,
+      "details": "OK",
+      "elapsed_ms": 0.017404556274414062
+    },
+    {
+      "case_id": "T08",
+      "passed": true,
+      "score": 1.0,
+      "details": "OK",
+      "elapsed_ms": 0.0152587890625
+    },
+    {
+      "case_id": "T09",
+      "passed": true,
+      "score": 1.0,
+      "details": "OK",
+      "elapsed_ms": 0.015974044799804688
+    },
+    {
+      "case_id": "T10",
+      "passed": true,
+      "score": 1.0,
+      "details": "OK",
+      "elapsed_ms": 0.021219253540039062
+    },
+    {
+      "case_id": "T11",
+      "passed": true,
+      "score": 1.0,
+      "details": "OK",
+      "elapsed_ms": 0.038623809814453125
+    },
+    {
+      "case_id": "T12",
+      "passed": true,
+      "score": 1.0,
+      "details": "OK",
+      "elapsed_ms": 0.0050067901611328125
+    },
+    {
+      "case_id": "T13",
+      "passed": true,
+      "score": 1.0,
+      "details": "OK",
+      "elapsed_ms": 0.006198883056640625
+    },
+    {
+      "case_id": "T14",
+      "passed": true,
+      "score": 0.8,
+      "details": "Empty handled without error",
+      "elapsed_ms": 0.00286102294921875
+    },
+    {
+      "case_id": "T15",
+      "passed": true,
+      "score": 1.0,
+      "details": "OK",
+      "elapsed_ms": 0.002384185791015625
+    },
+    {
+      "case_id": "M01",
+      "passed": true,
+      "score": 1.0,
+      "details": "OK",
+      "elapsed_ms": 0.0073909759521484375
+    },
+    {
+      "case_id": "M02",
+      "passed": true,
+      "score": 1.0,
+      "details": "OK",
+      "elapsed_ms": 0.016689300537109375
+    },
+    {
+      "case_id": "M03",
+      "passed": true,
+      "score": 1.0,
+      "details": "OK",
+      "elapsed_ms": 0.04696846008300781
+    },
+    {
+      "case_id": "M04",
+      "passed": true,
+      "score": 1.0,
+      "details": "OK",
+      "elapsed_ms": 0.0035762786865234375
+    },
+    {
+      "case_id": "M05",
+      "passed": true,
+      "score": 1.0,
+      "details": "OK",
+      "elapsed_ms": 0.1289844512939453
+    },
+    {
+      "case_id": "M06",
+      "passed": true,
+      "score": 1.0,
+      "details": "OK",
+      "elapsed_ms": 0.003337860107421875
+    },
+    {
+      "case_id": "M07",
+      "passed": true,
+      "score": 1.0,
+      "details": "OK",
+      "elapsed_ms": 0.00667572021484375
+    },
+    {
+      "case_id": "M08",
+      "passed": true,
+      "score": 1.0,
+      "details": "OK",
+      "elapsed_ms": 0.00286102294921875
+    },
+    {
+      "case_id": "M09",
+      "passed": true,
+      "score": 1.0,
+      "details": "OK",
+      "elapsed_ms": 0.00286102294921875
+    },
+    {
+      "case_id": "G01",
+      "passed": true,
+      "score": 1.0,
+      "details": "OK",
+      "elapsed_ms": 600.7101535797119
+    },
+    {
+      "case_id": "G02",
+      "passed": true,
+      "score": 1.0,
+      "details": "OK",
+      "elapsed_ms": 0.03409385681152344
+    },
+    {
+      "case_id": "G03",
+      "passed": true,
+      "score": 1.0,
+      "details": "OK",
+      "elapsed_ms": 0.03933906555175781
+    },
+    {
+      "case_id": "G04",
+      "passed": true,
+      "score": 1.0,
+      "details": "OK",
+      "elapsed_ms": 0.07534027099609375
+    },
+    {
+      "case_id": "G05",
+      "passed": true,
+      "score": 1.0,
+      "details": "OK",
+      "elapsed_ms": 0.04601478576660156
+    },
+    {
+      "case_id": "G06",
+      "passed": true,
+      "score": 1.0,
+      "details": "OK",
+      "elapsed_ms": 0.18310546875
+    },
+    {
+      "case_id": "G07",
+      "passed": true,
+      "score": 1.0,
+      "details": "OK",
+      "elapsed_ms": 0.21648406982421875
+    },
+    {
+      "case_id": "R01",
+      "passed": true,
+      "score": 1.0,
+      "details": "OK",
+      "elapsed_ms": 4.009246826171875
+    },
+    {
+      "case_id": "R02",
+      "passed": true,
+      "score": 1.0,
+      "details": "OK",
+      "elapsed_ms": 1.9145011901855469
+    },
+    {
+      "case_id": "R03",
+      "passed": true,
+      "score": 1.0,
+      "details": "OK",
+      "elapsed_ms": 2.2134780883789062
+    },
+    {
+      "case_id": "R04",
+      "passed": true,
+      "score": 1.0,
+      "details": "OK",
+      "elapsed_ms": 0.11873245239257812
+    },
+    {
+      "case_id": "R05",
+      "passed": true,
+      "score": 1.0,
+      "details": "OK",
+      "elapsed_ms": 2.367258071899414
+    },
+    {
+      "case_id": "R06",
+      "passed": true,
+      "score": 1.0,
+      "details": "OK",
+      "elapsed_ms": 1.7704963684082031
+    },
+    {
+      "case_id": "R07",
+      "passed": true,
+      "score": 1.0,
+      "details": "OK",
+      "elapsed_ms": 1.5864372253417969
+    },
+    {
+      "case_id": "R08",
+      "passed": true,
+      "score": 1.0,
+      "details": "OK",
+      "elapsed_ms": 0.00858306884765625
+    },
+    {
+      "case_id": "R09",
+      "passed": true,
+      "score": 1.0,
+      "details": "OK",
+      "elapsed_ms": 1.3608932495117188
+    }
+  ]
+}

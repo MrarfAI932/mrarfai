@@ -1,0 +1,9 @@
+services:
+  mrarfai:
+    build: .
+    container_name: mrarfai-app
+    ports:
+      - "8501:8501"
+    env_file:
+      - .env
+    restart: unless-stopped
