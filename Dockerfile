@@ -65,13 +65,10 @@ RUN chown -R mrarfai:mrarfai /app
 # 切换到非 root 用户
 USER mrarfai
 
-# 环境变量（敏感信息运行时通过 --env-file 或平台 Secrets 注入）
-# 注意：不设 STREAMLIT_SERVER_PORT，由 CMD 参数 --server.port=$PORT 控制
+# 环境变量 — 只设 Python 相关，Streamlit 配置全部由 CMD 参数控制
+# 避免 Railway 自动注入 STREAMLIT_* 变量导致冲突
 ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    STREAMLIT_SERVER_ADDRESS=0.0.0.0 \
-    STREAMLIT_SERVER_HEADLESS=true \
-    STREAMLIT_BROWSER_GATHER_USAGE_STATS=false
+    PYTHONDONTWRITEBYTECODE=1
 
 # Railway/Render 使用 $PORT 环境变量
 EXPOSE 8501
