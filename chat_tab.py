@@ -283,7 +283,15 @@ def _render_v8_review_card(result: dict):
     bar_width = min(score * 10, 100)
 
     checks_html = ""
-    for check_name, check_data in checks.items():
+    if isinstance(checks, dict):
+        checks_iter = checks.items()
+    elif isinstance(checks, list):
+        checks_iter = ((c.get("name", f"check_{i}"), c) for i, c in enumerate(checks) if isinstance(c, dict))
+    else:
+        checks_iter = []
+    for check_name, check_data in checks_iter:
+        if not isinstance(check_data, dict):
+            check_data = {"score": 0, "passed": True}
         c_score = check_data.get("score", 0)
         c_passed = check_data.get("passed", True)
         icon = "✅" if c_passed else "❌"
