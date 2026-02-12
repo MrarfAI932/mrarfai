@@ -608,16 +608,18 @@ with _bar2:
         logout()
         st.rerun()
 
-# ── Data upload — inline two-column ──
+# ── Data upload — inline with labels ──
 rev_file = None
 qty_file = None
 
 _d1, _d2, _d3, _d4 = st.columns([2, 2, 1.5, 1.5])
 with _d1:
+    st.markdown(f'<div style="font-family:\'JetBrains Mono\',monospace;font-size:0.55rem;font-weight:700;color:{SP_GREEN};letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;">📊 金额报表</div>', unsafe_allow_html=True)
     rev_file = st.file_uploader("金额报表", type=['xlsx'], key='rev', label_visibility="collapsed")
     if rev_file:
         st.caption(f"✓ {rev_file.name}")
 with _d2:
+    st.markdown(f'<div style="font-family:\'JetBrains Mono\',monospace;font-size:0.55rem;font-weight:700;color:{SP_BLUE};letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;">📦 数量报表</div>', unsafe_allow_html=True)
     qty_file = st.file_uploader("数量报表", type=['xlsx'], key='qty', label_visibility="collapsed")
     if qty_file:
         st.caption(f"✓ {qty_file.name}")
@@ -644,7 +646,7 @@ st.session_state["api_key"] = api_key or ""
 
 
 # ============================================================
-# 欢迎页 (未上传数据时) — 极简提示
+# 欢迎页 (未上传数据时)
 # ============================================================
 if not rev_file or not qty_file:
     _missing = []
@@ -654,40 +656,75 @@ if not rev_file or not qty_file:
         _missing.append(f'<strong style="color:{SP_BLUE};">数量报表</strong>')
     _missing_text = " & ".join(_missing)
 
+    # ── 提示信息 ──
     st.markdown(f"""
-    <div style="text-align:center; padding:28px 0 16px 0;">
-        <div style="display:inline-flex; align-items:center; gap:8px; padding:6px 14px;
-             background:rgba(0,255,136,0.04); border:1px solid rgba(0,255,136,0.12);
-             margin-bottom:16px;">
-            <div style="width:5px;height:5px;border-radius:50%;background:#00FF88;
-                 animation:neon-pulse 2s ease-in-out infinite;"></div>
-            <span style="font-family:'JetBrains Mono',monospace;font-size:0.55rem;
-                  font-weight:700;color:#00FF88;letter-spacing:0.1em;">V9.0 · AWAITING DATA</span>
-        </div>
-        <div style="font-family:'Space Grotesk',sans-serif;font-size:1.3rem;font-weight:700;
-             color:#FFFFFF;letter-spacing:-0.01em;margin-bottom:6px;">
-            上传 Excel 报表开始分析
-        </div>
+    <div style="text-align:center; padding:20px 0 12px 0;">
         <div style="font-family:'JetBrains Mono',monospace;font-size:0.7rem;
-             color:#6a6a6a;letter-spacing:0.02em;line-height:1.8;">
-            ↑ 请在上方上传 {_missing_text}
+             color:#6a6a6a;letter-spacing:0.02em;">
+            ↑ 请在上方上传 {_missing_text} 开始分析
         </div>
-        <div style="display:flex;justify-content:center;gap:20px;margin-top:20px;">
-            <div style="display:flex;align-items:center;gap:5px;">
-                <span style="color:{SP_GREEN};font-size:0.6rem;">◈</span>
-                <span style="font-family:'JetBrains Mono',monospace;font-size:0.5rem;
-                      color:#4a4a4a;letter-spacing:0.08em;">12-DIM ANALYTICS</span>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("---")
+
+    # ── 功能概览卡片 ──
+    _fc1, _fc2, _fc3 = st.columns(3)
+    with _fc1:
+        st.markdown(f"""<div style="background:#0C0C0C;border:1px solid rgba(255,255,255,0.06);
+            border-left:3px solid {SP_GREEN};padding:16px 18px;">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:0.55rem;font-weight:700;
+                 color:{SP_GREEN};letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px;">
+                ◈ 智能分析引擎
             </div>
-            <div style="display:flex;align-items:center;gap:5px;">
-                <span style="color:{SP_RED};font-size:0.6rem;">◆</span>
-                <span style="font-family:'JetBrains Mono',monospace;font-size:0.5rem;
-                      color:#4a4a4a;letter-spacing:0.08em;">RISK ALERTS</span>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:#8a8a8a;line-height:1.7;">
+                · 客户营收 & 出货量分析<br>
+                · 价量分解 & 月度趋势<br>
+                · 产品结构 & 区域分布<br>
+                · 行业对标 & 预测模型
             </div>
-            <div style="display:flex;align-items:center;gap:5px;">
-                <span style="color:{SP_BLUE};font-size:0.6rem;">◇</span>
-                <span style="font-family:'JetBrains Mono',monospace;font-size:0.5rem;
-                      color:#4a4a4a;letter-spacing:0.08em;">MULTI-AGENT</span>
+        </div>""", unsafe_allow_html=True)
+    with _fc2:
+        st.markdown(f"""<div style="background:#0C0C0C;border:1px solid rgba(255,255,255,0.06);
+            border-left:3px solid {SP_RED};padding:16px 18px;">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:0.55rem;font-weight:700;
+                 color:{SP_RED};letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px;">
+                ◆ 风险预警系统
             </div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:#8a8a8a;line-height:1.7;">
+                · 客户流失早期预警<br>
+                · 异常检测 & 自动告警<br>
+                · 5层安全护栏<br>
+                · 健康评分实时监控
+            </div>
+        </div>""", unsafe_allow_html=True)
+    with _fc3:
+        st.markdown(f"""<div style="background:#0C0C0C;border:1px solid rgba(255,255,255,0.06);
+            border-left:3px solid {SP_BLUE};padding:16px 18px;">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:0.55rem;font-weight:700;
+                 color:{SP_BLUE};letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px;">
+                ◇ Multi-Agent AI
+            </div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:#8a8a8a;line-height:1.7;">
+                · 多智能体协作分析<br>
+                · RLM 递归语言模型<br>
+                · 500K+ 上下文窗口<br>
+                · 自然语言问答对话
+            </div>
+        </div>""", unsafe_allow_html=True)
+
+    # ── 文件格式说明 ──
+    st.markdown(f"""
+    <div style="margin-top:20px;padding:12px 16px;background:rgba(138,138,138,0.04);
+         border:1px solid rgba(138,138,138,0.08);">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:0.55rem;font-weight:700;
+             color:#6a6a6a;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px;">
+            📋 支持的文件格式
+        </div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:0.62rem;color:#5a5a5a;line-height:1.8;">
+            <span style="color:{SP_GREEN};">金额报表</span> — Sprocomm 销售金额 Excel（含 "2025数据"、"与年度目标对比" 等 Sheet）<br>
+            <span style="color:{SP_BLUE};">数量报表</span> — Sprocomm 出货数量 Excel（含 "数量汇总" Sheet）<br>
+            <span style="color:#4a4a4a;">⚡ 系统会自动识别文件类型，上传顺序错了也会自动纠正</span>
         </div>
     </div>
     """, unsafe_allow_html=True)
