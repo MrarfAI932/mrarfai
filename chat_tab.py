@@ -855,42 +855,87 @@ def _render_suggestion_chips():
 
 
 def _render_welcome():
-    """Welcome state — command center terminal style."""
+    """Welcome state — compact prompt, no hero wall."""
     st.markdown(f"""
-    <div style="text-align:center; padding:32px 0 24px 0;">
-        <div style="margin-bottom:16px;">
-            <span class="welcome-badge">
-                <span class="badge-dot"></span>
-                AGENT TERMINAL · v5
-            </span>
+    <div style="text-align:center; padding:24px 0 16px 0;">
+        <div style="display:inline-flex; align-items:center; gap:8px; padding:6px 14px;
+             background:rgba(0,255,136,0.04); border:1px solid rgba(0,255,136,0.12);
+             margin-bottom:12px;">
+            <div style="width:5px;height:5px;border-radius:50%;background:#00FF88;
+                 animation:neon-pulse 2s ease-in-out infinite;"></div>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:0.55rem;
+                  font-weight:700;color:#00FF88;letter-spacing:0.1em;">AGENT TERMINAL · V9.0</span>
         </div>
-        <h1 class="welcome-title-green" style="font-size:2.2rem;">SPROCOMM</h1>
-        <h1 class="welcome-title-white" style="font-size:2.2rem;">SALES INTELLIGENCE</h1>
-        <p style="color:#6a6a6a; font-size:0.78rem; margin-top:12px;
-           font-family:'JetBrains Mono',monospace; letter-spacing:0.03em;">
-            // 多智能体协作 · 12维深度分析 · 实时预警系统
-        </p>
+        <div style="font-family:'Space Grotesk',sans-serif;font-size:1.2rem;font-weight:700;
+             color:#FFFFFF;letter-spacing:-0.01em;margin-bottom:6px;">
+            多智能体销售分析
+        </div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:0.65rem;
+             color:#6a6a6a;letter-spacing:0.02em;">
+            // 12维深度分析 · 实时预警 · RLM 递归语言模型
+        </div>
+        <div style="display:flex;justify-content:center;gap:18px;margin-top:14px;">
+            <div style="display:flex;align-items:center;gap:5px;">
+                <span style="color:{SP_GREEN};font-size:0.6rem;">◈</span>
+                <span style="font-family:'JetBrains Mono',monospace;font-size:0.5rem;
+                      color:#4a4a4a;letter-spacing:0.08em;">ANALYST</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:5px;">
+                <span style="color:{SP_RED};font-size:0.6rem;">◆</span>
+                <span style="font-family:'JetBrains Mono',monospace;font-size:0.5rem;
+                      color:#4a4a4a;letter-spacing:0.08em;">RISK</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:5px;">
+                <span style="color:{SP_BLUE};font-size:0.6rem;">◇</span>
+                <span style="font-family:'JetBrains Mono',monospace;font-size:0.5rem;
+                      color:#4a4a4a;letter-spacing:0.08em;">STRATEGY</span>
+            </div>
+        </div>
     </div>
     """, unsafe_allow_html=True)
 
-    # Agent roster — command center style with better spacing
-    cols = st.columns(3)
-    roster = [
-        ("◈", "数据分析师", "DATA ANALYST", SP_GREEN, "rgba(0,255,136,0.06)", "rgba(0,255,136,0.20)"),
-        ("◆", "风控专家", "RISK CONTROL", SP_RED, "rgba(217,64,64,0.06)", "rgba(217,64,64,0.20)"),
-        ("◇", "策略师", "STRATEGIST", SP_BLUE, "rgba(0,160,200,0.06)", "rgba(0,160,200,0.20)"),
-    ]
-    for i, (icon, name, role, color, bg, border) in enumerate(roster):
-        with cols[i]:
-            st.markdown(f"""
-            <div style="background:{bg};border:1px solid {border};
-                        padding:1.5rem 1rem;text-align:center;">
-                <div style="font-size:1.6rem;margin-bottom:0.6rem;color:{color};">{icon}</div>
-                <div style="font-family:'Space Grotesk',sans-serif;font-size:0.88rem;font-weight:700;color:{color};
-                     letter-spacing:0.05em;">{name}</div>
-                <div style="font-family:'JetBrains Mono',monospace;font-size:0.55rem;color:{C_TEXT_MUTED};
-                            text-transform:uppercase;letter-spacing:0.1em;margin-top:0.25rem;">{role}</div>
-            </div>""", unsafe_allow_html=True)
+
+def _render_ready_state():
+    """Compact ready state — data loaded, agents standby, no welcome wall."""
+    st.markdown(f"""
+    <div style="text-align:center; padding:40px 0 20px 0;">
+        <div style="display:inline-flex; align-items:center; gap:8px; padding:8px 18px;
+             background:rgba(0,255,136,0.04); border:1px solid rgba(0,255,136,0.15);
+             margin-bottom:20px;">
+            <div style="width:6px;height:6px;border-radius:50%;background:#00FF88;
+                 animation:neon-pulse 2s ease-in-out infinite;"></div>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:0.6rem;
+                  font-weight:700;color:#00FF88;letter-spacing:0.1em;text-transform:uppercase;">
+                AGENTS READY · V9.0
+            </span>
+        </div>
+        <div style="font-family:'Space Grotesk',sans-serif;font-size:1.4rem;font-weight:700;
+             color:#FFFFFF;letter-spacing:-0.02em;margin-bottom:6px;">
+            多智能体分析就绪
+        </div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:0.7rem;
+             color:#6a6a6a;letter-spacing:0.03em;">
+            // 在下方输入问题，或点击快捷提问开始分析
+        </div>
+    </div>
+    <div style="display:flex;justify-content:center;gap:24px;margin-bottom:24px;">
+        <div style="display:flex;align-items:center;gap:6px;">
+            <span style="color:{SP_GREEN};font-size:0.7rem;">◈</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:0.58rem;
+                  color:#6a6a6a;letter-spacing:0.05em;">DATA ANALYST</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;">
+            <span style="color:{SP_RED};font-size:0.7rem;">◆</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:0.58rem;
+                  color:#6a6a6a;letter-spacing:0.05em;">RISK CONTROL</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;">
+            <span style="color:{SP_BLUE};font-size:0.7rem;">◇</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:0.58rem;
+                  color:#6a6a6a;letter-spacing:0.05em;">STRATEGIST</span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
 
 # ════════════════════════════════════════════════════════════════
@@ -909,20 +954,19 @@ def render_chat_tab(data, results: dict, benchmark: dict = None, forecast: dict 
 
     if not has_data:
         _render_welcome()
-        st.info("请先在左侧上传数据文件")
+        st.info("请先在上方上传数据文件")
         return
 
     if not use_multi:
         _render_welcome()
-        st.warning("请在左侧打开 Multi-Agent 开关")
+        st.warning("请在上方打开 Multi-Agent 开关")
         return
 
     # ── Chat history ────────────────────────────────────────
     # If a new question is pending, skip old history rendering
     has_pending = "pending_question" in st.session_state
     if not st.session_state.chat_history:
-        _render_welcome()
-        st.markdown("---")
+        _render_ready_state()
         _render_suggestion_chips()
     elif not has_pending:
         for msg in st.session_state.chat_history:
@@ -1000,9 +1044,9 @@ def render_chat_tab(data, results: dict, benchmark: dict = None, forecast: dict 
             _api_key = api_key or st.session_state.get("api_key", "")
 
             if not _api_key:
-                st.warning("⚠️ 请先在左侧配置 API Key")
+                st.warning("⚠️ 请先在上方配置 API Key")
                 st.session_state.chat_history.append({"role": "user", "content": question})
-                st.session_state.chat_history.append({"role": "assistant", "content": "⚠️ 请先在左侧 AI ENGINE 中配置 API Key"})
+                st.session_state.chat_history.append({"role": "assistant", "content": "⚠️ 请先在上方 AI ENGINE 中配置 API Key"})
                 return
 
             # v4.0: Create streaming callback
@@ -1187,7 +1231,7 @@ def render_chat_tab(data, results: dict, benchmark: dict = None, forecast: dict 
 
             # 分类友好错误信息
             if "api_key" in err_str.lower() or "authentication" in err_str.lower() or "401" in err_str:
-                friendly = "🔑 API Key 无效或已过期，请在左侧重新输入"
+                friendly = "🔑 API Key 无效或已过期，请在上方重新输入"
             elif "rate_limit" in err_str.lower() or "429" in err_str:
                 friendly = "⏳ API 请求过于频繁，请稍等30秒后重试"
             elif "timeout" in err_str.lower() or "timed out" in err_str.lower():

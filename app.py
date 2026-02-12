@@ -94,7 +94,7 @@ def fmt(v, unit="万"):
 # ============================================================
 # 页面配置
 # ============================================================
-st.set_page_config(page_title="Sprocomm AI · MRARFAI v9.0", page_icon="🌿", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="Sprocomm AI · MRARFAI v9.0", page_icon="🌿", layout="wide", initial_sidebar_state="collapsed")
 
 # ============================================================
 # 登录门禁
@@ -134,18 +134,44 @@ st.markdown("""<style>
 [data-testid="stChatMessage"] { background: #0C0C0C !important; }
 .stChatMessage { background: #0C0C0C !important; }
 
-[data-testid="stSidebar"] { background: var(--bg-base) !important; border-right: 1px solid var(--border-subtle) !important; }
-/* Sidebar expand button - visible on dark bg */
-button[kind="headerNoPadding"] { color: #00FF88 !important; }
-[data-testid="collapsedControl"] { background: #111 !important; border: 1px solid #2f2f2f !important; }
-[data-testid="stSidebarCollapseButton"] button { color: #00FF88 !important; }
-[data-testid="stSidebar"] .stMarkdown p, [data-testid="stSidebar"] .stMarkdown span {
-    font-family: var(--font-mono) !important; color: var(--text-2) !important; font-size: 0.78rem !important;
+/* ── Hide sidebar completely ── */
+[data-testid="stSidebar"] { display: none !important; }
+[data-testid="collapsedControl"] { display: none !important; }
+[data-testid="stSidebarCollapseButton"] { display: none !important; }
+button[kind="headerNoPadding"] { display: none !important; }
+
+/* ── Top Config Bar ── */
+.top-bar {
+    display:flex; align-items:center; gap:16px; padding:10px 20px;
+    background:var(--bg-base); border:1px solid var(--border-subtle);
+    margin-bottom:16px; flex-wrap:wrap;
 }
-.sidebar-label {
-    font-family: var(--font-mono) !important; font-size: 0.6rem !important; font-weight: 700 !important;
-    letter-spacing: 0.15em !important; text-transform: uppercase !important; color: var(--text-3) !important;
-    padding: 1.2rem 0 0.4rem !important; border-top: 1px solid var(--border-subtle); margin-top: 0.8rem;
+.top-bar-logo {
+    display:flex; align-items:center; gap:10px; margin-right:auto;
+}
+.top-bar-section {
+    display:flex; align-items:center; gap:8px;
+}
+.top-bar-label {
+    font-family:var(--font-mono); font-size:0.55rem; font-weight:700;
+    letter-spacing:0.1em; text-transform:uppercase; color:var(--text-3);
+}
+/* ── Upload Zone (welcome page) ── */
+.upload-zone {
+    max-width:600px; margin:0 auto; padding:32px;
+    background:var(--bg-elevated); border:1px solid var(--border-subtle);
+    position:relative;
+}
+.upload-zone::before {
+    content:""; position:absolute; left:0; top:0; bottom:0; width:3px;
+    background:linear-gradient(180deg, #00FF88, rgba(0,255,136,0.15));
+}
+.upload-zone .stFileUploader {
+    border:1px dashed rgba(255,255,255,0.08) !important;
+    transition:border-color 0.2s;
+}
+.upload-zone .stFileUploader:hover {
+    border-color:rgba(0,255,136,0.25) !important;
 }
 
 .stMarkdown p { font-family: var(--font-mono) !important; color: var(--text-2) !important; font-size: 0.82rem !important; line-height: 1.7 !important; }
@@ -281,28 +307,26 @@ button[kind="headerNoPadding"] { color: #00FF88 !important; }
 }
 .welcome-card:hover::after { opacity:1; }
 
-/* ── Sidebar Enhancements ── */
+/* ── Logo Box (reused in top bar) ── */
 .sidebar-logo-box {
     width:32px; height:32px; background:#00FF88;
     display:flex; align-items:center; justify-content:center; flex-shrink:0;
     box-shadow:0 0 10px rgba(0,255,136,0.30), 0 0 20px rgba(0,255,136,0.08);
 }
-[data-testid="stSidebar"] hr {
-    border-color:rgba(255,255,255,0.04) !important;
-}
-[data-testid="stSidebar"] .stFileUploader {
+/* ── File uploader styling ── */
+.stFileUploader {
     border:1px dashed rgba(255,255,255,0.08) !important;
     transition:border-color 0.2s;
 }
-[data-testid="stSidebar"] .stFileUploader:hover {
+.stFileUploader:hover {
     border-color:rgba(0,255,136,0.25) !important;
 }
-[data-testid="stSidebar"] .stCaption, [data-testid="stSidebar"] small {
+.stCaption, small {
     font-family:var(--font-mono) !important; font-size:0.55rem !important;
     color:#6a6a6a !important; letter-spacing:0.03em !important;
 }
 .agent-active-badge {
-    display:flex; align-items:center; gap:6px; padding:6px 10px;
+    display:flex; align-items:center; gap:6px; padding:4px 8px;
     background:rgba(0,255,136,0.06); border:1px solid rgba(0,255,136,0.15);
     margin-top:4px;
 }
@@ -550,208 +574,169 @@ button[kind="headerNoPadding"] { color: #00FF88 !important; }
 
 </style>""", unsafe_allow_html=True)
 
-# Persistent sidebar open button (injects into parent page)
-import streamlit.components.v1 as components
-components.html("""
-<script>
-(function(){
-    if (parent.document.getElementById('my-sidebar-btn')) return;
-    var btn = document.createElement('div');
-    btn.id = 'my-sidebar-btn';
-    btn.innerHTML = '▶';
-    btn.style.cssText = 'position:fixed;top:12px;left:12px;z-index:999999;width:28px;height:28px;cursor:pointer;background:#1a1a1a;border:1px solid #00FF88;display:flex;align-items:center;justify-content:center;font-size:11px;color:#00FF88;';
-    btn.onclick = function(){
-        // Try all known Streamlit sidebar button selectors
-        var selectors = [
-            '[data-testid="stSidebarCollapsedControl"] button',
-            '[data-testid="collapsedControl"] button',
-            'button[kind="headerNoPadding"]',
-            '[data-testid="stSidebarCollapseButton"] button'
-        ];
-        for (var s of selectors) {
-            var b = parent.document.querySelector(s);
-            if (b) { b.click(); return; }
-        }
-    };
-    // Watch sidebar state to show/hide
-    function check() {
-        var sb = parent.document.querySelector('[data-testid="stSidebar"]');
-        if (sb) {
-            var collapsed = sb.getAttribute('aria-expanded') === 'false' || 
-                           getComputedStyle(sb).marginLeft.startsWith('-') ||
-                           getComputedStyle(sb).transform !== 'none';
-            btn.style.display = collapsed ? 'flex' : 'none';
-        }
-        requestAnimationFrame(check);
-    }
-    parent.document.body.appendChild(btn);
-    check();
-})();
-</script>
-""", height=0)
-
-
 # ============================================================
-# 侧边栏
+# 顶部导航栏 (替代侧边栏)
 # ============================================================
-with st.sidebar:
-    # Command Center Logo
-    _user = get_current_user()
+_user = get_current_user()
+
+# Top bar — logo + user + logout
+_bar1, _bar2 = st.columns([5, 1])
+with _bar1:
     st.markdown(f"""
-    <div style="padding:6px 0 14px 0;">
-        <div style="display:flex; align-items:center; gap:10px;">
-            <div class="sidebar-logo-box">
-                <span style="font-family:'Space Grotesk',sans-serif; font-weight:700;
-                      font-size:0.85rem; color:#0C0C0C;">S</span>
-            </div>
-            <div>
-                <div style="font-size:0.88rem; font-weight:700; color:#FFFFFF;
-                     letter-spacing:0.1em; font-family:'Space Grotesk',sans-serif;
-                     text-transform:uppercase;">SPROCOMM</div>
-                <div style="font-size:0.5rem; color:#6a6a6a; font-family:'JetBrains Mono',monospace;
-                     letter-spacing:0.1em; text-transform:uppercase;">MRARFAI v9.0 · RLM Engine</div>
-            </div>
+    <div style="display:flex; align-items:center; gap:12px; padding:4px 0;">
+        <div class="sidebar-logo-box">
+            <span style="font-family:'Space Grotesk',sans-serif; font-weight:700;
+                  font-size:0.85rem; color:#0C0C0C;">S</span>
+        </div>
+        <div>
+            <span style="font-size:0.88rem; font-weight:700; color:#FFFFFF;
+                 letter-spacing:0.1em; font-family:'Space Grotesk',sans-serif;
+                 text-transform:uppercase;">SPROCOMM AI</span>
+            <span style="font-size:0.5rem; color:#6a6a6a; font-family:'JetBrains Mono',monospace;
+                 letter-spacing:0.08em; margin-left:12px;">MRARFAI v9.0 · RLM</span>
+        </div>
+        <div style="margin-left:auto; display:flex; align-items:center; gap:8px;">
+            <span style="font-family:'JetBrains Mono',monospace; font-size:0.55rem;
+                 color:#6a6a6a; letter-spacing:0.05em;">
+                👤 {_user['display_name']} · <span style="color:{SP_GREEN};">{_user['role'].upper()}</span>
+            </span>
         </div>
     </div>
     """, unsafe_allow_html=True)
+with _bar2:
+    if st.button("登出", key="logout_btn", type="secondary", use_container_width=True):
+        logout()
+        st.rerun()
 
-    # 用户信息 + 登出
-    _ucol1, _ucol2 = st.columns([3, 1])
-    with _ucol1:
-        st.markdown(f"""<div style="font-family:'JetBrains Mono',monospace; font-size:0.55rem;
-             color:#6a6a6a; letter-spacing:0.05em;">
-            👤 {_user['display_name']} · <span style="color:{SP_GREEN};">{_user['role'].upper()}</span>
-        </div>""", unsafe_allow_html=True)
-    with _ucol2:
-        if st.button("登出", key="logout_btn", type="secondary"):
-            logout()
-            st.rerun()
+# ── Data upload — inline two-column ──
+rev_file = None
+qty_file = None
 
-    st.divider()
-
-    # Data section
-    st.markdown('<div class="sidebar-label">DATA</div>', unsafe_allow_html=True)
-    rev_file = st.file_uploader("金额报表 (.xlsx)", type=['xlsx'], key='rev', label_visibility="collapsed")
-    if rev_file: st.caption(f"✓ {rev_file.name}")
-    else: st.caption("拖入金额报表 .xlsx")
-
-    qty_file = st.file_uploader("数量报表 (.xlsx)", type=['xlsx'], key='qty', label_visibility="collapsed")
-    if qty_file: st.caption(f"✓ {qty_file.name}")
-    else: st.caption("拖入数量报表 .xlsx")
-
-    st.divider()
-
-    # AI Engine section
-    st.markdown('<div class="sidebar-label">AI ENGINE</div>', unsafe_allow_html=True)
-    ai_enabled = st.toggle("启用 AI 叙事", value=False)
+_d1, _d2, _d3, _d4 = st.columns([2, 2, 1.5, 1.5])
+with _d1:
+    rev_file = st.file_uploader("金额报表", type=['xlsx'], key='rev', label_visibility="collapsed")
+    if rev_file:
+        st.caption(f"✓ {rev_file.name}")
+with _d2:
+    qty_file = st.file_uploader("数量报表", type=['xlsx'], key='qty', label_visibility="collapsed")
+    if qty_file:
+        st.caption(f"✓ {qty_file.name}")
+with _d3:
+    ai_enabled = st.toggle("AI 叙事", value=False, key="ai_toggle")
     if ai_enabled:
-        ai_provider = st.selectbox("模型", ['DeepSeek', 'Claude'], label_visibility="collapsed")
-        api_key = st.text_input("API Key", type="password", label_visibility="collapsed", placeholder="sk-...")
+        ai_provider = st.selectbox("模型", ['DeepSeek', 'Claude'], label_visibility="collapsed", key="ai_prov")
+        api_key = st.text_input("Key", type="password", label_visibility="collapsed", placeholder="sk-...", key="ai_key")
     else:
         ai_provider, api_key = 'DeepSeek', None
-
-    st.session_state["ai_provider"] = ai_provider
-    st.session_state["api_key"] = api_key or ""
-
-    st.divider()
-
-    # Multi-Agent section
-    st.markdown('<div class="sidebar-label">MULTI-AGENT</div>', unsafe_allow_html=True)
-    use_multi = st.toggle("启用 Multi-Agent", value=False, key="use_multi_agent")
+with _d4:
+    use_multi = st.toggle("Multi-Agent", value=False, key="use_multi_agent")
     if use_multi:
         st.markdown(f"""
         <div class="agent-active-badge">
             <div class="pulse-dot"></div>
-            <span style="font-family:'JetBrains Mono',monospace; font-size:0.58rem;
-                  color:#6a6a6a; letter-spacing:0.05em;">V9 AGENTS [ACTIVE] · RLM · HITL</span>
+            <span style="font-family:'JetBrains Mono',monospace; font-size:0.52rem;
+                  color:#6a6a6a; letter-spacing:0.05em;">V9 ACTIVE</span>
         </div>
         """, unsafe_allow_html=True)
 
-    # Footer
-    st.markdown(f"""
-    <div style="text-align:center; opacity:0.3; font-size:0.5rem; color:#6a6a6a;
-         margin-top:40px; font-family:'JetBrains Mono',monospace;
-         letter-spacing:0.1em; text-transform:uppercase;">
-        SPROCOMM · 01401.HK<br>MRARFAI v9.0 · 36K+ lines
-    </div>
-    """, unsafe_allow_html=True)
+st.session_state["ai_provider"] = ai_provider
+st.session_state["api_key"] = api_key or ""
 
 
 # ============================================================
-# 欢迎页 (未上传数据时)
+# 欢迎页 (未上传数据时) — 极简提示
 # ============================================================
 if not rev_file or not qty_file:
+    _missing = []
+    if not rev_file:
+        _missing.append(f'<strong style="color:{SP_GREEN};">金额报表</strong>')
+    if not qty_file:
+        _missing.append(f'<strong style="color:{SP_BLUE};">数量报表</strong>')
+    _missing_text = " & ".join(_missing)
+
     st.markdown(f"""
-    <div class="welcome-bg" style="text-align:center; padding:50px 0 28px 0;">
-        <div style="margin-bottom:20px;">
-            <span class="welcome-badge">
-                <span class="badge-dot"></span>
-                V9.0 · RLM MULTI-AGENT INTELLIGENCE
-            </span>
+    <div style="text-align:center; padding:28px 0 16px 0;">
+        <div style="display:inline-flex; align-items:center; gap:8px; padding:6px 14px;
+             background:rgba(0,255,136,0.04); border:1px solid rgba(0,255,136,0.12);
+             margin-bottom:16px;">
+            <div style="width:5px;height:5px;border-radius:50%;background:#00FF88;
+                 animation:neon-pulse 2s ease-in-out infinite;"></div>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:0.55rem;
+                  font-weight:700;color:#00FF88;letter-spacing:0.1em;">V9.0 · AWAITING DATA</span>
         </div>
-        <h1 class="welcome-title-green">SPROCOMM</h1>
-        <h1 class="welcome-title-white">SALES INTELLIGENCE</h1>
-        <p style="color:#8a8a8a; font-size:0.82rem; margin-top:16px; max-width:500px;
-           margin-left:auto; margin-right:auto; line-height:1.6;
-           font-family:'JetBrains Mono',monospace;">
-            // 多智能体协作 · RLM递归语言模型 · 500K+上下文 · 实时预警系统
-        </p>
+        <div style="font-family:'Space Grotesk',sans-serif;font-size:1.3rem;font-weight:700;
+             color:#FFFFFF;letter-spacing:-0.01em;margin-bottom:6px;">
+            上传 Excel 报表开始分析
+        </div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:0.7rem;
+             color:#6a6a6a;letter-spacing:0.02em;line-height:1.8;">
+            ↑ 请在上方上传 {_missing_text}
+        </div>
+        <div style="display:flex;justify-content:center;gap:20px;margin-top:20px;">
+            <div style="display:flex;align-items:center;gap:5px;">
+                <span style="color:{SP_GREEN};font-size:0.6rem;">◈</span>
+                <span style="font-family:'JetBrains Mono',monospace;font-size:0.5rem;
+                      color:#4a4a4a;letter-spacing:0.08em;">12-DIM ANALYTICS</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:5px;">
+                <span style="color:{SP_RED};font-size:0.6rem;">◆</span>
+                <span style="font-family:'JetBrains Mono',monospace;font-size:0.5rem;
+                      color:#4a4a4a;letter-spacing:0.08em;">RISK ALERTS</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:5px;">
+                <span style="color:{SP_BLUE};font-size:0.6rem;">◇</span>
+                <span style="font-family:'JetBrains Mono',monospace;font-size:0.5rem;
+                      color:#4a4a4a;letter-spacing:0.08em;">MULTI-AGENT</span>
+            </div>
+        </div>
     </div>
     """, unsafe_allow_html=True)
-
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        st.markdown(f"""<div class="welcome-card" style="border-left-color:{SP_GREEN};">
-            <div style="width:36px;height:36px;background:rgba(0,255,136,0.08);
-                 display:flex;align-items:center;justify-content:center;margin-bottom:12px;">
-                <span style="color:{SP_GREEN};font-size:1.1rem;">◈</span>
-            </div>
-            <h4 style="color:#FFFFFF;font-family:'Space Grotesk',sans-serif;font-size:0.9rem;
-                letter-spacing:0.03em;margin:0 0 8px 0;text-transform:none;">RLM MULTI-AGENT</h4>
-            <p style="font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:#8a8a8a;
-               line-height:1.5;margin:0;">Route → Experts → Synthesize → Reflect → HITL</p>
-            <p style="font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:rgba(0,255,136,0.5);
-               margin:8px 0 0 0;letter-spacing:0.03em;">// 36,000+ LINES · 26 MODULES</p>
-        </div>""", unsafe_allow_html=True)
-    with c2:
-        st.markdown(f"""<div class="welcome-card" style="border-left-color:{SP_BLUE};">
-            <div style="width:36px;height:36px;background:rgba(0,160,200,0.08);
-                 display:flex;align-items:center;justify-content:center;margin-bottom:12px;">
-                <span style="color:{SP_BLUE};font-size:1.1rem;">◇</span>
-            </div>
-            <h4 style="color:#FFFFFF;font-family:'Space Grotesk',sans-serif;font-size:0.9rem;
-                letter-spacing:0.03em;margin:0 0 8px 0;text-transform:none;">12-DIMENSION ANALYTICS</h4>
-            <p style="font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:#8a8a8a;
-               line-height:1.5;margin:0;">客户·价量·预警·增长·产品·区域</p>
-            <p style="font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:rgba(0,160,200,0.5);
-               margin:8px 0 0 0;letter-spacing:0.03em;">// CONTEXT WINDOW 500K+ CHARS</p>
-        </div>""", unsafe_allow_html=True)
-    with c3:
-        st.markdown(f"""<div class="welcome-card" style="border-left-color:{SP_RED};">
-            <div style="width:36px;height:36px;background:rgba(217,64,64,0.08);
-                 display:flex;align-items:center;justify-content:center;margin-bottom:12px;">
-                <span style="color:{SP_RED};font-size:1.1rem;">◆</span>
-            </div>
-            <h4 style="color:#FFFFFF;font-family:'Space Grotesk',sans-serif;font-size:0.9rem;
-                letter-spacing:0.03em;margin:0 0 8px 0;text-transform:none;">5-LAYER GUARDRAILS</h4>
-            <p style="font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:#8a8a8a;
-               line-height:1.5;margin:0;">输入过滤·Prompt注入·幻觉检测</p>
-            <p style="font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:rgba(217,64,64,0.5);
-               margin:8px 0 0 0;letter-spacing:0.03em;">// 99.5% SECURITY PASS</p>
-        </div>""", unsafe_allow_html=True)
-
-    st.markdown(f"""<div style="text-align:center; margin-top:28px;">
-        <p style="color:#6a6a6a; font-size:0.75rem; font-family:'JetBrains Mono',monospace;">
-            ← UPLOAD <strong style="color:{SP_GREEN};">金额报表</strong> &
-            <strong style="color:{SP_BLUE};">数量报表</strong> TO BEGIN
-        </p>
-    </div>""", unsafe_allow_html=True)
     st.stop()
 
 
 # ============================================================
-# 数据加载
+# 智能文件检测 + 数据加载
 # ============================================================
+
+# ── 金额报表特征 sheet 名 ──
+_REV_MARKERS = ['2025数据', '2024数据', '数据', '与年度目标对比', '目标对比', '目标']
+# ── 数量报表特征 sheet 名 ──
+_QTY_MARKERS = ['数量汇总', '汇总', '数量']
+
+
+def _detect_file_type(file_bytes: bytes) -> str:
+    """
+    检测 Excel 文件类型。
+    返回 'revenue' / 'quantity' / 'unknown'
+    """
+    try:
+        tmp = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
+        tmp.write(file_bytes)
+        tmp.close()
+        xls = pd.ExcelFile(tmp.name)
+        sheets = xls.sheet_names
+        xls.close()
+        os.unlink(tmp.name)
+
+        # 数量报表特征：含 "数量汇总" / "汇总" / "数量"
+        for marker in _QTY_MARKERS:
+            if any(marker in s for s in sheets):
+                return 'quantity'
+
+        # 金额报表特征：含 "2025数据" / "数据" / "与年度目标对比" 等
+        for marker in _REV_MARKERS:
+            if any(marker in s for s in sheets):
+                return 'revenue'
+
+        # 兜底：如果有 Sheet1/Sheet2/Sheet3（至少3个 sheet）可能是金额报表
+        if len(sheets) >= 3:
+            return 'revenue'
+
+        return 'unknown'
+    except Exception:
+        return 'unknown'
+
+
 @st.cache_data(show_spinner=False)
 def run_full_analysis(rev_bytes, qty_bytes):
     with tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False) as f1:
@@ -767,22 +752,79 @@ def run_full_analysis(rev_bytes, qty_bytes):
     os.unlink(rp); os.unlink(qp)
     return data, results, bench, forecast
 
+
+# ── 智能检测：文件是否上传反了 / 文件类型是否正确 ──
+_rev_bytes = rev_file.read()
+_qty_bytes = qty_file.read()
+rev_file.seek(0)
+qty_file.seek(0)
+
+_type1 = _detect_file_type(_rev_bytes)
+_type2 = _detect_file_type(_qty_bytes)
+
+_swapped = False
+_file_error = False
+
+# 两个都是 unknown → 文件格式不对
+if _type1 == 'unknown' and _type2 == 'unknown':
+    _file_error = True
+# 金额位上传了数量文件，数量位上传了金额文件 → 自动交换
+elif _type1 == 'quantity' and _type2 == 'revenue':
+    _rev_bytes, _qty_bytes = _qty_bytes, _rev_bytes
+    _swapped = True
+# 金额位正确，数量位不是数量文件
+elif _type1 == 'revenue' and _type2 not in ('quantity', 'unknown'):
+    pass  # 正常
+elif _type1 not in ('revenue', 'unknown') and _type2 == 'quantity':
+    pass  # 第一个不确定但第二个是数量 → 假设第一个是金额
+# 两个都是金额 或 两个都是数量
+elif _type1 == _type2 and _type1 != 'unknown':
+    _file_error = True
+
+if _file_error:
+    st.markdown(f"""
+    <div style="font-family:'JetBrains Mono',monospace; font-size:0.72rem;
+         color:#D94040; padding:16px 20px; margin:8px 0;
+         border:1px solid rgba(217,64,64,0.2); background:rgba(217,64,64,0.04);">
+        <div style="font-weight:700; margin-bottom:8px; font-size:0.8rem;">
+            ⚠ 文件格式不匹配
+        </div>
+        <p style="color:#8a8a8a; margin:4px 0;">上传的文件不是预期的销售报表格式。请确保上传：</p>
+        <p style="margin:4px 0;">· <strong style="color:{SP_GREEN};">金额报表</strong> — 包含客户营收、Sheet 名如 "2025数据" "与年度目标对比"</p>
+        <p style="margin:4px 0;">· <strong style="color:{SP_BLUE};">数量报表</strong> — 包含出货数量、Sheet 名如 "数量汇总"</p>
+        <p style="color:#6a6a6a; margin:8px 0 0 0; font-size:0.6rem;">
+            FILE 1: {rev_file.name} → 检测为 {_type1.upper()}<br>
+            FILE 2: {qty_file.name} → 检测为 {_type2.upper()}
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+    st.stop()
+
+if _swapped:
+    st.markdown(f"""
+    <div style="font-family:'JetBrains Mono',monospace; font-size:0.65rem;
+         color:{SP_GREEN}; padding:8px 14px; margin:4px 0;
+         border:1px solid rgba(0,255,136,0.15); background:rgba(0,255,136,0.04);">
+        🔄 已自动识别并交换文件顺序（金额 ↔ 数量）
+    </div>
+    """, unsafe_allow_html=True)
+
 with st.spinner("🌿 数据加载 + 深度分析中..."):
     try:
-        data, results, benchmark, forecast = run_full_analysis(rev_file.read(), qty_file.read())
+        data, results, benchmark, forecast = run_full_analysis(_rev_bytes, _qty_bytes)
     except ValueError as e:
         err_msg = str(e)
         if "Worksheet named" in err_msg:
             sheet_name = err_msg.split("'")[1] if "'" in err_msg else "未知"
-            st.error(f"📊 Excel 格式不匹配")
+            st.error(f"📊 Excel 工作表不匹配")
             st.markdown(f"""
             <div style="font-family:'JetBrains Mono',monospace; font-size:0.7rem;
                  color:#8a8a8a; padding:12px; border:1px solid rgba(217,64,64,0.15);
                  background:rgba(217,64,64,0.04); margin-top:8px;">
                 <p>找不到工作表 "<strong style="color:#D94040;">{sheet_name}</strong>"</p>
                 <p style="margin-top:8px;">可能原因:</p>
-                <p>· 金额报表和数量报表上传位置反了</p>
-                <p>· Excel 文件中的 Sheet 名称已更改</p>
+                <p>· 上传的文件不是 Sprocomm 销售报表</p>
+                <p>· Excel 文件中的 Sheet 名称已被修改</p>
                 <p style="margin-top:8px;">请检查文件后重新上传。</p>
             </div>
             """, unsafe_allow_html=True)
