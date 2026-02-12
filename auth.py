@@ -122,26 +122,80 @@ SP_GREEN = "#00FF88"
 def _render_login_page():
     """渲染登录页面"""
 
-    # 全屏深色背景
+    # 全屏深色背景 + Command Center 动效
     st.markdown("""<style>
     @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
     @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
-    
-    [data-testid="stApp"] { background: #080808; }
+
+    /* ── Keyframes ── */
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(24px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes glowPulse {
+        0%, 100% { box-shadow: 0 0 0 1px rgba(0,255,136,0.06); }
+        50%      { box-shadow: 0 0 18px rgba(0,255,136,0.10), 0 0 0 1px rgba(0,255,136,0.18); }
+    }
+    @keyframes scanLine {
+        0%   { top: -2px; opacity: 0; }
+        10%  { opacity: 1; }
+        90%  { opacity: 1; }
+        100% { top: 100%; opacity: 0; }
+    }
+    @keyframes titleShimmer {
+        0%   { background-position: -200% center; }
+        100% { background-position: 200% center; }
+    }
+    @keyframes dotPulse {
+        0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(0,255,136,0.5); }
+        50%      { opacity: 0.7; box-shadow: 0 0 6px 3px rgba(0,255,136,0.2); }
+    }
+
+    /* ── Base ── */
+    [data-testid="stApp"] {
+        background: #080808;
+    }
+    /* Grid background overlay */
+    [data-testid="stApp"]::before {
+        content: "";
+        position: fixed; inset: 0; z-index: 0; pointer-events: none;
+        background-image:
+            linear-gradient(rgba(0,255,136,0.025) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0,255,136,0.025) 1px, transparent 1px);
+        background-size: 60px 60px;
+    }
     [data-testid="stSidebar"] { display: none; }
     [data-testid="stHeader"] { display: none; }
-    
+    #MainMenu, footer, .stDeployButton,
+    [data-testid="stToolbar"], [data-testid="stDecoration"],
+    [data-testid="stStatusWidget"] { display: none !important; }
+
+    /* ── Login Container ── */
     .login-container {
         max-width: 380px; margin: 10vh auto; padding: 40px;
         border: 1px solid rgba(255,255,255,0.06);
         background: rgba(12,12,12,0.95);
+        animation: fadeInUp 0.6s ease-out, glowPulse 4s ease-in-out 0.6s infinite;
+        position: relative; overflow: hidden;
     }
+    /* Scan line effect */
+    .login-container::after {
+        content: "";
+        position: absolute; left: 0; right: 0; height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(0,255,136,0.35), transparent);
+        animation: scanLine 5s ease-in-out infinite;
+        pointer-events: none;
+    }
+
+    /* ── Logo ── */
     .login-logo {
         display: flex; align-items: center; gap: 12px; margin-bottom: 32px;
+        position: relative; z-index: 1;
     }
     .login-logo-box {
         width: 40px; height: 40px; background: #00FF88;
         display: flex; align-items: center; justify-content: center;
+        box-shadow: 0 0 12px rgba(0,255,136,0.35), 0 0 24px rgba(0,255,136,0.10);
     }
     .login-logo-box span {
         font-family: 'Space Grotesk', sans-serif; font-weight: 700;
@@ -149,17 +203,39 @@ def _render_login_page():
     }
     .login-title {
         font-family: 'Space Grotesk', sans-serif; font-weight: 700;
-        font-size: 1.2rem; color: #FFFFFF; letter-spacing: 0.08em;
+        font-size: 1.2rem; letter-spacing: 0.08em;
         text-transform: uppercase;
+        /* Shimmer gradient */
+        background: linear-gradient(90deg, #FFFFFF 30%, #00FF88 50%, #FFFFFF 70%);
+        background-size: 200% auto;
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        background-clip: text;
+        animation: titleShimmer 4s linear infinite;
     }
     .login-subtitle {
         font-family: 'JetBrains Mono', monospace; font-size: 0.55rem;
         color: #6a6a6a; letter-spacing: 0.1em; text-transform: uppercase;
     }
+
+    /* ── Secure Badge ── */
+    .login-badge {
+        display: flex; align-items: center; gap: 6px;
+        padding: 6px 10px; margin-bottom: 20px;
+        background: rgba(0,255,136,0.04); border: 1px solid rgba(0,255,136,0.12);
+        font-family: 'JetBrains Mono', monospace; font-size: 0.5rem;
+        color: #6a6a6a; letter-spacing: 0.1em; text-transform: uppercase;
+        position: relative; z-index: 1;
+    }
+    .login-badge .badge-dot {
+        width: 5px; height: 5px; border-radius: 50%; background: #00FF88;
+        animation: dotPulse 2s ease-in-out infinite;
+    }
+
+    /* ── Labels & Errors ── */
     .login-label {
         font-family: 'JetBrains Mono', monospace; font-size: 0.6rem;
         color: #6a6a6a; letter-spacing: 0.1em; text-transform: uppercase;
-        margin-bottom: 4px;
+        margin-bottom: 4px; position: relative; z-index: 1;
     }
     .login-error {
         font-family: 'JetBrains Mono', monospace; font-size: 0.65rem;
@@ -170,17 +246,19 @@ def _render_login_page():
     .login-footer {
         font-family: 'JetBrains Mono', monospace; font-size: 0.5rem;
         color: #4a4a4a; text-align: center; margin-top: 32px;
-        letter-spacing: 0.05em;
+        letter-spacing: 0.05em; position: relative; z-index: 1;
     }
 
-    /* Style Streamlit inputs */
+    /* ── Streamlit Input Overrides ── */
     .login-container .stTextInput input {
         background: #111111 !important; border: 1px solid #2f2f2f !important;
         color: #FFFFFF !important; font-family: 'JetBrains Mono', monospace !important;
         font-size: 0.8rem !important; border-radius: 0 !important;
+        transition: border-color 0.2s, box-shadow 0.2s;
     }
     .login-container .stTextInput input:focus {
-        border-color: #00FF88 !important; box-shadow: none !important;
+        border-color: #00FF88 !important;
+        box-shadow: 0 0 0 1px rgba(0,255,136,0.25), 0 0 12px rgba(0,255,136,0.08) !important;
     }
     .login-container .stButton button {
         width: 100%; background: #00FF88 !important; color: #0C0C0C !important;
@@ -188,9 +266,17 @@ def _render_login_page():
         font-size: 0.75rem !important; letter-spacing: 0.1em !important;
         text-transform: uppercase !important; border: none !important;
         border-radius: 0 !important; padding: 10px !important; margin-top: 16px;
+        transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
+        position: relative; z-index: 1;
     }
     .login-container .stButton button:hover {
         background: #00cc6e !important;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 16px rgba(0,255,136,0.25);
+    }
+    .login-container .stButton button:active {
+        transform: translateY(0px);
+        box-shadow: 0 1px 4px rgba(0,255,136,0.15);
     }
     </style>""", unsafe_allow_html=True)
 
@@ -205,6 +291,10 @@ def _render_login_page():
                     <div class="login-title">SPROCOMM AI</div>
                     <div class="login-subtitle">MRARFAI v9.0 · Sales Intelligence</div>
                 </div>
+            </div>
+            <div class="login-badge">
+                <span class="badge-dot"></span>
+                SECURE ACCESS · V9.0
             </div>
         """, unsafe_allow_html=True)
 
@@ -233,7 +323,7 @@ def _render_login_page():
 
         st.markdown("""
             <div class="login-footer">
-                © 2025 MRARFAI · Powered by Multi-Agent Intelligence
+                © 2026 MRARFAI · Powered by Multi-Agent Intelligence
             </div>
         </div>
         """, unsafe_allow_html=True)

@@ -87,6 +87,258 @@ SUGGESTIONS = [
 
 
 # ════════════════════════════════════════════════════════════════
+#  ANSWER PARSER — 文本墙 → 卡片化 HTML
+# ════════════════════════════════════════════════════════════════
+
+# Section header detection patterns
+_SEC_PATTERNS = [
+    # (regex, type, color)
+    (re.compile(r'(?:核心结论|总结|概要|要点|摘要|总览)'), 'summary', SP_GREEN),
+    (re.compile(r'(?:增长|驱动|亮点|机会|正面|优势|突破)'), 'growth', SP_GREEN),
+    (re.compile(r'(?:风险|预警|流失|下滑|问题|挑战|威胁|隐患)'), 'risk', SP_RED),
+    (re.compile(r'(?:行动|建议|下一步|策略|方案|措施|计划|应对)'), 'action', SP_BLUE),
+    (re.compile(r'(?:分析|详情|对比|说明|背景|补充|结构|趋势)'), 'analysis', C_TEXT_MUTED),
+]
+
+# Regex for numbers worth highlighting: 54.1%, 41.71亿, 3.42亿元, 110.4%, -42.4%, +12家 etc.
+_METRIC_RE = re.compile(r'([+-]?\d+(?:\.\d+)?)\s*([%％万亿美元元家个月次台件倍])')
+
+# Header line pattern: lines that look like section titles
+_HEADER_RE = re.compile(
+    r'^\s*(?:[#*]*\s*)?'                             # optional markdown ## or **
+    r'(?:[\d一二三四五六七八九十]+[\.、）)]\s*)?'     # optional numbering
+    r'[【\[]?\s*'                                     # optional brackets
+    r'(.{2,15}?)'                                     # title text (2-15 chars)
+    r'\s*[】\]]?\s*$'                                 # optional closing bracket
+)
+
+
+def _classify_header(title: str):
+    """Classify a header title text into a section type."""
+    for pat, sec_type, color in _SEC_PATTERNS:
+        if pat.search(title):
+            return sec_type, color
+    return 'analysis', C_TEXT_MUTED
+
+
+def _highlight_metrics(text: str, section_type: str) -> str:
+    """Wrap numbers+units in colored metric chips."""
+    def _replace(m):
+        num_str = m.group(1)
+        unit = m.group(2)
+        # Determine polarity
+        if section_type == 'risk' or num_str.startswith('-'):
+            cls = 'ai-metric-negative'
+        elif section_type in ('growth', 'summary') or num_str.startswith('+'):
+            cls = 'ai-metric-positive'
+        else:
+            cls = 'ai-metric-neutral'
+        return f'<span class="ai-metric-chip {cls}">{num_str}{unit}</span>'
+    return _METRIC_RE.sub(_replace, text)
+
+
+def _format_action_items(body: str) -> str:
+    """Convert numbered list text into styled action items."""
+    lines = [l.strip() for l in body.split('\n') if l.strip()]
+    # Detect numbered items: 1. xxx  or  ① xxx  or  一、xxx
+    num_re = re.compile(r'^(?:(\d+)[\.、）)]|[①②③④⑤⑥⑦⑧⑨⑩])\s*(.*)')
+    items_html = []
+    counter = 1
+    for line in lines:
+        m = num_re.match(line)
+        if m:
+            text = m.group(2) if m.group(2) else line
+            text = _highlight_metrics(text, 'action')
+            items_html.append(
+                f'<div class="ai-action-item">'
+                f'<div class="ai-action-num">{counter}</div>'
+                f'<div class="ai-action-text">{text}</div></div>'
+            )
+            counter += 1
+        else:
+            # Non-numbered line in action section — still render with highlight
+            text = _highlight_metrics(line, 'action')
+            items_html.append(
+                f'<div class="ai-action-item">'
+                f'<div class="ai-action-num">→</div>'
+                f'<div class="ai-action-text">{text}</div></div>'
+            )
+    return '\n'.join(items_html)
+
+
+def _split_into_sections(text: str):
+    """Split answer text into typed sections by detecting header lines."""
+    lines = text.split('\n')
+    sections = []
+    current = None
+
+    for line in lines:
+        stripped = line.strip()
+        if not stripped:
+            if current:
+                current['body'] += '\n'
+            continue
+
+        # Check if this line is a header (short, matches patterns)
+        # Remove markdown bold markers for detection
+        clean = re.sub(r'\*\*', '', stripped)
+        is_header = False
+
+        if len(clean) <= 20:
+            sec_type, color = _classify_header(clean)
+            # If it matched a known keyword, treat as header
+            for pat, _, _ in _SEC_PATTERNS:
+                if pat.search(clean):
+                    is_header = True
+                    break
+
+        if is_header:
+            if current:
+                sections.append(current)
+            current = {'type': sec_type, 'title': clean, 'color': color, 'body': ''}
+        else:
+            if current is None:
+                # First lines before any header → treat as summary
+                current = {'type': 'summary', 'title': '核心结论', 'color': SP_GREEN, 'body': ''}
+            current['body'] += stripped + '\n'
+
+    if current:
+        sections.append(current)
+
+    return sections
+
+
+def _format_answer_html(answer: str) -> str:
+    """Parse plain-text answer into structured card-based HTML."""
+    if not answer:
+        return ''
+
+    # Very short answers — no parsing needed
+    if len(answer.strip()) < 50:
+        return (f'<div class="ai-response-container">'
+                f'<div class="ai-summary"><div class="ai-summary-text">'
+                f'{answer}</div></div></div>')
+
+    # Split into sections
+    sections = _split_into_sections(answer)
+
+    # Fallback: if only 1 section or none, create summary + body
+    if len(sections) <= 1:
+        text = answer.strip()
+        # Find first sentence break
+        for sep in ['。', '，', '. ', ', ']:
+            idx = text.find(sep, 30)
+            if idx > 0 and idx < len(text) - 20:
+                summary_text = text[:idx + len(sep)]
+                body_text = text[idx + len(sep):]
+                sections = [
+                    {'type': 'summary', 'title': '核心结论', 'color': SP_GREEN, 'body': summary_text},
+                    {'type': 'analysis', 'title': '详细分析', 'color': C_TEXT_MUTED, 'body': body_text},
+                ]
+                break
+        else:
+            sections = [{'type': 'summary', 'title': '核心结论', 'color': SP_GREEN, 'body': text}]
+
+    # Render sections
+    parts = ['<div class="ai-response-container">']
+    for sec in sections:
+        body = sec['body'].strip()
+        if not body:
+            continue
+
+        if sec['type'] == 'summary':
+            body_html = _highlight_metrics(body.replace('\n', '<br>'), 'summary')
+            parts.append(
+                f'<div class="ai-summary">'
+                f'<div class="ai-summary-label">{sec["title"]}</div>'
+                f'<div class="ai-summary-text">{body_html}</div>'
+                f'</div>'
+            )
+        elif sec['type'] == 'action':
+            items_html = _format_action_items(body)
+            parts.append(
+                f'<div class="ai-section ai-section-action">'
+                f'<div class="ai-section-header">'
+                f'<span class="ai-section-icon">▸</span> {sec["title"]}</div>'
+                f'<div class="ai-section-body">{items_html}</div>'
+                f'</div>'
+            )
+        else:
+            body_html = _highlight_metrics(body.replace('\n', '<br>'), sec['type'])
+            parts.append(
+                f'<div class="ai-section ai-section-{sec["type"]}">'
+                f'<div class="ai-section-header">'
+                f'<span class="ai-section-icon">▸</span> {sec["title"]}</div>'
+                f'<div class="ai-section-body">{body_html}</div>'
+                f'</div>'
+            )
+
+    parts.append('</div>')
+    return '\n'.join(parts)
+
+
+def _inline_meta_html(critique: dict = None, hitl_decision: dict = None) -> str:
+    """Compact inline HTML for quality badge + HITL confidence."""
+    parts = ['<div class="ai-inline-meta">']
+
+    if critique:
+        score = critique.get("overall_score", 0)
+        passed = critique.get("pass_threshold", score >= 7.0)
+        bg = "rgba(0,255,136,0.08)" if passed else "rgba(255,136,0,0.08)"
+        color = SP_GREEN if passed else C_WARNING
+        border = "rgba(0,255,136,0.25)" if passed else "rgba(255,136,0,0.25)"
+        icon = "✓" if passed else "!"
+        label = "PASS" if passed else "REVIEW"
+        parts.append(
+            f'<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;'
+            f'font-family:\'JetBrains Mono\',monospace;font-size:0.65rem;font-weight:700;'
+            f'background:{bg};color:{color};border:1px solid {border};">'
+            f'{icon} {label} {score:.1f}/10</span>'
+        )
+
+    if hitl_decision:
+        score = hitl_decision.get("confidence_score", 0)
+        level = hitl_decision.get("confidence_level", "medium")
+        pct = int(score * 100)
+        level_map = {
+            "high": (SP_GREEN, "HIGH CONFIDENCE"),
+            "medium": (C_WARNING, "MEDIUM"),
+            "low": (SP_RED, "LOW CONFIDENCE"),
+        }
+        color, label = level_map.get(level, (C_WARNING, level.upper()))
+        r, g, b = int(color[1:3], 16), int(color[3:5], 16), int(color[5:7], 16)
+        parts.append(
+            f'<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;'
+            f'font-family:\'JetBrains Mono\',monospace;font-size:0.65rem;font-weight:700;'
+            f'background:rgba({r},{g},{b},0.08);color:{color};'
+            f'border:1px solid rgba({r},{g},{b},0.25);">'
+            f'{pct} {label}</span>'
+        )
+
+    parts.append('</div>')
+    return ''.join(parts)
+
+
+def _render_expert_mini_cards(agent_outputs: dict):
+    """Render each expert's individual analysis in a styled mini-card."""
+    if not agent_outputs:
+        return
+    for expert_name, output in agent_outputs.items():
+        a = AGENTS.get(expert_name, {"icon": "🤖", "color": C_TEXT_MUTED, "role": "AGENT", "name": expert_name})
+        display_text = str(output)[:500] + ("..." if len(str(output)) > 500 else "")
+        display_text = display_text.replace("<", "&lt;").replace(">", "&gt;").replace("\n", "<br>")
+        st.markdown(f'''
+        <div class="ai-expert-card" style="border-left-color:{a['color']}">
+            <div class="ai-expert-header">
+                <span class="ai-expert-icon">{a.get('icon', '🤖')}</span>
+                <span class="ai-expert-name" style="color:{a['color']}">{a.get('name', expert_name)}</span>
+                <span class="ai-expert-role">{a.get('role', 'AGENT')}</span>
+            </div>
+            <div class="ai-expert-body">{display_text}</div>
+        </div>''', unsafe_allow_html=True)
+
+
+# ════════════════════════════════════════════════════════════════
 #  v4.0 STREAMING HELPERS
 # ════════════════════════════════════════════════════════════════
 
@@ -422,14 +674,16 @@ def _render_agent_cards(agents_used: list, agent_outputs: dict = None):
         })
 
         # All agents in agents_used list have completed
-        status = '<span style="font-family:monospace;font-size:0.58rem;padding:0.15rem 0.5rem;font-weight:700;flex-shrink:0;margin-left:auto;letter-spacing:0.05em;background:rgba(0,255,136,0.08);color:#00FF88;border:1px solid rgba(0,255,136,0.25);">DONE</span>'
+        status = ('<span style="font-family:\'JetBrains Mono\',monospace;font-size:0.6rem;padding:0.2rem 0.6rem;'
+                  'font-weight:700;flex-shrink:0;margin-left:auto;letter-spacing:0.05em;'
+                  'background:rgba(0,255,136,0.08);color:#00FF88;border:1px solid rgba(0,255,136,0.25);">DONE</span>')
 
         cards_html += f"""
-        <div style="background:#111;border:1px solid #2f2f2f;border-left:2px solid {a['color']};padding:0.8rem 1rem;margin:0.3rem 0;display:flex;align-items:center;gap:0.75rem;">
-            <div style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:0.9rem;flex-shrink:0;background:{a['bg']};border:1px solid {a['border']};">{a['icon']}</div>
+        <div style="background:#111;border:1px solid #2f2f2f;border-left:2px solid {a['color']};padding:1rem 1.2rem;margin:0.5rem 0;display:flex;align-items:center;gap:1rem;">
+            <div style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;background:{a['bg']};border:1px solid {a['border']};">{a['icon']}</div>
             <div style="flex:1;min-width:0;">
-                <div style="font-family:monospace;font-size:0.78rem;font-weight:700;color:#fff;letter-spacing:0.03em;">{a['name']}</div>
-                <div style="font-family:monospace;font-size:0.58rem;color:#6a6a6a;text-transform:uppercase;letter-spacing:0.1em;">{a['role']}</div>
+                <div style="font-family:'Space Grotesk',sans-serif;font-size:0.85rem;font-weight:700;color:#fff;letter-spacing:0.03em;">{a['name']}</div>
+                <div style="font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:#6a6a6a;text-transform:uppercase;letter-spacing:0.1em;margin-top:2px;">{a['role']}</div>
             </div>
             {status}
         </div>"""
@@ -474,7 +728,7 @@ def _render_thinking_timeline(thinking_log: str, total_time: float = 0):
 
             time_m = re.search(r'(\d+\.?\d*)\s*[sS秒]', line)
             time_str = f' `{time_m.group(1)}s`' if time_m else ""
-            st.markdown(f"<span style='color:{color};font-size:8px;'>●</span> <span style='font-family:monospace;font-size:0.75rem;color:#aaa;'>{line}</span>{time_str}", unsafe_allow_html=True)
+            st.markdown(f"<span style='color:{color};font-size:8px;'>●</span> <span style='font-family:\"JetBrains Mono\",monospace;font-size:0.75rem;color:#aaa;line-height:1.8;'>{line}</span>{time_str}", unsafe_allow_html=True)
 
 
 def _render_quality_badge(critique: dict):
@@ -503,7 +757,7 @@ def _render_quality_badge(critique: dict):
 
     st.markdown(f"""
     <div style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.35rem 0.7rem;
-         font-family:monospace;font-size:0.65rem;font-weight:700;letter-spacing:0.05em;
+         font-family:'JetBrains Mono',monospace;font-size:0.68rem;font-weight:700;letter-spacing:0.05em;
          margin:0.25rem 0;background:{bg};color:{color};border:1px solid {border};">
         <span style="font-size:0.8rem;">{icon}</span>
         <span>{label}</span>
@@ -546,17 +800,17 @@ def _render_hitl_card(hitl_decision: dict):
                 items.append(f"• {t.get('message', t.get('reason', str(t)))}")
             else:
                 items.append(f"• {t}")
-        trig_html = f'<div style="font-family:monospace;font-size:0.55rem;color:#6a6a6a;text-align:right;flex-shrink:0;">{"<br>".join(items)}</div>'
+        trig_html = f'<div style="font-family:\'JetBrains Mono\',monospace;font-size:0.6rem;color:#6a6a6a;text-align:right;flex-shrink:0;">{"<br>".join(items)}</div>'
 
     gauge_bg = f"rgba({','.join(str(int(color.lstrip('#')[i:i+2],16)) for i in (0,2,4))},0.10)"
     gauge_border = f"rgba({','.join(str(int(color.lstrip('#')[i:i+2],16)) for i in (0,2,4))},0.35)"
 
     st.markdown(f"""
-    <div style="background:#080808;border:1px solid #2f2f2f;padding:0.7rem 1rem;margin:0.5rem 0;display:flex;align-items:center;gap:0.8rem;">
-        <div style="width:42px;height:42px;display:flex;align-items:center;justify-content:center;font-family:monospace;font-size:0.72rem;font-weight:700;flex-shrink:0;background:{gauge_bg};color:{color};border:2px solid {gauge_border};">{pct}</div>
+    <div style="background:#080808;border:1px solid #2f2f2f;padding:1rem 1.2rem;margin:0.8rem 0;display:flex;align-items:center;gap:1rem;">
+        <div style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-size:0.85rem;font-weight:700;flex-shrink:0;background:{gauge_bg};color:{color};border:2px solid {gauge_border};">{pct}</div>
         <div style="flex:1;">
-            <div style="font-family:monospace;font-size:0.65rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:{color};">{label}</div>
-            <div style="font-family:monospace;font-size:0.72rem;color:#aaa;margin-top:0.1rem;">{act_text}</div>
+            <div style="font-family:'Space Grotesk',sans-serif;font-size:0.75rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:{color};">{label}</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:#aaa;margin-top:0.2rem;">{act_text}</div>
         </div>
         {trig_html}
     </div>""", unsafe_allow_html=True)
@@ -587,7 +841,7 @@ def _render_trace_bar(trace_id: str = "", obs_summary: dict = None):
             items.append(f'<span style="margin-right:0.5rem;">CALLS <span style="color:#00FF88;font-weight:700;">{calls}</span></span>')
 
     if items:
-        st.markdown(f'<div style="display:flex;align-items:center;gap:1rem;padding:0.35rem 0.8rem;background:#080808;border:1px solid #2f2f2f;font-family:monospace;font-size:0.58rem;color:#6a6a6a;margin:0.4rem 0;">{" ".join(items)}</div>', unsafe_allow_html=True)
+        st.markdown('<div class="trace-bar">' + " ".join(items) + '</div>', unsafe_allow_html=True)
 
 
 def _render_suggestion_chips():
@@ -603,22 +857,23 @@ def _render_suggestion_chips():
 def _render_welcome():
     """Welcome state — command center terminal style."""
     st.markdown(f"""
-    <div class="hero-section">
-        <div class="hero-badge">
-            <span style="width:6px;height:6px;border-radius:50%;background:{SP_GREEN};display:inline-block;"></span>
-            AGENT TERMINAL · v5
+    <div style="text-align:center; padding:32px 0 24px 0;">
+        <div style="margin-bottom:16px;">
+            <span class="welcome-badge">
+                <span class="badge-dot"></span>
+                AGENT TERMINAL · v5
+            </span>
         </div>
-        <div class="hero-title">
-            <span style="color:{SP_GREEN};">SPROCOMM</span><br>
-            <span style="color:#FFFFFF;">SALES INTELLIGENCE</span>
-        </div>
-        <div class="hero-sub">
+        <h1 class="welcome-title-green" style="font-size:2.2rem;">SPROCOMM</h1>
+        <h1 class="welcome-title-white" style="font-size:2.2rem;">SALES INTELLIGENCE</h1>
+        <p style="color:#6a6a6a; font-size:0.78rem; margin-top:12px;
+           font-family:'JetBrains Mono',monospace; letter-spacing:0.03em;">
             // 多智能体协作 · 12维深度分析 · 实时预警系统
-        </div>
+        </p>
     </div>
     """, unsafe_allow_html=True)
 
-    # Agent roster — command center style
+    # Agent roster — command center style with better spacing
     cols = st.columns(3)
     roster = [
         ("◈", "数据分析师", "DATA ANALYST", SP_GREEN, "rgba(0,255,136,0.06)", "rgba(0,255,136,0.20)"),
@@ -629,12 +884,12 @@ def _render_welcome():
         with cols[i]:
             st.markdown(f"""
             <div style="background:{bg};border:1px solid {border};
-                        padding:1.2rem;text-align:center;">
-                <div style="font-size:1.4rem;margin-bottom:0.4rem;color:{color};">{icon}</div>
-                <div style="font-family:var(--font-mono);font-size:0.82rem;font-weight:700;color:{color};
+                        padding:1.5rem 1rem;text-align:center;">
+                <div style="font-size:1.6rem;margin-bottom:0.6rem;color:{color};">{icon}</div>
+                <div style="font-family:'Space Grotesk',sans-serif;font-size:0.88rem;font-weight:700;color:{color};
                      letter-spacing:0.05em;">{name}</div>
-                <div style="font-family:var(--font-mono);font-size:0.52rem;color:{C_TEXT_MUTED};
-                            text-transform:uppercase;letter-spacing:0.1em;margin-top:0.15rem;">{role}</div>
+                <div style="font-family:'JetBrains Mono',monospace;font-size:0.55rem;color:{C_TEXT_MUTED};
+                            text-transform:uppercase;letter-spacing:0.1em;margin-top:0.25rem;">{role}</div>
             </div>""", unsafe_allow_html=True)
 
 
@@ -676,32 +931,41 @@ def render_chat_tab(data, results: dict, benchmark: dict = None, forecast: dict 
                     st.markdown(msg["content"])
             else:
                 with st.chat_message("assistant", avatar="🌿"):
-                    st.markdown(msg["content"])
-                    if msg.get("agents_used"):
-                        _render_agent_cards(msg["agents_used"], msg.get("expert_outputs"))
-                    if msg.get("thinking_log"):
-                        _render_thinking_timeline(msg["thinking_log"], msg.get("total_time", 0))
-                    # v4.0 feature badges (from history)
-                    v4f = msg.get("v4_features", {})
-                    if v4f:
-                        _render_v4_badges({
-                            "tool_use_enabled": v4f.get("tool_use"),
-                            "guardrails_enabled": v4f.get("guardrails"),
-                            "streaming_enabled": v4f.get("streaming"),
-                            "from_cache": v4f.get("from_cache"),
-                        })
-                    if msg.get("critique"):
-                        _render_quality_badge(msg["critique"])
-                    if msg.get("hitl_decision"):
-                        _render_hitl_card(msg["hitl_decision"])
+                    # ── 1. Formatted answer ──
+                    formatted = _format_answer_html(msg["content"])
+                    st.markdown(formatted, unsafe_allow_html=True)
+
+                    # ── 2. Inline meta ──
+                    if msg.get("critique") or msg.get("hitl_decision"):
+                        st.markdown(
+                            _inline_meta_html(msg.get("critique"), msg.get("hitl_decision")),
+                            unsafe_allow_html=True
+                        )
+
+                    # ── 3. Agent details — collapsed ──
+                    with st.expander("🔬 Agent Details", expanded=False):
+                        if msg.get("agents_used"):
+                            _render_agent_cards(msg["agents_used"], msg.get("expert_outputs"))
+                        if msg.get("expert_outputs"):
+                            _render_expert_mini_cards(msg.get("expert_outputs"))
+                        v4f = msg.get("v4_features", {})
+                        if v4f:
+                            _render_v4_badges({
+                                "tool_use_enabled": v4f.get("tool_use"),
+                                "guardrails_enabled": v4f.get("guardrails"),
+                                "streaming_enabled": v4f.get("streaming"),
+                                "from_cache": v4f.get("from_cache"),
+                            })
+                        if msg.get("v8_enhanced"):
+                            _render_v8_badges(msg)
+                        if msg.get("v9_modules"):
+                            _render_v9_badges(msg)
+                        if msg.get("thinking_log"):
+                            _render_thinking_timeline(msg["thinking_log"], msg.get("total_time", 0))
+
+                    # ── 4. Trace bar ──
                     if msg.get("trace_id") or msg.get("obs_summary"):
                         _render_trace_bar(msg.get("trace_id", ""), msg.get("obs_summary"))
-                    # V8.0 badges from history
-                    if msg.get("v8_enhanced"):
-                        _render_v8_badges(msg)
-                    # V9.0 badges from history
-                    if msg.get("v9_modules"):
-                        _render_v9_badges(msg)
 
     # ── Input ───────────────────────────────────────────────
     pending = st.session_state.pop("pending_question", None)
@@ -861,35 +1125,39 @@ def render_chat_tab(data, results: dict, benchmark: dict = None, forecast: dict 
             critique = result.get("critique", {})
             hitl_decision = result.get("hitl_decision", {})
 
-            st.markdown(answer)
-            if agents_used: _render_agent_cards(agents_used, agent_outputs)
-            if thinking_log: _render_thinking_timeline(thinking_log, elapsed)
+            # ── 1. FORMATTED ANSWER — the hero ──
+            formatted_html = _format_answer_html(answer)
+            st.markdown(formatted_html, unsafe_allow_html=True)
 
-            # v4.0: Feature badges
-            _render_v4_badges(result)
+            # ── 2. INLINE META — quality + confidence compact ──
+            if critique or hitl_decision:
+                st.markdown(_inline_meta_html(critique, hitl_decision), unsafe_allow_html=True)
 
-            # v8.0: V8 badges + gate card + review card
-            if result.get("v8_enhanced"):
-                _render_v8_badges(result)
-                with st.expander("🔬 V8.0 Details", expanded=False):
+            # ── 3. AGENT DETAILS — all collapsed in one expander ──
+            with st.expander("🔬 Agent Details", expanded=False):
+                if agents_used:
+                    _render_agent_cards(agents_used, agent_outputs)
+                if agent_outputs:
+                    _render_expert_mini_cards(agent_outputs)
+                _render_v4_badges(result)
+                if result.get("v8_enhanced"):
+                    _render_v8_badges(result)
                     _render_v8_gate_card(result)
                     _render_v8_review_card(result)
-                    # Contract issues
                     issues = result.get("v8_contract_issues", {})
                     if issues:
                         for agent_name, issue_list in issues.items():
                             for iss in issue_list:
                                 st.caption(f"⚠️ [{agent_name}] {iss}")
-
-            # v9.0: V9 论文模块 badges + details
-            if result.get("v9_modules"):
-                _render_v9_badges(result)
-                with st.expander("🧬 V9.0 论文模块", expanded=False):
+                if result.get("v9_modules"):
+                    _render_v9_badges(result)
                     _render_v9_details(result)
+                if thinking_log:
+                    _render_thinking_timeline(thinking_log, elapsed)
 
-            if critique: _render_quality_badge(critique)
-            if hitl_decision: _render_hitl_card(hitl_decision)
-            if trace_id or obs_summary: _render_trace_bar(trace_id, obs_summary)
+            # ── 4. TRACE BAR — subtle bottom ──
+            if trace_id or obs_summary:
+                _render_trace_bar(trace_id, obs_summary)
 
             st.session_state.chat_history.append({"role": "user", "content": question})
             st.session_state.chat_history.append({

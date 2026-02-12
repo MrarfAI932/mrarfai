@@ -188,8 +188,365 @@ button[kind="headerNoPadding"] { color: #00FF88 !important; }
 .hitl-info .hitl-action { font-family:var(--font-mono);font-size:0.72rem;color:#aaa;margin-top:0.1rem; }
 .hitl-triggers { font-family:var(--font-mono);font-size:0.55rem;color:#6a6a6a;text-align:right;flex-shrink:0; }
 
-.trace-bar { display:flex;align-items:center;gap:1rem;padding:0.35rem 0.8rem;background:#080808;border:1px solid #2f2f2f;font-family:var(--font-mono);font-size:0.58rem;color:#6a6a6a;margin:0.4rem 0;letter-spacing:0.03em; }
+.trace-bar { display:flex;align-items:center;gap:1.2rem;padding:0.6rem 1rem;background:#080808;border:1px solid #2f2f2f;font-family:var(--font-mono);font-size:0.6rem;color:#6a6a6a;margin:0.8rem 0;letter-spacing:0.03em; }
 .trace-bar .trace-value { color:#00FF88;font-weight:700; }
+
+/* ======================================== */
+/* V9.0 UI POLISH — Animations & Keyframes */
+/* ======================================== */
+@keyframes neon-pulse {
+    0%, 100% { opacity:1; box-shadow:0 0 0 0 rgba(0,255,136,0.5); }
+    50%      { opacity:0.7; box-shadow:0 0 8px 4px rgba(0,255,136,0.15); }
+}
+@keyframes fade-in-up {
+    from { opacity:0; transform:translateY(16px); }
+    to   { opacity:1; transform:translateY(0); }
+}
+@keyframes glow-border {
+    0%, 100% { border-color:rgba(0,255,136,0.12); }
+    50%      { border-color:rgba(0,255,136,0.30); }
+}
+@keyframes v9-spin { to { transform:rotate(360deg); } }
+@keyframes badge-glow {
+    0%, 100% { box-shadow:0 0 0 0 rgba(0,255,136,0.08); }
+    50%      { box-shadow:0 0 12px rgba(0,255,136,0.12), 0 0 0 1px rgba(0,255,136,0.20); }
+}
+
+/* ── Status Bar (post-load) ── */
+.status-bar {
+    display:flex; align-items:center; gap:8px;
+    padding:8px 14px; margin-bottom:16px;
+    background:rgba(0,255,136,0.03); border:1px solid rgba(0,255,136,0.10);
+    animation:fade-in-up 0.5s ease-out;
+}
+.status-bar .status-dot {
+    width:6px; height:6px; border-radius:50%; background:#00FF88;
+    animation:neon-pulse 2s ease-in-out infinite; flex-shrink:0;
+}
+.status-bar .status-text {
+    font-family:var(--font-mono); font-size:0.62rem; font-weight:700;
+    color:#00FF88; letter-spacing:0.1em; text-transform:uppercase;
+}
+.status-bar .status-meta {
+    font-family:var(--font-mono); font-size:0.55rem; color:#6a6a6a;
+    letter-spacing:0.05em; margin-left:auto;
+}
+
+/* ── Section Header ── */
+.section-header {
+    font-family:var(--font-mono); font-size:0.65rem; font-weight:700;
+    letter-spacing:0.12em; text-transform:uppercase; color:var(--text-2);
+    padding:8px 0 6px; margin:16px 0 10px;
+    border-bottom:2px solid var(--neon);
+    display:inline-block;
+}
+
+/* ── Welcome Page ── */
+.welcome-badge {
+    display:inline-flex; align-items:center; gap:8px;
+    padding:6px 16px;
+    background:rgba(0,255,136,0.06); border:1px solid rgba(0,255,136,0.25);
+    font-size:0.62rem; color:#00FF88; font-weight:700;
+    letter-spacing:0.1em; font-family:var(--font-mono);
+    text-transform:uppercase;
+    animation:badge-glow 3s ease-in-out infinite;
+}
+.welcome-badge .badge-dot {
+    width:6px; height:6px; border-radius:50%; background:#00FF88;
+    animation:neon-pulse 2s ease-in-out infinite;
+}
+.welcome-title-green {
+    font-size:3rem; font-weight:700; color:#00FF88; letter-spacing:-2px;
+    margin:0; line-height:1.1; font-family:'Space Grotesk',sans-serif;
+    text-shadow: 0 0 30px rgba(0,255,136,0.20), 0 0 60px rgba(0,255,136,0.06);
+}
+.welcome-title-white {
+    font-size:3rem; font-weight:700; color:#FFFFFF; letter-spacing:-2px;
+    margin:0; line-height:1.1; font-family:'Space Grotesk',sans-serif;
+}
+.welcome-card {
+    background:var(--bg-elevated); border:1px solid var(--border-subtle);
+    border-left:2px solid var(--neon); display:block; text-align:left;
+    padding:1.2rem; position:relative; overflow:hidden;
+    transition:transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+.welcome-card::after {
+    content:""; position:absolute; bottom:0; left:0; right:0; height:1px;
+    background:linear-gradient(90deg, transparent, rgba(0,255,136,0.25), transparent);
+    opacity:0; transition:opacity 0.3s;
+}
+.welcome-card:hover {
+    transform:translateY(-2px); border-color:rgba(0,255,136,0.25);
+    box-shadow:0 6px 24px rgba(0,0,0,0.3);
+}
+.welcome-card:hover::after { opacity:1; }
+
+/* ── Sidebar Enhancements ── */
+.sidebar-logo-box {
+    width:32px; height:32px; background:#00FF88;
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+    box-shadow:0 0 10px rgba(0,255,136,0.30), 0 0 20px rgba(0,255,136,0.08);
+}
+[data-testid="stSidebar"] hr {
+    border-color:rgba(255,255,255,0.04) !important;
+}
+[data-testid="stSidebar"] .stFileUploader {
+    border:1px dashed rgba(255,255,255,0.08) !important;
+    transition:border-color 0.2s;
+}
+[data-testid="stSidebar"] .stFileUploader:hover {
+    border-color:rgba(0,255,136,0.25) !important;
+}
+[data-testid="stSidebar"] .stCaption, [data-testid="stSidebar"] small {
+    font-family:var(--font-mono) !important; font-size:0.55rem !important;
+    color:#6a6a6a !important; letter-spacing:0.03em !important;
+}
+.agent-active-badge {
+    display:flex; align-items:center; gap:6px; padding:6px 10px;
+    background:rgba(0,255,136,0.06); border:1px solid rgba(0,255,136,0.15);
+    margin-top:4px;
+}
+.agent-active-badge .pulse-dot {
+    width:5px; height:5px; border-radius:50%; background:#00FF88;
+    animation:neon-pulse 2s ease-in-out infinite;
+    box-shadow:0 0 6px rgba(0,255,136,0.4);
+}
+
+/* ── Metric Card Enhancements ── */
+[data-testid="stMetric"] {
+    background:var(--bg-elevated) !important; border:1px solid var(--border-subtle) !important;
+    padding:14px 16px !important; position:relative;
+    transition:border-color 0.2s, box-shadow 0.2s;
+    overflow:hidden;
+}
+[data-testid="stMetric"]::before {
+    content:""; position:absolute; left:0; top:0; bottom:0; width:3px;
+    background:linear-gradient(180deg, #00FF88, rgba(0,255,136,0.15));
+}
+[data-testid="stMetric"]:hover {
+    border-color:rgba(0,255,136,0.20) !important;
+    box-shadow:0 0 12px rgba(0,255,136,0.06);
+}
+[data-testid="stMetricLabel"] {
+    font-family:var(--font-mono) !important; font-size:0.55rem !important;
+    font-weight:700 !important; letter-spacing:0.1em !important;
+    text-transform:uppercase !important; color:var(--text-3) !important;
+}
+[data-testid="stMetricValue"] {
+    font-family:var(--font-sans) !important; font-weight:700 !important;
+    color:var(--text-1) !important;
+}
+[data-testid="stMetricDelta"] {
+    font-family:var(--font-mono) !important; font-size:0.65rem !important;
+}
+
+/* ── Tab Enhancements ── */
+.stTabs [aria-selected="true"] {
+    text-shadow:0 0 8px rgba(0,255,136,0.3) !important;
+}
+.stTabs [data-baseweb="tab"]:hover {
+    background:rgba(255,255,255,0.02) !important;
+}
+
+/* ── Expander Enhancements ── */
+.streamlit-expanderHeader {
+    font-family:var(--font-mono) !important; font-size:0.72rem !important;
+    background:var(--bg-elevated) !important;
+}
+[data-testid="stExpander"] {
+    background:var(--bg-elevated) !important;
+    border:1px solid var(--border-subtle) !important;
+    transition:border-color 0.2s;
+}
+[data-testid="stExpander"]:hover {
+    border-color:rgba(0,255,136,0.15) !important;
+}
+
+/* ── Chat Area — Breathing Room ── */
+[data-testid="stChatMessage"] {
+    padding:1rem 1.2rem !important; margin-bottom:0.8rem !important;
+}
+[data-testid="stChatMessage"] p {
+    font-family:'JetBrains Mono',monospace !important;
+    font-size:0.82rem !important; line-height:1.85 !important;
+    color:#d4d4d4 !important;
+}
+[data-testid="stChatMessage"] h1,
+[data-testid="stChatMessage"] h2 {
+    font-family:'Space Grotesk',sans-serif !important;
+    color:#FFFFFF !important; margin-top:1rem !important;
+}
+[data-testid="stChatMessage"] h3,
+[data-testid="stChatMessage"] h4 {
+    font-family:'Space Grotesk',sans-serif !important;
+    color:#e2e8f0 !important; font-size:0.95rem !important;
+    margin-top:0.8rem !important;
+}
+[data-testid="stChatMessage"] li {
+    font-family:'JetBrains Mono',monospace !important;
+    font-size:0.8rem !important; line-height:1.8 !important;
+    color:#b4b4b4 !important; margin-bottom:0.3rem !important;
+}
+[data-testid="stChatMessage"] strong {
+    color:#FFFFFF !important;
+}
+/* Chat input */
+[data-testid="stChatInput"] {
+    border-top:1px solid #2f2f2f !important;
+    padding-top:0.8rem !important;
+}
+[data-testid="stChatInput"] textarea {
+    font-family:'JetBrains Mono',monospace !important;
+    font-size:0.82rem !important;
+}
+/* Status expander in chat */
+[data-testid="stStatus"] {
+    margin:0.6rem 0 !important;
+}
+[data-testid="stStatus"] p {
+    font-size:0.75rem !important; line-height:1.6 !important;
+}
+
+/* ── Suggestion Chips ── */
+.stButton button {
+    font-family:'JetBrains Mono',monospace !important;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width:4px; height:4px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:#2f2f2f; border-radius:2px; }
+::-webkit-scrollbar-thumb:hover { background:#00FF88; }
+
+/* ════════════════════════════════════════════════════════ */
+/* AI RESPONSE — Card-based Answer Layout                  */
+/* ════════════════════════════════════════════════════════ */
+
+.ai-response-container {
+    display:flex; flex-direction:column; gap:10px;
+    margin:4px 0 14px; animation:fade-in-up 0.4s ease-out;
+}
+
+/* Summary — Hero card */
+.ai-summary {
+    background:rgba(0,255,136,0.04); border:1px solid rgba(0,255,136,0.15);
+    border-left:3px solid #00FF88; padding:16px 20px; position:relative;
+}
+.ai-summary::after {
+    content:""; position:absolute; bottom:0; left:0; right:0; height:1px;
+    background:linear-gradient(90deg, #00FF88, transparent 80%); opacity:0.25;
+}
+.ai-summary-label {
+    font-family:var(--font-mono); font-size:0.55rem; font-weight:700;
+    letter-spacing:0.12em; text-transform:uppercase; color:#00FF88; margin-bottom:6px;
+}
+.ai-summary-text {
+    font-family:var(--font-sans); font-size:0.92rem; font-weight:500;
+    color:#FFFFFF; line-height:1.75;
+}
+
+/* Section cards */
+.ai-section {
+    background:#0C0C0C; border:1px solid rgba(255,255,255,0.06);
+    border-left:3px solid #6a6a6a; padding:12px 16px;
+    transition:border-color 0.2s;
+}
+.ai-section:hover { border-color:rgba(255,255,255,0.12); }
+.ai-section-header {
+    font-family:var(--font-mono); font-size:0.62rem; font-weight:700;
+    letter-spacing:0.08em; text-transform:uppercase; color:#8a8a8a;
+    margin-bottom:6px; padding-bottom:4px;
+    border-bottom:1px solid rgba(255,255,255,0.04);
+}
+.ai-section-icon { color:#00FF88; margin-right:4px; }
+.ai-section-body {
+    font-family:var(--font-mono); font-size:0.8rem;
+    color:#b4b4b4; line-height:1.8;
+}
+
+/* Section color variants */
+.ai-section-growth { border-left-color:#00FF88; }
+.ai-section-growth .ai-section-header { color:#00FF88; }
+.ai-section-risk { border-left-color:#D94040; }
+.ai-section-risk .ai-section-header { color:#D94040; }
+.ai-section-action { border-left-color:#00A0C8; }
+.ai-section-action .ai-section-header { color:#00A0C8; }
+.ai-section-analysis { border-left-color:#8a8a8a; }
+
+/* Metric chips — inline number highlights */
+.ai-metric-chip {
+    display:inline; padding:1px 5px;
+    font-family:var(--font-mono); font-weight:700;
+    font-size:inherit; letter-spacing:0.02em;
+}
+.ai-metric-positive {
+    color:#00FF88; background:rgba(0,255,136,0.08);
+    border:1px solid rgba(0,255,136,0.20);
+}
+.ai-metric-negative {
+    color:#D94040; background:rgba(217,64,64,0.08);
+    border:1px solid rgba(217,64,64,0.20);
+}
+.ai-metric-neutral {
+    color:#FFFFFF; background:rgba(255,255,255,0.06);
+    border:1px solid rgba(255,255,255,0.10);
+}
+
+/* Action items */
+.ai-action-item {
+    display:flex; align-items:flex-start; gap:10px;
+    padding:8px 12px; margin:4px 0;
+    background:rgba(0,160,200,0.03); border-left:2px solid rgba(0,160,200,0.30);
+}
+.ai-action-num {
+    font-family:var(--font-mono); font-size:0.6rem; font-weight:700;
+    color:#00A0C8; background:rgba(0,160,200,0.10);
+    border:1px solid rgba(0,160,200,0.25);
+    width:20px; height:20px; display:flex; align-items:center;
+    justify-content:center; flex-shrink:0; margin-top:1px;
+}
+.ai-action-text {
+    font-family:var(--font-mono); font-size:0.8rem; color:#ccc; line-height:1.7;
+}
+
+/* Expert mini-cards (inside expander) */
+.ai-expert-card {
+    background:#080808; border:1px solid #2f2f2f;
+    padding:10px 14px; margin:6px 0; border-left:3px solid #6a6a6a;
+}
+.ai-expert-header {
+    display:flex; align-items:center; gap:8px; margin-bottom:6px;
+}
+.ai-expert-icon { font-size:0.9rem; }
+.ai-expert-name {
+    font-family:var(--font-sans); font-size:0.78rem; font-weight:700;
+    letter-spacing:0.03em;
+}
+.ai-expert-role {
+    font-family:var(--font-mono); font-size:0.52rem; color:#6a6a6a;
+    text-transform:uppercase; letter-spacing:0.1em; margin-left:auto;
+}
+.ai-expert-body {
+    font-family:var(--font-mono); font-size:0.75rem; color:#999;
+    line-height:1.7; max-height:140px; overflow-y:auto;
+}
+
+/* Inline meta row */
+.ai-inline-meta {
+    display:flex; align-items:center; gap:8px;
+    flex-wrap:wrap; margin:6px 0;
+}
+
+/* ── Welcome Background Gradient ── */
+.welcome-bg {
+    position:relative;
+}
+.welcome-bg::before {
+    content:""; position:absolute; top:-60px; left:50%; transform:translateX(-50%);
+    width:600px; height:300px;
+    background:radial-gradient(ellipse, rgba(0,255,136,0.04) 0%, transparent 70%);
+    pointer-events:none; z-index:0;
+}
 
 </style>""", unsafe_allow_html=True)
 
@@ -243,8 +600,7 @@ with st.sidebar:
     st.markdown(f"""
     <div style="padding:6px 0 14px 0;">
         <div style="display:flex; align-items:center; gap:10px;">
-            <div style="width:32px; height:32px; background:{SP_GREEN}; display:flex;
-                 align-items:center; justify-content:center; flex-shrink:0;">
+            <div class="sidebar-logo-box">
                 <span style="font-family:'Space Grotesk',sans-serif; font-weight:700;
                       font-size:0.85rem; color:#0C0C0C;">S</span>
             </div>
@@ -304,11 +660,8 @@ with st.sidebar:
     use_multi = st.toggle("启用 Multi-Agent", value=False, key="use_multi_agent")
     if use_multi:
         st.markdown(f"""
-        <div style="display:flex; align-items:center; gap:6px; padding:6px 10px;
-             background:rgba(0,255,136,0.06); border:1px solid rgba(0,255,136,0.15);
-             margin-top:4px;">
-            <div style="width:5px; height:5px; border-radius:50%; background:{SP_GREEN};
-                 animation:neon-pulse 2s ease-in-out infinite;"></div>
+        <div class="agent-active-badge">
+            <div class="pulse-dot"></div>
             <span style="font-family:'JetBrains Mono',monospace; font-size:0.58rem;
                   color:#6a6a6a; letter-spacing:0.05em;">V9 AGENTS [ACTIVE] · RLM · HITL</span>
         </div>
@@ -329,26 +682,15 @@ with st.sidebar:
 # ============================================================
 if not rev_file or not qty_file:
     st.markdown(f"""
-    <div style="text-align:center; padding:50px 0 28px 0;">
+    <div class="welcome-bg" style="text-align:center; padding:50px 0 28px 0;">
         <div style="margin-bottom:20px;">
-            <span style="display:inline-flex; align-items:center; gap:8px;
-                padding:6px 16px;
-                background:rgba(0,255,136,0.06); border:1px solid rgba(0,255,136,0.25);
-                font-size:0.62rem; color:{SP_GREEN}; font-weight:700;
-                letter-spacing:0.1em; font-family:'JetBrains Mono',monospace;
-                text-transform:uppercase;">
-                <span style="width:6px;height:6px;border-radius:50%;background:{SP_GREEN};"></span>
+            <span class="welcome-badge">
+                <span class="badge-dot"></span>
                 V9.0 · RLM MULTI-AGENT INTELLIGENCE
             </span>
         </div>
-        <h1 style="font-size:3rem; font-weight:700; color:{SP_GREEN}; letter-spacing:-2px;
-            margin:0; line-height:1.1; font-family:'Space Grotesk',sans-serif;">
-            SPROCOMM
-        </h1>
-        <h1 style="font-size:3rem; font-weight:700; color:#FFFFFF; letter-spacing:-2px;
-            margin:0; line-height:1.1; font-family:'Space Grotesk',sans-serif;">
-            SALES INTELLIGENCE
-        </h1>
+        <h1 class="welcome-title-green">SPROCOMM</h1>
+        <h1 class="welcome-title-white">SALES INTELLIGENCE</h1>
         <p style="color:#8a8a8a; font-size:0.82rem; margin-top:16px; max-width:500px;
            margin-left:auto; margin-right:auto; line-height:1.6;
            font-family:'JetBrains Mono',monospace;">
@@ -359,42 +701,39 @@ if not rev_file or not qty_file:
 
     c1, c2, c3 = st.columns(3)
     with c1:
-        st.markdown(f"""<div class="agent-card" style="border-left:2px solid {SP_GREEN};
-            display:block; text-align:left; padding:1.2rem;">
+        st.markdown(f"""<div class="welcome-card" style="border-left-color:{SP_GREEN};">
             <div style="width:36px;height:36px;background:rgba(0,255,136,0.08);
                  display:flex;align-items:center;justify-content:center;margin-bottom:12px;">
                 <span style="color:{SP_GREEN};font-size:1.1rem;">◈</span>
             </div>
             <h4 style="color:#FFFFFF;font-family:'Space Grotesk',sans-serif;font-size:0.9rem;
-                letter-spacing:0.03em;margin:0 0 8px 0;">RLM MULTI-AGENT</h4>
+                letter-spacing:0.03em;margin:0 0 8px 0;text-transform:none;">RLM MULTI-AGENT</h4>
             <p style="font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:#8a8a8a;
                line-height:1.5;margin:0;">Route → Experts → Synthesize → Reflect → HITL</p>
             <p style="font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:rgba(0,255,136,0.5);
                margin:8px 0 0 0;letter-spacing:0.03em;">// 36,000+ LINES · 26 MODULES</p>
         </div>""", unsafe_allow_html=True)
     with c2:
-        st.markdown(f"""<div class="agent-card" style="border-left:2px solid {SP_BLUE};
-            display:block; text-align:left; padding:1.2rem;">
+        st.markdown(f"""<div class="welcome-card" style="border-left-color:{SP_BLUE};">
             <div style="width:36px;height:36px;background:rgba(0,160,200,0.08);
                  display:flex;align-items:center;justify-content:center;margin-bottom:12px;">
                 <span style="color:{SP_BLUE};font-size:1.1rem;">◇</span>
             </div>
             <h4 style="color:#FFFFFF;font-family:'Space Grotesk',sans-serif;font-size:0.9rem;
-                letter-spacing:0.03em;margin:0 0 8px 0;">12-DIMENSION ANALYTICS</h4>
+                letter-spacing:0.03em;margin:0 0 8px 0;text-transform:none;">12-DIMENSION ANALYTICS</h4>
             <p style="font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:#8a8a8a;
                line-height:1.5;margin:0;">客户·价量·预警·增长·产品·区域</p>
             <p style="font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:rgba(0,160,200,0.5);
                margin:8px 0 0 0;letter-spacing:0.03em;">// CONTEXT WINDOW 500K+ CHARS</p>
         </div>""", unsafe_allow_html=True)
     with c3:
-        st.markdown(f"""<div class="agent-card" style="border-left:2px solid {SP_RED};
-            display:block; text-align:left; padding:1.2rem;">
+        st.markdown(f"""<div class="welcome-card" style="border-left-color:{SP_RED};">
             <div style="width:36px;height:36px;background:rgba(217,64,64,0.08);
                  display:flex;align-items:center;justify-content:center;margin-bottom:12px;">
                 <span style="color:{SP_RED};font-size:1.1rem;">◆</span>
             </div>
             <h4 style="color:#FFFFFF;font-family:'Space Grotesk',sans-serif;font-size:0.9rem;
-                letter-spacing:0.03em;margin:0 0 8px 0;">5-LAYER GUARDRAILS</h4>
+                letter-spacing:0.03em;margin:0 0 8px 0;text-transform:none;">5-LAYER GUARDRAILS</h4>
             <p style="font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:#8a8a8a;
                line-height:1.5;margin:0;">输入过滤·Prompt注入·幻觉检测</p>
             <p style="font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:rgba(217,64,64,0.5);
