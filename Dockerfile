@@ -77,15 +77,8 @@ ENV PYTHONUNBUFFERED=1 \
 EXPOSE 8501
 
 # 健康检查
-HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
-    CMD curl --fail http://localhost:${PORT:-8501}/_stcore/health || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD curl --fail http://localhost:8501/_stcore/health || exit 1
 
-# 启动 — 使用 $PORT 环境变量兼容 Railway/Render
-CMD streamlit run app.py \
-    --server.port=${PORT:-8501} \
-    --server.address=0.0.0.0 \
-    --server.headless=true \
-    --browser.gatherUsageStats=false \
-    --server.enableCORS=false \
-    --server.enableXsrfProtection=false \
-    --server.maxUploadSize=50
+# 启动 — 使用 shell 形式确保 $PORT 被正确展开
+CMD ["sh", "-c", "streamlit run app.py --server.port=${PORT:-8501} --server.address=0.0.0.0 --server.headless=true --browser.gatherUsageStats=false --server.enableCORS=false --server.enableXsrfProtection=false --server.maxUploadSize=50"]
