@@ -679,15 +679,12 @@ with _uc:
         label_visibility="collapsed",
     )
 
-# ── 底部行：[AI叙事]  提示文字  [Multi-Agent] ──
+# ── 底部行：右对齐 AI叙事 + Multi-Agent ──
 _fl, _fc, _fr = st.columns([1, 3, 1])
 with _fc:
-    _b1, _b2, _b3 = st.columns([1, 3, 1])
-    with _b1:
-        ai_enabled = st.toggle("AI 叙事", value=False, key="ai_toggle")
+    _b1, _b2, _b3 = st.columns([2, 1, 1])
     with _b2:
-        _have = len(uploaded_files) if uploaded_files else 0
-        st.caption(f"上传 2 个 Excel 文件（已选 {_have}/2，系统自动识别）")
+        ai_enabled = st.toggle("AI 叙事", value=False, key="ai_toggle")
     with _b3:
         use_multi = st.toggle("Multi-Agent", value=False, key="use_multi_agent")
 
