@@ -340,14 +340,14 @@ def _render_agent_cards(agents_used: list, agent_outputs: dict = None):
         })
 
         # All agents in agents_used list have completed
-        status = '<span class="agent-status status-complete">DONE</span>'
+        status = '<span style="font-family:monospace;font-size:0.58rem;padding:0.15rem 0.5rem;font-weight:700;flex-shrink:0;margin-left:auto;letter-spacing:0.05em;background:rgba(0,255,136,0.08);color:#00FF88;border:1px solid rgba(0,255,136,0.25);">DONE</span>'
 
         cards_html += f"""
-        <div class="agent-card" style="border-left:2px solid {a['color']};">
-            <div class="agent-avatar" style="background:{a['bg']};border:1px solid {a['border']};">{a['icon']}</div>
+        <div style="background:#111;border:1px solid #2f2f2f;border-left:2px solid {a['color']};padding:0.8rem 1rem;margin:0.3rem 0;display:flex;align-items:center;gap:0.75rem;">
+            <div style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:0.9rem;flex-shrink:0;background:{a['bg']};border:1px solid {a['border']};">{a['icon']}</div>
             <div style="flex:1;min-width:0;">
-                <div class="agent-name">{a['name']}</div>
-                <div class="agent-role">{a['role']}</div>
+                <div style="font-family:monospace;font-size:0.78rem;font-weight:700;color:#fff;letter-spacing:0.03em;">{a['name']}</div>
+                <div style="font-family:monospace;font-size:0.58rem;color:#6a6a6a;text-transform:uppercase;letter-spacing:0.1em;">{a['role']}</div>
             </div>
             {status}
         </div>"""
@@ -364,46 +364,35 @@ def _render_thinking_timeline(thinking_log: str, total_time: float = 0):
     if not lines:
         return
 
-    steps_html = ""
-    for line in lines:
-        # Color mapping using Sprocomm palette
-        if any(k in line for k in ["✅", "完成", "通过"]):
-            dot = SP_GREEN
-        elif any(k in line for k in ["⚠️", "警告", "未通过", "需改进"]):
-            dot = C_WARNING
-        elif any(k in line for k in ["❌", "错误", "失败"]):
-            dot = SP_RED
-        elif any(k in line for k in ["🔍", "审查", "质量"]):
-            dot = SP_GREEN
-        elif any(k in line for k in ["🎯", "HITL", "置信"]):
-            dot = SP_BLUE
-        elif any(k in line for k in ["🧠", "记忆"]):
-            dot = SP_BLUE
-        elif any(k in line for k in ["📊", "分析", "Atlas"]):
-            dot = SP_GREEN
-        elif any(k in line for k in ["🛡️", "风控", "Shield"]):
-            dot = SP_RED
-        elif any(k in line for k in ["💡", "策略", "Nova"]):
-            dot = SP_BLUE
-        else:
-            dot = C_TEXT_MUTED
-
-        time_m = re.search(r'(\d+\.?\d*)\s*[sS秒]', line)
-        time_str = f'{time_m.group(1)}s' if time_m else ""
-        clean = line.replace("<", "&lt;").replace(">", "&gt;")
-
-        steps_html += f"""
-        <div class="thinking-step">
-            <div class="step-dot" style="background:{dot};"></div>
-            <div class="step-text">{clean}</div>
-            {f'<div class="step-meta">{time_str}</div>' if time_str else ''}
-        </div>"""
-
     t_label = f"· {total_time:.1f}s" if total_time > 0 else ""
 
     with st.expander(f"🧠 推理过程 {t_label} · {len(lines)} 步骤", expanded=False):
-        st.markdown(f'<div class="thinking-timeline" style="border:none;padding:0;">{steps_html}</div>',
-                    unsafe_allow_html=True)
+        for line in lines:
+            # Color mapping
+            if any(k in line for k in ["✅", "完成", "通过"]):
+                color = SP_GREEN
+            elif any(k in line for k in ["⚠️", "警告", "未通过", "需改进"]):
+                color = C_WARNING
+            elif any(k in line for k in ["❌", "错误", "失败"]):
+                color = SP_RED
+            elif any(k in line for k in ["🔍", "审查", "质量"]):
+                color = SP_GREEN
+            elif any(k in line for k in ["🎯", "HITL", "置信"]):
+                color = SP_BLUE
+            elif any(k in line for k in ["🧠", "记忆"]):
+                color = SP_BLUE
+            elif any(k in line for k in ["📊", "分析", "Atlas"]):
+                color = SP_GREEN
+            elif any(k in line for k in ["🛡️", "风控", "Shield"]):
+                color = SP_RED
+            elif any(k in line for k in ["💡", "策略", "Nova"]):
+                color = SP_BLUE
+            else:
+                color = C_TEXT_MUTED
+
+            time_m = re.search(r'(\d+\.?\d*)\s*[sS秒]', line)
+            time_str = f' `{time_m.group(1)}s`' if time_m else ""
+            st.markdown(f"<span style='color:{color};font-size:8px;'>●</span> <span style='font-family:monospace;font-size:0.75rem;color:#aaa;'>{line}</span>{time_str}", unsafe_allow_html=True)
 
 
 def _render_quality_badge(critique: dict):
@@ -420,7 +409,9 @@ def _render_quality_badge(critique: dict):
     abbr_map = {"completeness":"COM","accuracy":"ACC","actionability":"ACT","clarity":"CLA","consistency":"CON"}
     dim_text = " · ".join(f"{abbr_map.get(k,k[:3].upper())}:{v}" for k, v in dims.items()) if dims else ""
 
-    cls = "quality-pass" if passed else "quality-fail"
+    bg = "rgba(0,255,136,0.08)" if passed else "rgba(255,136,0,0.08)"
+    color = SP_GREEN if passed else C_WARNING
+    border = "rgba(0,255,136,0.25)" if passed else "rgba(255,136,0,0.25)"
     icon = "✓" if passed else "!"
     label = "PASS" if passed else "REVIEW"
 
@@ -429,7 +420,9 @@ def _render_quality_badge(critique: dict):
     dim_html = f'<span style="font-size:0.58rem;color:{C_TEXT_MUTED};margin-left:0.4rem;">{dim_text}</span>' if dim_text else ""
 
     st.markdown(f"""
-    <div class="quality-badge {cls}">
+    <div style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.35rem 0.7rem;
+         font-family:monospace;font-size:0.65rem;font-weight:700;letter-spacing:0.05em;
+         margin:0.25rem 0;background:{bg};color:{color};border:1px solid {border};">
         <span style="font-size:0.8rem;">{icon}</span>
         <span>{label}</span>
         <span style="font-weight:700;">{score:.1f}</span>
@@ -471,14 +464,17 @@ def _render_hitl_card(hitl_decision: dict):
                 items.append(f"• {t.get('message', t.get('reason', str(t)))}")
             else:
                 items.append(f"• {t}")
-        trig_html = f'<div class="hitl-triggers">{"<br>".join(items)}</div>'
+        trig_html = f'<div style="font-family:monospace;font-size:0.55rem;color:#6a6a6a;text-align:right;flex-shrink:0;">{"<br>".join(items)}</div>'
+
+    gauge_bg = f"rgba({','.join(str(int(color.lstrip('#')[i:i+2],16)) for i in (0,2,4))},0.10)"
+    gauge_border = f"rgba({','.join(str(int(color.lstrip('#')[i:i+2],16)) for i in (0,2,4))},0.35)"
 
     st.markdown(f"""
-    <div class="hitl-card">
-        <div class="hitl-gauge {gauge_cls}">{pct}</div>
-        <div class="hitl-info">
-            <div class="hitl-level" style="color:{color};">{label}</div>
-            <div class="hitl-action">{act_text}</div>
+    <div style="background:#080808;border:1px solid #2f2f2f;padding:0.7rem 1rem;margin:0.5rem 0;display:flex;align-items:center;gap:0.8rem;">
+        <div style="width:42px;height:42px;display:flex;align-items:center;justify-content:center;font-family:monospace;font-size:0.72rem;font-weight:700;flex-shrink:0;background:{gauge_bg};color:{color};border:2px solid {gauge_border};">{pct}</div>
+        <div style="flex:1;">
+            <div style="font-family:monospace;font-size:0.65rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:{color};">{label}</div>
+            <div style="font-family:monospace;font-size:0.72rem;color:#aaa;margin-top:0.1rem;">{act_text}</div>
         </div>
         {trig_html}
     </div>""", unsafe_allow_html=True)
@@ -488,28 +484,28 @@ def _render_trace_bar(trace_id: str = "", obs_summary: dict = None):
     """Compact trace info bar — adapted to multi_agent.py obs_summary format."""
     items = []
     if trace_id:
-        items.append(f'<span class="trace-item">TRACE <span class="trace-value">{trace_id[:8]}</span></span>')
+        items.append(f'<span style="margin-right:0.5rem;">TRACE <span style="color:#00FF88;font-weight:700;">{trace_id[:8]}</span></span>')
     if obs_summary:
         # Latency
         lb = obs_summary.get("latency_breakdown", {})
         total_ms = lb.get("total_ms", 0)
         if total_ms:
-            items.append(f'<span class="trace-item">LATENCY <span class="trace-value">{total_ms/1000:.1f}s</span></span>')
+            items.append(f'<span style="margin-right:0.5rem;">LATENCY <span style="color:#00FF88;font-weight:700;">{total_ms/1000:.1f}s</span></span>')
         # Tokens
         tokens = obs_summary.get("total_tokens", 0)
         if tokens:
-            items.append(f'<span class="trace-item">TOKENS <span class="trace-value">{tokens:,}</span></span>')
+            items.append(f'<span style="margin-right:0.5rem;">TOKENS <span style="color:#00FF88;font-weight:700;">{tokens:,}</span></span>')
         # Cost
         cost = obs_summary.get("total_cost_usd", 0)
         if cost:
-            items.append(f'<span class="trace-item">COST <span class="trace-value">${cost:.4f}</span></span>')
+            items.append(f'<span style="margin-right:0.5rem;">COST <span style="color:#00FF88;font-weight:700;">${cost:.4f}</span></span>')
         # LLM calls
         calls = obs_summary.get("total_llm_calls", 0)
         if calls:
-            items.append(f'<span class="trace-item">CALLS <span class="trace-value">{calls}</span></span>')
+            items.append(f'<span style="margin-right:0.5rem;">CALLS <span style="color:#00FF88;font-weight:700;">{calls}</span></span>')
 
     if items:
-        st.markdown(f'<div class="trace-bar">{"".join(items)}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div style="display:flex;align-items:center;gap:1rem;padding:0.35rem 0.8rem;background:#080808;border:1px solid #2f2f2f;font-family:monospace;font-size:0.58rem;color:#6a6a6a;margin:0.4rem 0;">{" ".join(items)}</div>', unsafe_allow_html=True)
 
 
 def _render_suggestion_chips():
@@ -585,11 +581,13 @@ def render_chat_tab(data, results: dict, benchmark: dict = None, forecast: dict 
         return
 
     # ── Chat history ────────────────────────────────────────
+    # If a new question is pending, skip old history rendering
+    has_pending = "pending_question" in st.session_state
     if not st.session_state.chat_history:
         _render_welcome()
         st.markdown("---")
         _render_suggestion_chips()
-    else:
+    elif not has_pending:
         for msg in st.session_state.chat_history:
             if msg["role"] == "user":
                 with st.chat_message("user"):
@@ -626,6 +624,9 @@ def render_chat_tab(data, results: dict, benchmark: dict = None, forecast: dict 
     question = pending or user_input
     if not question:
         return
+
+    # Clear previous history - only show current Q&A
+    st.session_state.chat_history = []
 
     with st.chat_message("user"):
         st.markdown(question)

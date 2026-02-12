@@ -94,11 +94,13 @@ def fmt(v, unit="万"):
 # ============================================================
 # 页面配置
 # ============================================================
-st.set_page_config(page_title="Sprocomm AI · MRARFAI v9.0", page_icon="🌿", layout="wide")
+st.set_page_config(page_title="Sprocomm AI · MRARFAI v9.0", page_icon="🌿", layout="wide", initial_sidebar_state="expanded")
 
 
 # ============================================================
-# 内联主题 — Command Center (替代 ui_theme.py)
+# 内联主题 — Command Center (完整版)
+# ============================================================
+# 内联主题 — Command Center (完整版)
 # ============================================================
 st.markdown("""<style>
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
@@ -116,14 +118,21 @@ st.markdown("""<style>
     --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
 }
 
-#MainMenu, footer, header, .stDeployButton,
+#MainMenu, footer, .stDeployButton,
 [data-testid="stToolbar"], [data-testid="stDecoration"],
 [data-testid="stStatusWidget"] { display: none !important; }
 
 .stApp { background: var(--bg-deep) !important; }
 .block-container { padding: 1.5rem 2rem 3rem !important; max-width: 1600px; }
+/* Solid background for chat messages */
+[data-testid="stChatMessage"] { background: #0C0C0C !important; }
+.stChatMessage { background: #0C0C0C !important; }
 
 [data-testid="stSidebar"] { background: var(--bg-base) !important; border-right: 1px solid var(--border-subtle) !important; }
+/* Sidebar expand button - visible on dark bg */
+button[kind="headerNoPadding"] { color: #00FF88 !important; }
+[data-testid="collapsedControl"] { background: #111 !important; border: 1px solid #2f2f2f !important; }
+[data-testid="stSidebarCollapseButton"] button { color: #00FF88 !important; }
 [data-testid="stSidebar"] .stMarkdown p, [data-testid="stSidebar"] .stMarkdown span {
     font-family: var(--font-mono) !important; color: var(--text-2) !important; font-size: 0.78rem !important;
 }
@@ -133,60 +142,90 @@ st.markdown("""<style>
     padding: 1.2rem 0 0.4rem !important; border-top: 1px solid var(--border-subtle); margin-top: 0.8rem;
 }
 
-.stMarkdown p { font-family: var(--font-mono) !important; color: var(--text-1) !important; line-height: 1.65 !important; font-size: 0.85rem !important; }
-h1, h2, h3 { font-family: var(--font-sans) !important; font-weight: 700 !important; letter-spacing: -0.5px !important; }
+.stMarkdown p { font-family: var(--font-mono) !important; color: var(--text-2) !important; font-size: 0.82rem !important; line-height: 1.7 !important; }
+.stMarkdown h1 { font-family: var(--font-sans) !important; color: var(--text-1) !important; font-weight: 700 !important; letter-spacing: -0.03em !important; }
+.stMarkdown h2 { font-family: var(--font-sans) !important; color: var(--text-1) !important; font-weight: 600 !important; letter-spacing: -0.02em !important; }
+.stMarkdown h3, .stMarkdown h4 { font-family: var(--font-mono) !important; color: var(--neon) !important; font-weight: 700 !important; letter-spacing: 0.05em !important; text-transform: uppercase !important; font-size: 0.72rem !important; }
 
-.stTabs [data-baseweb="tab-list"] { background: var(--bg-base) !important; gap: 0 !important; border-bottom: 1px solid var(--border-subtle) !important; padding: 0 !important; overflow-x: auto; scrollbar-width: none; }
+.stTabs [data-baseweb="tab-list"] { gap: 0; border-bottom: 1px solid var(--border-subtle); }
+.stTabs [data-baseweb="tab"] { font-family: var(--font-mono) !important; font-size: 0.62rem !important; font-weight: 600 !important; letter-spacing: 0.12em !important; text-transform: uppercase !important; color: var(--text-3) !important; border-radius: 0 !important; padding: 0.7rem 1rem !important; }
+.stTabs [aria-selected="true"] { color: var(--neon) !important; border-bottom: 2px solid var(--neon) !important; background: transparent !important; }
 .stTabs [data-baseweb="tab-list"]::-webkit-scrollbar { display: none; }
-.stTabs [data-baseweb="tab"] {
-    background: transparent !important; color: var(--text-3) !important; border: none !important;
-    border-bottom: 2px solid transparent !important; border-radius: 0 !important; padding: 0.65rem 1rem !important;
-    font-family: var(--font-mono) !important; font-size: 0.7rem !important; font-weight: 500 !important;
-    letter-spacing: 0.05em !important; text-transform: uppercase !important; white-space: nowrap !important;
-}
-.stTabs [data-baseweb="tab"]:hover { color: var(--text-2) !important; background: rgba(255,255,255,0.03) !important; }
-.stTabs [data-baseweb="tab"][aria-selected="true"] { color: var(--neon) !important; border-bottom-color: var(--neon) !important; background: var(--bg-deep) !important; }
 
-.stButton > button {
-    background: var(--bg-elevated) !important; color: var(--text-1) !important; border: 1px solid var(--border-default) !important;
-    border-radius: 0 !important; font-family: var(--font-mono) !important; font-size: 0.75rem !important;
-    font-weight: 600 !important; letter-spacing: 0.05em !important; text-transform: uppercase !important;
-}
-.stButton > button:hover { border-color: var(--neon) !important; background: rgba(0,255,136,0.06) !important; color: var(--neon) !important; }
-
-.stTextInput input, .stTextArea textarea, .stSelectbox > div > div, .stNumberInput input {
-    background: var(--bg-elevated) !important; color: var(--text-1) !important;
-    border: 1px solid var(--border-default) !important; border-radius: 0 !important;
-    font-family: var(--font-mono) !important; font-size: 0.82rem !important;
-}
-.stTextInput input:focus, .stTextArea textarea:focus { border-color: var(--neon) !important; box-shadow: 0 0 0 2px rgba(0,255,136,0.10) !important; }
-
-[data-testid="stMetric"] { background: var(--bg-elevated) !important; border: 1px solid var(--border-subtle) !important; padding: 0.8rem 1rem !important; }
-[data-testid="stMetric"] label { font-family: var(--font-mono) !important; font-size: 0.6rem !important; letter-spacing: 0.1em !important; text-transform: uppercase !important; color: var(--text-3) !important; }
-[data-testid="stMetric"] [data-testid="stMetricValue"] { font-family: var(--font-sans) !important; font-weight: 700 !important; color: var(--text-1) !important; }
-
-[data-testid="stExpander"] { background: var(--bg-elevated) !important; border: 1px solid var(--border-subtle) !important; border-radius: 0 !important; }
-[data-testid="stExpander"] summary { font-family: var(--font-mono) !important; font-size: 0.78rem !important; }
-
-[data-testid="stDataFrame"] { border: 1px solid var(--border-subtle) !important; border-radius: 0 !important; }
-.stDataFrame th { background: var(--bg-elevated) !important; }
-
-[data-testid="stChatInput"] { background: var(--bg-base) !important; border-top: 1px solid var(--border-subtle) !important; }
-[data-testid="stChatInput"] textarea { background: var(--bg-elevated) !important; color: var(--text-1) !important; border: 1px solid var(--border-default) !important; border-radius: 0 !important; font-family: var(--font-mono) !important; }
-[data-testid="stChatInput"] textarea:focus { border-color: var(--neon) !important; box-shadow: 0 0 0 2px rgba(0,255,136,0.10), 0 0 30px rgba(0,255,136,0.08) !important; }
-[data-testid="stChatMessage"] { background: transparent !important; border: none !important; padding: 0.8rem 0 !important; }
-
-.section-header { font-family: var(--font-mono); font-size: 0.58rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-3); padding-bottom: 0.4rem; border-bottom: 1px solid var(--border-subtle); margin: 1.5rem 0 0.5rem; }
-.status-bar { display: flex; align-items: center; gap: 10px; padding: 10px 18px; background: rgba(0,255,136,0.04); border: 1px solid rgba(0,255,136,0.15); margin-bottom: 14px; }
-.status-bar .status-dot { width: 6px; height: 6px; background: var(--neon); border-radius: 50%; animation: neon-pulse 2s ease-in-out infinite; }
-.status-bar .status-text { font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; color: var(--neon); letter-spacing: 0.08em; }
-.status-bar .status-meta { font-family: var(--font-mono); font-size: 0.62rem; color: var(--text-3); margin-left: auto; }
-
-.agent-card { background: var(--bg-elevated); border: 1px solid var(--border-subtle); padding: 0.8rem 1rem; margin: 0.3rem 0; transition: border-color 0.15s; }
+.agent-card { background: var(--bg-elevated); border: 1px solid var(--border-subtle); padding: 0.8rem 1rem; margin: 0.3rem 0; transition: border-color 0.15s; display: flex; align-items: center; gap: 0.75rem; }
 .agent-card:hover { border-color: rgba(0,255,136,0.25); }
+.agent-card .agent-avatar { width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:0.9rem;flex-shrink:0; }
+.agent-card .agent-name { font-family:var(--font-mono);font-size:0.78rem;font-weight:700;color:#fff;letter-spacing:0.03em; }
+.agent-card .agent-role { font-family:var(--font-mono);font-size:0.58rem;color:#6a6a6a;text-transform:uppercase;letter-spacing:0.1em; }
+.agent-card .agent-status { font-family:var(--font-mono);font-size:0.58rem;padding:0.15rem 0.5rem;font-weight:700;flex-shrink:0;margin-left:auto;letter-spacing:0.05em; }
+.status-complete { background:rgba(0,255,136,0.08);color:#00FF88;border:1px solid rgba(0,255,136,0.25); }
+.status-running { background:rgba(0,160,200,0.08);color:#00A0C8;border:1px solid rgba(0,160,200,0.25); }
+.status-error { background:rgba(217,64,64,0.08);color:#D94040;border:1px solid rgba(217,64,64,0.25); }
 
-@keyframes neon-pulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+.thinking-timeline { background:#080808;border:1px solid #2f2f2f;border-left:2px solid rgba(0,255,136,0.30);padding:0.8rem 1rem;margin:0.5rem 0; }
+.thinking-step { display:flex;align-items:flex-start;gap:0.6rem;padding:0.3rem 0;margin-left:0.55rem;border-left:1px solid #2f2f2f;padding-left:1rem; }
+.thinking-step .step-dot { width:6px;height:6px;margin-top:0.35rem;flex-shrink:0;margin-left:-1.35rem; }
+.thinking-step .step-text { font-family:var(--font-mono);font-size:0.72rem;color:#aaa;line-height:1.5; }
+.thinking-step .step-meta { font-family:var(--font-mono);font-size:0.58rem;color:#00FF88;margin-left:auto;flex-shrink:0;white-space:nowrap;font-weight:600; }
+
+.quality-badge { display:inline-flex;align-items:center;gap:0.4rem;padding:0.35rem 0.7rem;font-family:var(--font-mono);font-size:0.65rem;font-weight:700;letter-spacing:0.05em;margin:0.25rem 0.25rem 0.25rem 0; }
+.quality-pass { background:rgba(0,255,136,0.08);color:#00FF88;border:1px solid rgba(0,255,136,0.25); }
+.quality-fail { background:rgba(255,136,0,0.08);color:#FF8800;border:1px solid rgba(255,136,0,0.25); }
+
+.hitl-card { background:#080808;border:1px solid #2f2f2f;padding:0.7rem 1rem;margin:0.5rem 0;display:flex;align-items:center;gap:0.8rem; }
+.hitl-gauge { width:42px;height:42px;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:0.72rem;font-weight:700;flex-shrink:0; }
+.hitl-high { background:rgba(0,255,136,0.10);color:#00FF88;border:2px solid rgba(0,255,136,0.40); }
+.hitl-medium { background:rgba(255,136,0,0.10);color:#FF8800;border:2px solid rgba(255,136,0,0.35); }
+.hitl-low { background:rgba(217,64,64,0.10);color:#D94040;border:2px solid rgba(217,64,64,0.35); }
+.hitl-info { flex:1; }
+.hitl-info .hitl-level { font-family:var(--font-mono);font-size:0.65rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase; }
+.hitl-info .hitl-action { font-family:var(--font-mono);font-size:0.72rem;color:#aaa;margin-top:0.1rem; }
+.hitl-triggers { font-family:var(--font-mono);font-size:0.55rem;color:#6a6a6a;text-align:right;flex-shrink:0; }
+
+.trace-bar { display:flex;align-items:center;gap:1rem;padding:0.35rem 0.8rem;background:#080808;border:1px solid #2f2f2f;font-family:var(--font-mono);font-size:0.58rem;color:#6a6a6a;margin:0.4rem 0;letter-spacing:0.03em; }
+.trace-bar .trace-value { color:#00FF88;font-weight:700; }
+
 </style>""", unsafe_allow_html=True)
+
+# Persistent sidebar open button (injects into parent page)
+import streamlit.components.v1 as components
+components.html("""
+<script>
+(function(){
+    if (parent.document.getElementById('my-sidebar-btn')) return;
+    var btn = document.createElement('div');
+    btn.id = 'my-sidebar-btn';
+    btn.innerHTML = '▶';
+    btn.style.cssText = 'position:fixed;top:12px;left:12px;z-index:999999;width:28px;height:28px;cursor:pointer;background:#1a1a1a;border:1px solid #00FF88;display:flex;align-items:center;justify-content:center;font-size:11px;color:#00FF88;';
+    btn.onclick = function(){
+        // Try all known Streamlit sidebar button selectors
+        var selectors = [
+            '[data-testid="stSidebarCollapsedControl"] button',
+            '[data-testid="collapsedControl"] button',
+            'button[kind="headerNoPadding"]',
+            '[data-testid="stSidebarCollapseButton"] button'
+        ];
+        for (var s of selectors) {
+            var b = parent.document.querySelector(s);
+            if (b) { b.click(); return; }
+        }
+    };
+    // Watch sidebar state to show/hide
+    function check() {
+        var sb = parent.document.querySelector('[data-testid="stSidebar"]');
+        if (sb) {
+            var collapsed = sb.getAttribute('aria-expanded') === 'false' || 
+                           getComputedStyle(sb).marginLeft.startsWith('-') ||
+                           getComputedStyle(sb).transform !== 'none';
+            btn.style.display = collapsed ? 'flex' : 'none';
+        }
+        requestAnimationFrame(check);
+    }
+    parent.document.body.appendChild(btn);
+    check();
+})();
+</script>
+""", height=0)
 
 
 # ============================================================
