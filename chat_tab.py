@@ -235,6 +235,88 @@ def _render_v8_badges(result: dict):
 
 def _render_v8_gate_card(result: dict):
     """V8.0 gate routing detail card."""
+
+    # ── V9.0 COLORS ──
+V9_TEAL = "#2DD4BF"
+V9_INDIGO = "#818CF8"
+V9_ROSE = "#FB7185"
+
+def _render_v9_badges(result: dict):
+    """V9.0 论文模块活动指标 — 实际被触发的模块."""
+    v9_mods = result.get("v9_modules", {})
+    v9_act = result.get("v9_activity", {})
+    if not v9_mods:
+        return
+
+    badges = []
+
+    # RLM
+    if v9_act.get("rlm_used"):
+        badges.append(_badge_html("🔄 RLM ACTIVE", V9_TEAL))
+    elif v9_mods.get("rlm"):
+        badges.append(_badge_html("RLM READY", C_TEXT_MUTED))
+
+    # Reasoning Templates
+    if v9_act.get("reasoning_templates_injected"):
+        badges.append(_badge_html("🧠 REASONING V9", V9_INDIGO))
+
+    # Memory 3D
+    if v9_act.get("memory_3d_retrieved"):
+        badges.append(_badge_html("💾 MEM3D HIT", V9_TEAL))
+    elif v9_act.get("memory_3d_saved"):
+        badges.append(_badge_html("💾 MEM3D SAVED", V9_INDIGO))
+
+    # Interpretability
+    trace_steps = v9_act.get("trace_steps", 0)
+    if trace_steps > 0:
+        badges.append(_badge_html(f"🔍 TRACE {trace_steps}步", V9_ROSE))
+    elif v9_act.get("interpretability_traced"):
+        badges.append(_badge_html("🔍 TRACED", C_TEXT_MUTED))
+
+    # Module count
+    active = sum(1 for v in v9_mods.values() if v)
+    badges.append(_badge_html(f"V9 {active}/7", V9_TEAL))
+
+    if badges:
+        st.markdown(
+            f'<div style="display:flex;gap:0.3rem;flex-wrap:wrap;margin:0.3rem 0 0.1rem;">{"".join(badges)}</div>',
+            unsafe_allow_html=True
+        )
+
+
+def _render_v9_details(result: dict):
+    """V9.0 详细面板 — expander 内容."""
+    v9_mods = result.get("v9_modules", {})
+    v9_act = result.get("v9_activity", {})
+    if not v9_mods:
+        return
+
+    rows = [
+        ("① RLM递归引擎", "rlm", v9_act.get("rlm_used", False), "数据递归压缩处理"),
+        ("② AWM合成环境", "awm", False, "训练/测试时使用"),
+        ("③ EnCompass搜索", "search_engine", False, "多路径分支搜索"),
+        ("④ 推理模板", "reasoning_templates", v9_act.get("reasoning_templates_injected", False), "结构化CoT注入"),
+        ("⑤ 三维记忆", "memory_3d", v9_act.get("memory_3d_saved", False), f"{'检索命中' if v9_act.get('memory_3d_retrieved') else '已保存本次'}"),
+        ("⑥ 可解释性", "interpretability", v9_act.get("interpretability_traced", False), f"{v9_act.get('trace_steps', 0)}步追踪"),
+        ("⑦ 评估框架", "evals_v9", False, "批量评估时使用"),
+    ]
+
+    for label, mod_key, used, desc in rows:
+        installed = v9_mods.get(mod_key, False)
+        if used:
+            icon = "🟢"
+            status = "ACTIVE"
+            color = V9_TEAL
+        elif installed:
+            icon = "🟡"
+            status = "READY"
+            color = C_TEXT_MUTED
+        else:
+            icon = "🔴"
+            status = "OFF"
+            color = SP_RED
+
+        st.caption(f"{icon} {label} · {status} · {desc}")
     gate = result.get("v8_gate", {})
     if not gate:
         return
@@ -617,6 +699,9 @@ def render_chat_tab(data, results: dict, benchmark: dict = None, forecast: dict 
                     # V8.0 badges from history
                     if msg.get("v8_enhanced"):
                         _render_v8_badges(msg)
+                    # V9.0 badges from history
+                    if msg.get("v9_modules"):
+                        _render_v9_badges(msg)
 
     # ── Input ───────────────────────────────────────────────
     pending = st.session_state.pop("pending_question", None)
@@ -795,6 +880,12 @@ def render_chat_tab(data, results: dict, benchmark: dict = None, forecast: dict 
                         for agent_name, issue_list in issues.items():
                             for iss in issue_list:
                                 st.caption(f"⚠️ [{agent_name}] {iss}")
+
+            # v9.0: V9 论文模块 badges + details
+            if result.get("v9_modules"):
+                _render_v9_badges(result)
+                with st.expander("🧬 V9.0 论文模块", expanded=False):
+                    _render_v9_details(result)
 
             if critique: _render_quality_badge(critique)
             if hitl_decision: _render_hitl_card(hitl_decision)

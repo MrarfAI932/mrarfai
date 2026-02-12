@@ -28,6 +28,33 @@ from pathlib import Path
 MONTHS = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月']
 
 
+def _find_sheet(excel_file, candidates: list, fallback_index: int = 0):
+    """
+    智能查找 sheet —— 按候选名列表匹配，支持模糊匹配，找不到则用索引兜底。
+    
+    candidates: ['2025数据', '2024数据', '数据'] — 按优先级排列
+    fallback_index: 找不到任何候选时用第几个 sheet（默认第一个）
+    """
+    xl = pd.ExcelFile(excel_file)
+    sheets = xl.sheet_names
+    
+    # 精确匹配
+    for name in candidates:
+        if name in sheets:
+            return name
+    
+    # 模糊匹配（包含关键词）
+    for name in candidates:
+        for s in sheets:
+            if name in s or s in name:
+                return s
+    
+    # 兜底：用索引
+    if fallback_index < len(sheets):
+        return sheets[fallback_index]
+    return sheets[0]
+
+
 # ============================================================
 # 模块一：数据加载（增强版 - 全维度）
 # ============================================================
@@ -59,7 +86,7 @@ class SprocommDataLoaderV2:
 
     def _load_client_revenue(self):
         """客户月度金额明细"""
-        df = pd.read_excel(self.rf, sheet_name='2025数据', header=None)
+        df = pd.read_excel(self.rf, sheet_name=_find_sheet(self.rf, ['2025数据', '2024数据', '数据']), header=None)
         clients = []
         for i in range(4, 42):
             row = df.iloc[i]
@@ -84,7 +111,7 @@ class SprocommDataLoaderV2:
 
     def _load_client_quantity(self):
         """客户月度数量（计划 vs 实际）"""
-        df = pd.read_excel(self.qf, sheet_name='数量汇总', header=None)
+        df = pd.read_excel(self.qf, sheet_name=_find_sheet(self.qf, ['数量汇总', '汇总', '数量']), header=None)
         clients = []
         for i in range(3, 29):
             row = df.iloc[i]
@@ -114,7 +141,7 @@ class SprocommDataLoaderV2:
 
     def _load_category_yoy(self):
         """业务类别同比（2024 vs 2025）"""
-        df = pd.read_excel(self.rf, sheet_name='Sheet2', header=None)
+        df = pd.read_excel(self.rf, sheet_name=_find_sheet(self.rf, ['Sheet2'], fallback_index=2), header=None)
         cats = []
         for i in range(1, 7):
             row = df.iloc[i]
@@ -139,7 +166,7 @@ class SprocommDataLoaderV2:
 
     def _load_regional(self):
         """区域分布"""
-        df = pd.read_excel(self.rf, sheet_name='Sheet3', header=None)
+        df = pd.read_excel(self.rf, sheet_name=_find_sheet(self.rf, ['Sheet3'], fallback_index=3), header=None)
         regions = []
         for i in range(1, len(df)):
             if pd.isna(df.iloc[i, 0]):
@@ -152,7 +179,7 @@ class SprocommDataLoaderV2:
 
     def _load_product_breakdown(self):
         """产品类型分布 FP/SP/PAD"""
-        df = pd.read_excel(self.qf, sheet_name='数量汇总', header=None)
+        df = pd.read_excel(self.qf, sheet_name=_find_sheet(self.qf, ['数量汇总', '汇总', '数量']), header=None)
         products = {}
         for i in range(33, 36):
             row = df.iloc[i]
@@ -171,7 +198,7 @@ class SprocommDataLoaderV2:
 
     def _load_order_type_distribution(self):
         """订单模式分布 CKD/SKD/CBU"""
-        df = pd.read_excel(self.qf, sheet_name='数量汇总', header=None)
+        df = pd.read_excel(self.qf, sheet_name=_find_sheet(self.qf, ['数量汇总', '汇总', '数量']), header=None)
         orders = {}
         for i in range(33, 39):
             row = df.iloc[i]
@@ -185,7 +212,7 @@ class SprocommDataLoaderV2:
 
     def _load_quarterly_targets(self):
         """季度目标对比"""
-        df = pd.read_excel(self.rf, sheet_name='与年度目标对比', header=None)
+        df = pd.read_excel(self.rf, sheet_name=_find_sheet(self.rf, ['与年度目标对比', '目标对比', '目标']), header=None)
         targets = []
         for i in range(3, 9):
             row = df.iloc[i]
@@ -208,7 +235,7 @@ class SprocommDataLoaderV2:
 
     def _load_yoy_quarterly(self):
         """2024 vs 2025 季度对比"""
-        df = pd.read_excel(self.rf, sheet_name='Sheet1', header=None)
+        df = pd.read_excel(self.rf, sheet_name=_find_sheet(self.rf, ['Sheet1'], fallback_index=0), header=None)
         self.data['季度YoY'] = {
             'Q1': {
                 '2025': float(df.iloc[1, 1]) if pd.notna(df.iloc[1, 1]) else 0,
@@ -224,7 +251,7 @@ class SprocommDataLoaderV2:
 
     def _load_sales_team(self):
         """销售团队维度"""
-        df = pd.read_excel(self.rf, sheet_name='2025数据', header=None)
+        df = pd.read_excel(self.rf, sheet_name=_find_sheet(self.rf, ['2025数据', '2024数据', '数据']), header=None)
         team = {}
         for i in range(47, 55):
             row = df.iloc[i]

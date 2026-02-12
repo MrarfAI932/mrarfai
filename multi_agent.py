@@ -1484,7 +1484,7 @@ def ask_multi_agent(
 
         # V9.0: RLM 递归语言模型 — 解决大数据截断瓶颈
         rlm_used = False
-        if HAS_RLM and len(context_data) > 5000:
+        if HAS_RLM and len(context_data) > 500:
             try:
                 rlm = RLMEngine(config=RLMConfig(
                     max_recursion=3,
@@ -1821,6 +1821,17 @@ def ask_multi_agent(
                 "search_engine": HAS_SEARCH,
                 "awm": HAS_AWM,
                 "evals_v9": HAS_EVALS_V9,
+            },
+            "v9_activity": {
+                "rlm_used": rlm_used,
+                "reasoning_templates_injected": HAS_REASONING,
+                "memory_3d_saved": HAS_MEM3D,
+                "memory_3d_retrieved": bool(
+                    HAS_MEM3D and _get_v9_memory()
+                    and _get_v9_memory().query_skills(question, top_k=1)
+                ) if HAS_MEM3D else False,
+                "interpretability_traced": HAS_INTERP and _get_v9_tracer() is not None,
+                "trace_steps": len(_get_v9_tracer().get_trace()) if HAS_INTERP and _get_v9_tracer() else 0,
             },
         }
 
