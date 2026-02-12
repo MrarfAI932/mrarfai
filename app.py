@@ -609,25 +609,6 @@ with _bar2:
         logout()
         st.rerun()
 
-# ── 开关行（AI + Multi-Agent）──
-_sw1, _sw2 = st.columns(2)
-with _sw1:
-    ai_enabled = st.toggle("AI 叙事", value=False, key="ai_toggle")
-    if ai_enabled:
-        _ai1, _ai2 = st.columns(2)
-        with _ai1:
-            ai_provider = st.selectbox("模型", ['DeepSeek', 'Claude'], label_visibility="collapsed", key="ai_prov")
-        with _ai2:
-            api_key = st.text_input("Key", type="password", label_visibility="collapsed", placeholder="sk-...", key="ai_key")
-    else:
-        ai_provider, api_key = 'DeepSeek', None
-with _sw2:
-    use_multi = st.toggle("Multi-Agent", value=False, key="use_multi_agent")
-
-st.session_state["ai_provider"] = ai_provider
-st.session_state["api_key"] = api_key or ""
-
-
 # ============================================================
 # 智能文件检测 + 数据加载
 # ============================================================
@@ -672,21 +653,61 @@ def run_full_analysis(rev_bytes, qty_bytes):
     return data, results, bench, forecast
 
 
+# ── MRARFAI 品牌 + Agent 名字 ──
+_bl, _bc, _br = st.columns([1, 3, 1])
+with _bc:
+    st.markdown(f"""
+    <div style="text-align:center;padding:16px 0 4px 0;">
+        <div style="font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.3rem;
+              color:#FFFFFF;letter-spacing:0.18em;">MRARFAI</div>
+        <div style="display:flex;justify-content:center;gap:16px;margin-top:8px;flex-wrap:wrap;">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:0.5rem;color:{SP_GREEN};letter-spacing:0.05em;">📊 数据分析师</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:0.5rem;color:{SP_RED};letter-spacing:0.05em;">🛡 风控专家</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:0.5rem;color:{SP_BLUE};letter-spacing:0.05em;">💡 策略师</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:0.5rem;color:#8a8a8a;letter-spacing:0.05em;">🖊 报告员</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:0.5rem;color:{SP_GREEN};letter-spacing:0.05em;">🔍 质量审查</span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
 # ── 居中上传框 ──
-_pad_l, _upload_col, _pad_r = st.columns([1, 3, 1])
-with _upload_col:
+_ul, _uc, _ur = st.columns([1, 3, 1])
+with _uc:
     uploaded_files = st.file_uploader(
         "上传报表", type=['xlsx'],
         accept_multiple_files=True, key='files',
         label_visibility="collapsed",
     )
 
+# ── 底部行：[AI叙事]  提示文字  [Multi-Agent] ──
+_fl, _fc, _fr = st.columns([1, 3, 1])
+with _fc:
+    _b1, _b2, _b3 = st.columns([1, 3, 1])
+    with _b1:
+        ai_enabled = st.toggle("AI 叙事", value=False, key="ai_toggle")
+    with _b2:
+        _have = len(uploaded_files) if uploaded_files else 0
+        st.caption(f"请上传金额报表 + 数量报表（已选 {_have}/2，自动识别类型）")
+    with _b3:
+        use_multi = st.toggle("Multi-Agent", value=False, key="use_multi_agent")
+
+# ── AI 叙事展开配置 ──
+if ai_enabled:
+    _al, _ac, _ar = st.columns([1, 3, 1])
+    with _ac:
+        _ai1, _ai2 = st.columns(2)
+        with _ai1:
+            ai_provider = st.selectbox("模型", ['DeepSeek', 'Claude'], label_visibility="collapsed", key="ai_prov")
+        with _ai2:
+            api_key = st.text_input("Key", type="password", label_visibility="collapsed", placeholder="sk-...", key="ai_key")
+else:
+    ai_provider, api_key = 'DeepSeek', None
+
+st.session_state["ai_provider"] = ai_provider
+st.session_state["api_key"] = api_key or ""
+
 # ── 等待 2 个文件 ──
 if not uploaded_files or len(uploaded_files) < 2:
-    _pad_l2, _msg_col, _pad_r2 = st.columns([1, 3, 1])
-    with _msg_col:
-        _have = len(uploaded_files) if uploaded_files else 0
-        st.caption(f"请上传金额报表 + 数量报表（已选 {_have}/2 个文件，系统自动识别类型）")
     st.stop()
 
 # ── 智能文件分类 ──
