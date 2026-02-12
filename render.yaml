@@ -1,0 +1,20 @@
+# ============================================================
+# MRARFAI V9.0 — Render 部署配置 (Infrastructure as Code)
+# ============================================================
+# Render 会读取此文件自动配置服务
+# 环境变量在 Render Dashboard → Environment 中配置
+
+services:
+  - type: web
+    name: mrarfai
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: starter  # 免费套餐，可升级为 standard ($7/月)
+    healthCheckPath: /_stcore/health
+    envVars:
+      - key: MRARFAI_ENV
+        value: production
+      - key: DEEPSEEK_API_KEY
+        sync: false  # 手动在 Dashboard 配置
+      - key: ANTHROPIC_API_KEY
+        sync: false

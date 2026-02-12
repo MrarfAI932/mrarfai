@@ -1,2 +1,41 @@
+# ============================================================
+# MRARFAI V9.0 .gitignore
+# ============================================================
+
+# Secrets
 .env
+.env.local
+.env.production
+.streamlit/secrets.toml
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environments
 venv/
+.venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Data & DB
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
