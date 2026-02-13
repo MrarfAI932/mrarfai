@@ -18,6 +18,10 @@ A2A Skills:
 
 import json
 import logging
+try:
+    import pandas as pd
+except ImportError:
+    pd = None
 from datetime import datetime
 from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, field
@@ -100,6 +104,53 @@ class QualityEngine:
     def __init__(self, yields: List[YieldRecord] = None, returns: List[ReturnRecord] = None):
         self.yields = yields or SAMPLE_YIELDS
         self.returns = returns or SAMPLE_RETURNS
+
+    @classmethod
+    def from_dataframes(cls, yields_df=None, returns_df=None):
+        """从 DataFrame 创建引擎（用于 Excel 上传）"""
+        yields = []
+        if yields_df is not None:
+            for _, row in yields_df.iterrows():
+                try:
+                    # 前5列: 产线 | 产品 | 月份 | 总产数 | 合格数，后面是缺陷类型
+                    defects = {}
+                    for col in yields_df.columns[5:]:
+                        val = row[col]
+                        if pd.notna(val) and val:
+                            defects[str(col)] = int(val)
+                    total = int(row.iloc[3])
+                    passed = int(row.iloc[4])
+                    yields.append(YieldRecord(
+                        line=str(row.iloc[0]),
+                        product=str(row.iloc[1]) if len(row) > 1 else "",
+                        month=str(row.iloc[2]) if len(row) > 2 else "",
+                        total_produced=total,
+                        passed=passed,
+                        yield_rate=round(passed / total, 4) if total > 0 else 0,
+                        defect_types=defects,
+                    ))
+                except Exception:
+                    continue
+
+        returns = []
+        if returns_df is not None:
+            for _, row in returns_df.iterrows():
+                try:
+                    returns.append(ReturnRecord(
+                        customer=str(row.iloc[0]),
+                        product=str(row.iloc[1]) if len(row) > 1 else "",
+                        quantity=int(row.iloc[2]) if len(row) > 2 else 0,
+                        reason=str(row.iloc[3]) if len(row) > 3 else "",
+                        date=str(row.iloc[4]) if len(row) > 4 else "",
+                        severity=str(row.iloc[5]) if len(row) > 5 else "中",
+                    ))
+                except Exception:
+                    continue
+
+        return cls(
+            yields=yields if yields else None,
+            returns=returns if returns else None,
+        )
 
     def monitor_yield(self, product: str = "", line: str = "") -> Dict:
         """良率监控"""

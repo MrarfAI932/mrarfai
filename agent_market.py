@@ -128,10 +128,32 @@ SENTIMENT_DATA = [
 class MarketEngine:
     """市场分析引擎"""
 
-    def __init__(self):
-        self.competitors = {c.name: c for c in COMPETITORS}
-        self.trends = INDUSTRY_TRENDS
-        self.sentiments = SENTIMENT_DATA
+    def __init__(self, competitors=None, trends=None, sentiments=None):
+        self.competitors = {c.name: c for c in (competitors or COMPETITORS)}
+        self.trends = trends or INDUSTRY_TRENDS
+        self.sentiments = sentiments or SENTIMENT_DATA
+
+    @classmethod
+    def from_dataframes(cls, competitors_df=None):
+        """从 DataFrame 创建引擎（用于 Excel 上传）"""
+        competitors = []
+        if competitors_df is not None:
+            for _, row in competitors_df.iterrows():
+                try:
+                    competitors.append(Competitor(
+                        name=str(row.iloc[0]),
+                        stock_code=str(row.iloc[1]) if len(row) > 1 else "",
+                        revenue_2025=float(row.iloc[2]) if len(row) > 2 else 0,
+                        yoy_growth=float(row.iloc[3]) / 100 if len(row) > 3 else 0,
+                        main_clients=[s.strip() for s in str(row.iloc[4]).split(",")] if len(row) > 4 else [],
+                        strengths=[s.strip() for s in str(row.iloc[5]).split(",")] if len(row) > 5 else [],
+                        weaknesses=[s.strip() for s in str(row.iloc[6]).split(",")] if len(row) > 6 else [],
+                        market_share=float(row.iloc[7]) / 100 if len(row) > 7 else 0,
+                    ))
+                except Exception:
+                    continue
+
+        return cls(competitors=competitors if competitors else None)
 
     def monitor_competitor(self, name: str = "") -> Dict:
         """竞品监控"""

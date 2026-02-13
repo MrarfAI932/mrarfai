@@ -141,6 +141,48 @@ class ProcurementEngine:
         self.suppliers = {s.name: s for s in (suppliers or SAMPLE_SUPPLIERS)}
         self.orders = orders or SAMPLE_POS
 
+    @classmethod
+    def from_dataframes(cls, suppliers_df=None, orders_df=None):
+        """从 DataFrame 创建引擎（用于 Excel 上传）"""
+        suppliers = []
+        if suppliers_df is not None:
+            for _, row in suppliers_df.iterrows():
+                try:
+                    suppliers.append(Supplier(
+                        name=str(row.iloc[0]),
+                        category=str(row.iloc[1]) if len(row) > 1 else "",
+                        lead_time_days=int(row.iloc[2]) if len(row) > 2 else 14,
+                        quality_score=float(row.iloc[3]) if len(row) > 3 else 0.9,
+                        price_index=float(row.iloc[4]) if len(row) > 4 else 1.0,
+                        on_time_rate=float(row.iloc[5]) if len(row) > 5 else 0.9,
+                        defect_rate=float(row.iloc[6]) if len(row) > 6 else 0.02,
+                        credit_rating=str(row.iloc[7]) if len(row) > 7 else "B",
+                    ))
+                except Exception:
+                    continue
+
+        orders = []
+        if orders_df is not None:
+            for _, row in orders_df.iterrows():
+                try:
+                    orders.append(PurchaseOrder(
+                        po_id=str(row.iloc[0]),
+                        supplier=str(row.iloc[1]) if len(row) > 1 else "",
+                        items=[{"item": str(row.iloc[2]) if len(row) > 2 else "", "qty": int(row.iloc[3]) if len(row) > 3 else 0}],
+                        total_amount=float(row.iloc[4]) if len(row) > 4 else 0,
+                        currency="RMB",
+                        status=str(row.iloc[5]).lower() if len(row) > 5 else "pending",
+                        created_at=str(row.iloc[6]) if len(row) > 6 else "",
+                        expected_date=str(row.iloc[7]) if len(row) > 7 else "",
+                    ))
+                except Exception:
+                    continue
+
+        return cls(
+            suppliers=suppliers if suppliers else None,
+            orders=orders if orders else None,
+        )
+
     def compare_quotes(self, category: str = "", top_n: int = 5) -> Dict:
         """比价分析"""
         candidates = [s for s in self.suppliers.values()

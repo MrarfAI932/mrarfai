@@ -535,12 +535,30 @@ class PlatformGateway:
         "strategist": "战略顾问，擅长行业对标、增长策略、营收预测。",
     }
 
-    def _llm_synthesize(self, query: str, agent_name: str, raw_data: str,
-                         provider: str = "claude", api_key: str = "") -> str:
-        """
-        用 LLM 将结构化数据转为自然语言回答
+    def _build_chat_messages(self, chat_history: List = None, max_turns: int = 10) -> List[Dict]:
+        """将聊天历史转为 LLM messages 数组（最近 max_turns 轮）"""
+        if not chat_history:
+            return []
+        msgs = []
+        # 取最近 max_turns 条（user+assistant 对）
+        recent = chat_history[-(max_turns * 2):]
+        for msg in recent:
+            role = msg.get("role", "")
+            content = msg.get("content", "")
+            if role == "user":
+                msgs.append({"role": "user", "content": content})
+            elif role == "assistant":
+                # 截取避免超长
+                msgs.append({"role": "assistant", "content": content[:1500]})
+        return msgs
 
-        - 有 API Key → 调用 Claude/DeepSeek 生成智能回答
+    def _llm_synthesize(self, query: str, agent_name: str, raw_data: str,
+                         provider: str = "claude", api_key: str = "",
+                         chat_history: List = None) -> str:
+        """
+        用 LLM 将结构化数据转为自然语言回答（支持多轮记忆）
+
+        - 有 API Key → 调用 Claude/DeepSeek 生成智能回答（含上下文）
         - 无 API Key → 原样返回 raw_data (JSON)
         """
         if not api_key:
@@ -555,31 +573,35 @@ class PlatformGateway:
             "3. 用 markdown 格式，善用加粗、列表、表格\n"
             "4. 数据要精确引用(金额、百分比、排名)\n"
             "5. 最后给出1-2条可执行的建议\n"
-            "6. 不要编造数据中没有的信息"
+            "6. 不要编造数据中没有的信息\n"
+            "7. 如果用户追问之前的话题，请结合之前的对话上下文回答"
         )
         user_prompt = f"用户问题: {query}\n\n以下是系统查询到的数据:\n```json\n{raw_data[:3000]}\n```"
+
+        # 构建多轮消息（含历史上下文）
+        history_msgs = self._build_chat_messages(chat_history)
+        current_msg = {"role": "user", "content": user_prompt}
 
         try:
             provider_lower = provider.lower() if provider else "claude"
 
             if provider_lower == "claude" and HAS_ANTHROPIC:
                 client = anthropic.Anthropic(api_key=api_key)
+                messages = history_msgs + [current_msg]
                 resp = client.messages.create(
                     model="claude-sonnet-4-20250514",
                     max_tokens=1500,
                     system=system_prompt,
-                    messages=[{"role": "user", "content": user_prompt}],
+                    messages=messages,
                 )
                 return resp.content[0].text
 
             elif provider_lower == "deepseek" and HAS_OPENAI:
                 client = OpenAI(api_key=api_key, base_url="https://api.deepseek.com/v1")
+                messages = [{"role": "system", "content": system_prompt}] + history_msgs + [current_msg]
                 resp = client.chat.completions.create(
                     model="deepseek-chat",
-                    messages=[
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": user_prompt},
-                    ],
+                    messages=messages,
                     temperature=0.3,
                     max_tokens=1500,
                 )
@@ -663,8 +685,14 @@ class PlatformGateway:
             logger.error(f"协作LLM综合失败: {e}")
             return self.collaboration._synthesize(scenario, results, query)
 
+    def update_engine(self, agent_name: str, engine) -> None:
+        """替换指定Agent的引擎实例（用于自定义数据上传）"""
+        self.collaboration.engines[agent_name] = engine
+        logger.info(f"Agent '{agent_name}' 引擎已更新")
+
     def ask(self, query: str, user: str = "anonymous",
-            provider: str = "claude", api_key: str = "") -> Dict:
+            provider: str = "claude", api_key: str = "",
+            chat_history: List = None) -> Dict:
         """
         统一查询入口
 
@@ -721,9 +749,10 @@ class PlatformGateway:
                         "note": "连接实际数据源后返回真实分析",
                     }, ensure_ascii=False)
 
-                # LLM 智能合成 (有 Key 时转自然语言)
+                # LLM 智能合成 (有 Key 时转自然语言，含多轮记忆)
                 answer = self._llm_synthesize(
-                    query, agent_name, raw_answer, provider, api_key)
+                    query, agent_name, raw_answer, provider, api_key,
+                    chat_history=chat_history)
 
                 response = {
                     "type": "single_agent",

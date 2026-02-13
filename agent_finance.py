@@ -114,6 +114,43 @@ class FinanceEngine:
         self.ar_records = ar_records or SAMPLE_AR
         self.margins = margins or SAMPLE_MARGINS
 
+    @classmethod
+    def from_dataframes(cls, ar_df=None, margin_df=None):
+        """从 DataFrame 创建引擎（用于 Excel 上传）"""
+        ar_records = []
+        if ar_df is not None:
+            for _, row in ar_df.iterrows():
+                try:
+                    ar_records.append(ARRecord(
+                        customer=str(row.iloc[0]),
+                        invoice_no=str(row.iloc[1]) if len(row) > 1 else "",
+                        amount=float(row.iloc[2]) if len(row) > 2 else 0,
+                        currency=str(row.iloc[3]) if len(row) > 3 else "RMB",
+                        due_date=str(row.iloc[4]) if len(row) > 4 else "",
+                        status=str(row.iloc[5]).lower() if len(row) > 5 else "outstanding",
+                        aging_days=int(row.iloc[6]) if len(row) > 6 else 0,
+                    ))
+                except Exception:
+                    continue
+
+        margins = []
+        if margin_df is not None:
+            for _, row in margin_df.iterrows():
+                try:
+                    margins.append(MarginRecord(
+                        product=str(row.iloc[0]),
+                        customer=str(row.iloc[1]) if len(row) > 1 else "",
+                        revenue=float(row.iloc[2]) if len(row) > 2 else 0,
+                        cogs=float(row.iloc[3]) if len(row) > 3 else 0,
+                    ))
+                except Exception:
+                    continue
+
+        return cls(
+            ar_records=ar_records if ar_records else None,
+            margins=margins if margins else None,
+        )
+
     def track_ar(self, customer: str = "") -> Dict:
         """应收账款跟踪"""
         records = self.ar_records

@@ -1298,7 +1298,7 @@ if HAS_V10_GATEWAY:
                     if st.button(f"⚡ {_scfg['name']}", key=f"collab_{_sid}", use_container_width=True):
                         _trig = _scfg["trigger_keywords"][0]
                         _history.append({"role": "user", "content": f"[协作] {_scfg['name']}: {_trig}"})
-                        _resp = _gw.ask(_trig, user="admin", provider=_v10_provider.lower(), api_key=_v10_api_key)
+                        _resp = _gw.ask(_trig, user="admin", provider=_v10_provider.lower(), api_key=_v10_api_key, chat_history=_history)
                         if _resp["type"] == "collaboration":
                             _res = _resp["result"]
                             _disp = _res.get("synthesis", "")
@@ -1315,7 +1315,65 @@ if HAS_V10_GATEWAY:
                     st.caption(f"{_chain_icons}\n{_scfg['description']}")
 
         else:
-            # ── V10 独立 Agent 界面 — 快捷功能按钮 ──
+            # ── V10 独立 Agent 界面 ──
+
+            # ── Excel 数据上传（替换样本数据） ──
+            _upload_hints = {
+                "procurement": "Sheet1「供应商」: 名称|类别|交期天数|质量评分|价格指数|准时率|不良率|信用等级\nSheet2「订单」: PO号|供应商|物料|数量|总额(万)|状态|创建日期|期望交期",
+                "finance": "Sheet1「应收」: 客户|发票号|金额(万)|货币|到期日|状态|逾期天数\nSheet2「毛利」: 产品|客户|营收(万)|成本(万)",
+                "quality": "Sheet1「良率」: 产线|产品|月份|总产数|合格数|缺陷类型1|缺陷类型2|...\nSheet2「退货」: 客户|产品|数量|原因|日期|严重度",
+                "market": "Sheet1「竞品」: 公司|股票代码|营收(亿)|增速%|主要客户(逗号分隔)|优势(逗号分隔)|劣势(逗号分隔)|市场份额%",
+            }
+            _data_key = f"{_active}_custom_data"
+            with st.expander(f"📎 上传自定义数据（Excel） — 替换内置样本数据", expanded=False):
+                st.markdown(f"""<div style="font-size:0.55rem;color:#888;font-family:'JetBrains Mono',monospace;
+                    white-space:pre-line;line-height:1.5;">{_upload_hints.get(_active, '')}</div>""", unsafe_allow_html=True)
+                _uploaded_data = st.file_uploader(
+                    "上传 Excel", type=["xlsx"], key=f"upload_{_active}",
+                    label_visibility="collapsed")
+                if _uploaded_data:
+                    try:
+                        _xls = pd.ExcelFile(_uploaded_data)
+                        _sheets = _xls.sheet_names
+                        _dfs = {s: pd.read_excel(_xls, s) for s in _sheets}
+                        st.session_state[_data_key] = _dfs
+
+                        # 用 from_dataframes 创建新引擎
+                        _sheet_list = list(_dfs.values())
+                        if _active == "procurement":
+                            from agent_procurement import ProcurementEngine as _PE
+                            _new_engine = _PE.from_dataframes(
+                                suppliers_df=_sheet_list[0] if len(_sheet_list) > 0 else None,
+                                orders_df=_sheet_list[1] if len(_sheet_list) > 1 else None)
+                            _gw.update_engine("procurement", _new_engine)
+                        elif _active == "finance":
+                            from agent_finance import FinanceEngine as _FE
+                            _new_engine = _FE.from_dataframes(
+                                ar_df=_sheet_list[0] if len(_sheet_list) > 0 else None,
+                                margin_df=_sheet_list[1] if len(_sheet_list) > 1 else None)
+                            _gw.update_engine("finance", _new_engine)
+                        elif _active == "quality":
+                            from agent_quality import QualityEngine as _QE
+                            _new_engine = _QE.from_dataframes(
+                                yields_df=_sheet_list[0] if len(_sheet_list) > 0 else None,
+                                returns_df=_sheet_list[1] if len(_sheet_list) > 1 else None)
+                            _gw.update_engine("quality", _new_engine)
+                        elif _active == "market":
+                            from agent_market import MarketEngine as _ME
+                            _new_engine = _ME.from_dataframes(
+                                competitors_df=_sheet_list[0] if len(_sheet_list) > 0 else None)
+                            _gw.update_engine("market", _new_engine)
+
+                        st.success(f"✅ 数据已加载！{len(_sheets)} 个Sheet · {sum(len(df) for df in _dfs.values())} 条记录")
+                        for _sn, _sdf in _dfs.items():
+                            st.caption(f"Sheet「{_sn}」: {len(_sdf)} 行 × {len(_sdf.columns)} 列")
+                    except Exception as _ue:
+                        st.error(f"⚠️ Excel 解析失败: {_ue}")
+                elif _data_key in st.session_state:
+                    _dfs = st.session_state[_data_key]
+                    st.info(f"📊 使用已上传的自定义数据 ({sum(len(df) for df in _dfs.values())} 条记录)")
+
+            # ── 快捷功能按钮 ──
             _quick_queries = {
                 "procurement": [("供应商评估", "供应商评估"), ("PO跟踪", "PO跟踪进度"), ("比价分析", "供应商比价分析"), ("延迟预警", "采购延迟预警")],
                 "quality": [("良率监控", "良率趋势如何"), ("退货分析", "退货率分析"), ("投诉分类", "客户投诉分类"), ("根因追溯", "品质根因追溯")],
@@ -1329,7 +1387,7 @@ if HAS_V10_GATEWAY:
                     with _qcols[_i]:
                         if st.button(f"{_label}", key=f"aq_{_active}_{_i}", use_container_width=True):
                             _history.append({"role": "user", "content": _query})
-                            _resp = _gw.ask(_query, user="admin", provider=_v10_provider.lower(), api_key=_v10_api_key)
+                            _resp = _gw.ask(_query, user="admin", provider=_v10_provider.lower(), api_key=_v10_api_key, chat_history=_history)
                             _ans = _resp.get("answer", "")
                             try:
                                 _disp = json.dumps(json.loads(_ans) if isinstance(_ans, str) else _ans,
@@ -1362,7 +1420,7 @@ if HAS_V10_GATEWAY:
         _v10q = st.chat_input(f"向 {_cn} 提问...", key=f"chat_input_{_active}")
         if _v10q:
             _history.append({"role": "user", "content": _v10q})
-            _resp = _gw.ask(_v10q, user="admin", provider=_v10_provider.lower(), api_key=_v10_api_key)
+            _resp = _gw.ask(_v10q, user="admin", provider=_v10_provider.lower(), api_key=_v10_api_key, chat_history=_history)
             if _resp["type"] == "collaboration":
                 _res = _resp["result"]
                 _disp = _res.get("synthesis", "")
