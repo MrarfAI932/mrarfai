@@ -928,79 +928,319 @@ if HAS_V10_GATEWAY:
                 <span class="status-meta">{active} clients · V10.0 · {datetime.now().strftime('%H:%M:%S')}</span>
             </div>""", unsafe_allow_html=True)
 
-            # 根据进入的 Agent 显示对应 tabs
+            # 根据进入的 Agent 显示对应 tabs（完整 V9 分析功能）
             if _active == "sales":
                 _sub_tabs = st.tabs(["🧠 Agent Chat", "📊 总览", "👥 客户分析", "💰 价量分解",
                     "📈 增长机会", "🏭 产品结构", "🌍 区域分析", "📥 导出"])
+
+                # ── Tab: Agent Chat ──
                 with _sub_tabs[0]:
                     render_chat_tab(data, results, benchmark, forecast, ai_provider, api_key)
+
+                # ── Tab: 总览 (完整 V9 版) ──
                 with _sub_tabs[1]:
                     yoy = data['总YoY']
-                    c1, c2, c3 = st.columns(3)
-                    c1.metric("全年营收", f"{data['总营收']:,.0f}万", f"+{yoy['增长率']*100:.1f}% YoY")
                     qs = data['数量汇总']
-                    c2.metric("出货量", f"{qs['全年实际']/10000:,.0f}万台")
-                    c3.metric("客户数", f"{active}")
-                    st.markdown("**月度营收趋势**")
-                    import pandas as _pd2
-                    _month_data = _pd2.DataFrame(data['月度趋势'])
-                    st.line_chart(_month_data.set_index('月份')[['今年', '去年']] if '月份' in _month_data.columns else _month_data)
-                with _sub_tabs[2]:
-                    st.markdown("### 👥 客户分析")
-                    _cdf = _pd2.DataFrame(data['客户金额'])
-                    _cdf = _cdf.sort_values('年度金额', ascending=False)
-                    st.dataframe(_cdf.head(20), use_container_width=True, hide_index=True)
-                with _sub_tabs[3]:
-                    st.markdown("### 💰 价量分解")
-                    if results.get('价量分解'):
-                        _pvdf = _pd2.DataFrame(results['价量分解'])
-                        st.dataframe(_pvdf, use_container_width=True, hide_index=True)
-                with _sub_tabs[4]:
-                    st.markdown("### 📈 增长机会")
-                    if results.get('增长机会'):
-                        for opp in results['增长机会'][:10]:
-                            st.markdown(f"- **{opp.get('客户','')}**: {opp.get('机会','')}")
-                with _sub_tabs[5]:
-                    st.markdown("### 🏭 产品结构")
-                    if data.get('产品结构'):
-                        st.dataframe(_pd2.DataFrame(data['产品结构']), use_container_width=True, hide_index=True)
-                with _sub_tabs[6]:
-                    st.markdown("### 🌍 区域分析")
-                    if data.get('区域分析'):
-                        st.dataframe(_pd2.DataFrame(data['区域分析']), use_container_width=True, hide_index=True)
-                with _sub_tabs[7]:
-                    st.markdown("### 📥 导出")
-                    st.info("上传文件后，可在此导出分析报告")
+                    high_risk = [a for a in results['流失预警'] if '高' in a['风险']]
+                    hr_amt = sum(a['年度金额'] for a in high_risk)
+                    c1, c2, c3, c4, c5 = st.columns(5)
+                    c1.metric("全年营收", f"{data['总营收']:,.0f}万", f"+{yoy['增长率']*100:.1f}% YoY")
+                    c2.metric("出货量", f"{qs['全年实际']/10000:,.0f}万台", f"完成率 {qs['全年实际']/qs['全年计划']*100:.0f}%")
+                    c3.metric("活跃客户", f"{active}家")
+                    c4.metric("高风险", f"{len(high_risk)}家", f"涉及 {hr_amt:,.0f}万")
+                    c5.metric("增长机会", f"{len(results['增长机会'])}个")
+                    st.markdown("")
+                    findings = results['核心发现']
+                    st.markdown('<div class="section-header">KEY FINDINGS</div>', unsafe_allow_html=True)
+                    fcols = st.columns(min(len(findings), 3))
+                    for i, f in enumerate(findings):
+                        with fcols[i % len(fcols)]:
+                            st.markdown(f'<div class="agent-card"><p>{f}</p></div>', unsafe_allow_html=True)
+                    st.markdown("")
+                    m_data = data['月度总营收']
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        if HAS_PLOTLY:
+                            fig = go.Figure()
+                            fig.add_trace(go.Bar(x=MONTHS, y=m_data,
+                                marker=dict(color=[SP_GREEN if v == max(m_data) else "rgba(140,191,63,0.30)" for v in m_data]),
+                                text=[f"{v:,.0f}" for v in m_data], textposition="outside", textfont=dict(size=10, color=TEXT2)))
+                            fig.update_layout(**plotly_layout("月度营收趋势（万元）", 380, False))
+                            st.plotly_chart(fig, use_container_width=True)
+                    with col2:
+                        if HAS_PLOTLY:
+                            cat_data = results['类别趋势']
+                            fig = go.Figure()
+                            fig.add_trace(go.Bar(x=[c['类别'] for c in cat_data], y=[c['2025金额'] for c in cat_data],
+                                name="2025", marker_color=SP_GREEN, text=[f"{c['2025金额']:,.0f}" for c in cat_data],
+                                textposition="outside", textfont=dict(size=10)))
+                            fig.add_trace(go.Bar(x=[c['类别'] for c in cat_data], y=[c['2024金额'] for c in cat_data],
+                                name="2024", marker_color="rgba(100,116,139,0.3)"))
+                            fig.update_layout(**plotly_layout("业务类别 YoY", 380), barmode='group')
+                            st.plotly_chart(fig, use_container_width=True)
+                    q = [sum(m_data[i:i+3]) for i in range(0, 12, 3)]
+                    qc1, qc2, qc3, qc4 = st.columns(4)
+                    qc1.metric("Q1", f"{q[0]:,.0f}")
+                    qc2.metric("Q2", f"{q[1]:,.0f}")
+                    qc3.metric("Q3", f"{q[2]:,.0f}", "峰值季度")
+                    qc4.metric("Q4", f"{q[3]:,.0f}", f"{(q[3]/q[2]-1)*100:+.1f}%")
+                    with st.expander("📋 业务类别同比明细"):
+                        cat_df = pd.DataFrame(results['类别趋势'])
+                        for col in ['2025金额', '2024金额', '增长额']:
+                            if col in cat_df.columns:
+                                cat_df[col] = cat_df[col].apply(lambda x: round(float(x)) if pd.notna(x) else 0)
+                        st.dataframe(cat_df, use_container_width=True, hide_index=True,
+                            column_config={'2025金额': st.column_config.NumberColumn(format="%,d"),
+                                '2024金额': st.column_config.NumberColumn(format="%,d"),
+                                '增长额': st.column_config.NumberColumn(format="%,d")})
 
+                # ── Tab: 客户分析 (完整 V9 版 — 分级+集中度曲线) ──
+                with _sub_tabs[2]:
+                    tiers = results['客户分级']
+                    tier_counts = {t: sum(1 for x in tiers if x['等级']==t) for t in ['A','B','C']}
+                    tier_rev = {t: sum(x['年度金额'] for x in tiers if x['等级']==t) for t in ['A','B','C']}
+                    c1, c2, c3, c4 = st.columns(4)
+                    c1.metric(f"A级 · {tier_counts['A']}家", f"{tier_rev['A']:,.0f}万", f"占比 {tier_rev['A']/data['总营收']*100:.1f}%")
+                    c2.metric(f"B级 · {tier_counts['B']}家", f"{tier_rev['B']:,.0f}万")
+                    c3.metric(f"C级 · {tier_counts['C']}家", f"{tier_rev['C']:,.0f}万")
+                    c4.metric("Top4 集中度", f"{tiers[3]['累计占比']}%", "⚠️ 偏高" if tiers[3]['累计占比']>50 else "✅ 健康")
+                    filter_tier = st.multiselect("筛选等级", ['A','B','C'], default=['A','B','C'], key="tier_filter_sales")
+                    filtered = [t for t in tiers if t['等级'] in filter_tier]
+                    tier_df = pd.DataFrame(filtered)
+                    for col in ['年度金额', 'H1', 'H2']:
+                        if col in tier_df.columns:
+                            tier_df[col] = tier_df[col].apply(lambda x: round(float(x)) if pd.notna(x) else 0)
+                    st.dataframe(tier_df, use_container_width=True, hide_index=True,
+                        column_config={'年度金额': st.column_config.NumberColumn(format="%,d"),
+                            'H1': st.column_config.NumberColumn(format="%,d"),
+                            'H2': st.column_config.NumberColumn(format="%,d")})
+                    if HAS_PLOTLY:
+                        st.markdown('<div class="section-header">CONCENTRATION CURVE</div>', unsafe_allow_html=True)
+                        cum = [t['累计占比'] for t in tiers]
+                        fig = go.Figure()
+                        fig.add_trace(go.Scatter(x=list(range(1, len(cum)+1)), y=cum, mode='lines+markers',
+                            line=dict(color=SP_GREEN, width=2), marker=dict(size=5, color=SP_GREEN),
+                            fill='tozeroy', fillcolor='rgba(0,255,136,0.06)'))
+                        fig.add_hline(y=80, line_dash="dash", line_color=ORANGE,
+                            annotation_text="80% 帕累托线", annotation_font=dict(size=10, color=ORANGE))
+                        fig.update_layout(**plotly_layout("客户集中度曲线", 350, False))
+                        fig.update_xaxes(title_text="客户排名")
+                        fig.update_yaxes(title_text="累计占比 (%)")
+                        st.plotly_chart(fig, use_container_width=True)
+
+                # ── Tab: 价量分解 (完整 V9 版 — 图表+表格) ──
+                with _sub_tabs[3]:
+                    pv = results['价量分解']
+                    if pv:
+                        quality_counts = {}
+                        for p in pv:
+                            _q = p.get('质量评估', '未知')
+                            quality_counts[_q] = quality_counts.get(_q, 0) + 1
+                        st.markdown('<div class="section-header">PRICE-VOLUME DECOMPOSITION</div>', unsafe_allow_html=True)
+                        pv_df = pd.DataFrame(pv)
+                        st.dataframe(pv_df, use_container_width=True, hide_index=True)
+                        if HAS_PLOTLY:
+                            fig = go.Figure()
+                            for _i2, p in enumerate(pv[:10]):
+                                color = SP_GREEN if '优质' in p.get('质量评估', '') else (SP_RED if '齐跌' in p.get('质量评估', '') else SP_BLUE)
+                                fig.add_trace(go.Bar(name=p['客户'], x=[p['客户']], y=[p.get('年度金额', 0)],
+                                    marker_color=color, showlegend=False,
+                                    text=[f"{p.get('年度金额', 0):,.0f}"], textposition="outside"))
+                            fig.update_layout(**plotly_layout("客户价量分布", 380, False))
+                            st.plotly_chart(fig, use_container_width=True)
+
+                # ── Tab: 增长机会 (完整 V9 版) ──
+                with _sub_tabs[4]:
+                    growth = results['增长机会']
+                    st.markdown(f'<div class="section-header">GROWTH OPPORTUNITIES · {len(growth)} FOUND</div>', unsafe_allow_html=True)
+                    for g in growth:
+                        with st.expander(f"📈 **{g.get('客户', '未知')}** — {g.get('类型', '')} — {g.get('说明', '')}", expanded=False):
+                            for k, v in g.items():
+                                if k not in ('客户',):
+                                    st.markdown(f"**{k}**: {v}")
+
+                # ── Tab: 产品结构 (完整 V9 版 — 带图表) ──
+                with _sub_tabs[5]:
+                    pm = data.get('产品结构', data.get('类别YoY', []))
+                    if pm:
+                        st.markdown('<div class="section-header">PRODUCT MIX</div>', unsafe_allow_html=True)
+                        pm_df = pd.DataFrame(pm)
+                        st.dataframe(pm_df, use_container_width=True, hide_index=True)
+                        if HAS_PLOTLY:
+                            fig = go.Figure()
+                            for _i3, p in enumerate(pm):
+                                fig.add_trace(go.Bar(x=[p['类别']], y=[p['2025金额']],
+                                    marker_color=CHART_COLORS[_i3 % len(CHART_COLORS)], name=p['类别'],
+                                    text=[f"{p['2025金额']:,.0f}"], textposition="outside"))
+                            fig.update_layout(**plotly_layout("2025 产品结构（万元）", 380))
+                            st.plotly_chart(fig, use_container_width=True)
+
+                # ── Tab: 区域分析 (完整 V9 版 — 带HHI+图表) ──
+                with _sub_tabs[6]:
+                    reg = results['区域洞察']
+                    c1, c2, c3 = st.columns(3)
+                    c1.metric("覆盖区域", f"{len(reg['详细'])}个")
+                    c2.metric("Top3 集中度", f"{reg['Top3集中度']}%")
+                    c3.metric("HHI", f"{reg['赫芬达尔指数']}", "⚠️ 高度集中" if reg['赫芬达尔指数']>2500 else "✅")
+                    if reg['赫芬达尔指数'] > 2500:
+                        st.warning(f"⚠️ HHI={reg['赫芬达尔指数']}（>2500），区域依赖风险")
+                    st.dataframe(pd.DataFrame(reg['详细']), use_container_width=True, hide_index=True)
+                    if HAS_PLOTLY:
+                        regions = reg['详细']
+                        fig = go.Figure()
+                        fig.add_trace(go.Bar(x=[r['区域'] for r in regions], y=[r['金额'] for r in regions],
+                            marker_color=[SP_GREEN if _i4 == 0 else "rgba(140,191,63,0.25)" for _i4 in range(len(regions))],
+                            text=[f"{r['金额']:,.0f}" for r in regions], textposition="outside", textfont=dict(size=10)))
+                        fig.update_layout(**plotly_layout("区域出货分布（万元）", 380, False))
+                        st.plotly_chart(fig, use_container_width=True)
+
+                # ── Tab: 导出 (完整 V9 版 — PDF+JSON+Prompt) ──
+                with _sub_tabs[7]:
+                    render_report_section(data, results, benchmark, forecast)
+                    st.markdown("")
+                    st.markdown("#### 其他格式")
+                    gen = ReportGeneratorV2(data, results)
+                    base_report = gen.generate()
+                    bench_section = generate_benchmark_section(benchmark)
+                    forecast_section = generate_forecast_section(forecast)
+                    narrator = AINarrator(data, results, benchmark, forecast)
+                    memo = narrator._template_narrative()
+                    footer = "\n---\n> MRARFAI 销售分析"
+                    if footer in base_report:
+                        parts = base_report.split(footer)
+                        full = parts[0] + bench_section + forecast_section + memo + footer + parts[1]
+                    else:
+                        full = base_report + bench_section + forecast_section + memo
+                    full = full.replace("Agent v2.0", "Agent v10.0").replace("智能分析系统 v2.0", "智能分析系统 v10.0")
+                    full = full.replace("Agent v4.0", "Agent v10.0").replace("Agent v8.0", "Agent v10.0").replace("Agent v9.0", "Agent v10.0")
+                    now = datetime.now().strftime('%Y%m%d')
+                    c1, c2, c3 = st.columns(3)
+                    with c1:
+                        st.download_button("📄 完整报告", full, f"禾苗销售分析_{now}.md", "text/markdown", use_container_width=True)
+                    with c2:
+                        json_all = json.dumps({'分析': results, '行业': benchmark, '预测': forecast},
+                            ensure_ascii=False, indent=2, default=str)
+                        st.download_button("📊 JSON数据", json_all, f"analysis_{now}.json", "application/json", use_container_width=True)
+                    with c3:
+                        st.download_button("🤖 AI Prompt", gen.generate_ai_prompt(), "ai_prompt.txt", "text/plain", use_container_width=True)
+                    with st.expander("📖 报告预览"):
+                        st.markdown(full)
+
+            # ── Risk Agent: 完整 V9 预警+健康评分+异常检测 ──
             elif _active == "risk":
                 _sub_tabs = st.tabs(["🚨 预警中心", "❤️ 健康评分", "🔬 异常检测"])
-                with _sub_tabs[0]:
-                    st.markdown("### 🚨 流失预警")
-                    if results.get('流失预警'):
-                        import pandas as _pd3
-                        st.dataframe(_pd3.DataFrame(results['流失预警']), use_container_width=True, hide_index=True)
-                with _sub_tabs[1]:
-                    st.markdown("### ❤️ 健康评分")
-                    st.info("基于多维度指标的客户健康评分")
-                with _sub_tabs[2]:
-                    st.markdown("### 🔬 异常检测")
-                    st.info("统计异常检测分析")
 
+                with _sub_tabs[0]:
+                    alerts = results['流失预警']
+                    high_risk = [a for a in alerts if '高' in a['风险']]
+                    med_risk = [a for a in alerts if '中' in a['风险']]
+                    c1, c2, c3 = st.columns(3)
+                    c1.metric("🔴 高风险", f"{len(high_risk)}家", f"涉及 {sum(a['年度金额'] for a in high_risk):,.0f}万")
+                    c2.metric("🟡 中风险", f"{len(med_risk)}家")
+                    c3.metric("总预警", f"{len(alerts)}家")
+                    st.markdown('<div class="section-header">HIGH RISK CLIENTS</div>', unsafe_allow_html=True)
+                    for a in high_risk:
+                        st.error(f"🔴 **{a['客户']}** — ¥{a['年度金额']:,.0f}万 — {a.get('原因', a.get('风险', ''))}")
+                    for a in med_risk:
+                        st.warning(f"🟡 **{a['客户']}** — ¥{a['年度金额']:,.0f}万 — {a.get('原因', a.get('风险', ''))}")
+
+                with _sub_tabs[1]:
+                    render_health_dashboard(data, results)
+
+                with _sub_tabs[2]:
+                    st.caption("基于统计模型 (Z-Score · IQR · 趋势断裂 · 波动率 · 系统性风险)")
+                    render_anomaly_dashboard(data, results)
+
+            # ── Strategist Agent: 完整 V9 对标+预测+CEO备忘录 ──
             elif _active == "strategist":
                 _sub_tabs = st.tabs(["🌐 行业对标", "🔮 预测", "✏️ CEO备忘录"])
+
+                # ── 行业对标 (完整 V9 版) ──
                 with _sub_tabs[0]:
-                    st.markdown("### 🌐 行业对标")
-                    if benchmark:
-                        import pandas as _pd4
-                        st.dataframe(_pd4.DataFrame(benchmark) if isinstance(benchmark, list) else _pd4.DataFrame([benchmark]),
-                                     use_container_width=True, hide_index=True)
+                    st.caption("数据来源：IDC / Counterpoint / 公司年报")
+                    mp = benchmark['市场定位']
+                    for k, v in mp.items():
+                        st.markdown(f'<div class="agent-card"><h4>{k}</h4><p>{v}</p></div>', unsafe_allow_html=True)
+                    st.markdown("")
+                    cb = benchmark['竞争对标']
+                    comp_data = []
+                    for name in ['华勤', '闻泰', '龙旗', '禾苗']:
+                        comp_data.append({'公司': f"{'→ ' if name=='禾苗' else ''}{name}",
+                            '营收(亿)': cb['营收'].get(name, '-'), '增速': cb['增速'].get(name, '-'),
+                            '毛利率': cb['毛利率'].get(name, '-')})
+                    st.dataframe(pd.DataFrame(comp_data), use_container_width=True, hide_index=True)
+                    st.info(f"📊 客户集中度：{cb['客户集中度']}")
+                    st.markdown("")
+                    for v in benchmark['客户外部视角']:
+                        with st.expander(f"**{v['客户']}**", expanded=v['客户']=='HMD'):
+                            if '外部' in v: st.markdown(f"🌐 **外部趋势**：{v['外部']}")
+                            if '禾苗' in v: st.markdown(f"📊 **禾苗表现**：{v['禾苗']}")
+                            st.markdown(f"🎯 **判断**：{v['判断']}")
+                            if '根因' in v: st.error(f"🔍 **根因分析**：{v['根因']}")
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        for r in benchmark['结构性风险']:
+                            with st.expander(f"🔴 {r['风险']}"):
+                                st.markdown(f"**行业**：{r['行业']}\n\n**禾苗**：{r['禾苗']}")
+                                st.success(f"→ {r['建议']}")
+                    with col2:
+                        for o in benchmark['战略机会']:
+                            with st.expander(f"🚀 {o['机会']}（{o['数据']}）"):
+                                st.markdown(f"**行业**：{o['行业']}")
+                                st.success(f"→ {o['行动']}")
+
+                # ── 预测 (完整 V9 版 — 含图表) ──
                 with _sub_tabs[1]:
-                    st.markdown("### 🔮 营收预测")
-                    if forecast:
-                        st.json(forecast)
+                    t = forecast['总营收预测']
+                    c1, c2, c3 = st.columns(3)
+                    c1.metric("Q1 乐观", f"{t['置信区间']['乐观(+15%)']:,.0f}万")
+                    c2.metric("Q1 基准", f"{t['置信区间']['基准']:,.0f}万", "⬅️ 核心预测")
+                    c3.metric("Q1 悲观", f"{t['置信区间']['悲观(-15%)']:,.0f}万")
+                    st.caption(f"参考：Q1 2025 {t['参考']['Q1_2025实际']:,.0f}万 | Q4 2025 {t['参考']['Q4_2025实际']:,.0f}万")
+                    with st.expander("🔍 预测方法"):
+                        for k, v in t['方法说明'].items():
+                            st.markdown(f"- **{k}**：{v}")
+                    st.markdown("")
+                    cp_df = pd.DataFrame(forecast['客户预测'])
+                    for col in ['Q4实际', 'Q1预测']:
+                        if col in cp_df.columns:
+                            cp_df[col] = pd.to_numeric(cp_df[col], errors='coerce').round(0)
+                    st.dataframe(cp_df, use_container_width=True, hide_index=True,
+                        column_config={'Q4实际': st.column_config.NumberColumn(format="%,.0f"),
+                            'Q1预测': st.column_config.NumberColumn(format="%,.0f")})
+                    with st.expander("📋 品类预测 2026E"):
+                        st.dataframe(pd.DataFrame(forecast['品类预测']), use_container_width=True, hide_index=True)
+                    st.markdown("")
+                    scenarios = forecast['风险场景']
+                    if HAS_PLOTLY:
+                        names = list(scenarios.keys())
+                        values = [scenarios[n]['全年预测'] for n in names]
+                        fig = go.Figure()
+                        fig.add_trace(go.Bar(x=[n.split('(')[0] for n in names], y=values,
+                            marker_color=[SP_GREEN, SP_BLUE, ORANGE, SP_RED],
+                            text=[f"{v/10000:.1f}亿" for v in values],
+                            textposition="outside", textfont=dict(size=13, color=TEXT2)))
+                        fig.update_layout(**plotly_layout("2026 情景预测", 400, False))
+                        st.plotly_chart(fig, use_container_width=True)
+                    cols = st.columns(4)
+                    for _i5, (name, sc) in enumerate(scenarios.items()):
+                        with cols[_i5]:
+                            st.metric(name.split('(')[0], f"{sc['全年预测']/10000:.1f}亿")
+                            st.caption(sc['假设'])
+
+                # ── CEO备忘录 (完整 V9 版 — AI生成+模板) ──
                 with _sub_tabs[2]:
-                    st.markdown("### ✏️ CEO备忘录")
-                    st.info("基于分析生成 CEO 周报/月报")
+                    if ai_enabled and api_key:
+                        if st.button("🧠 用AI生成深度叙事", type="primary", use_container_width=True, key="ai_memo_strat"):
+                            narrator = AINarrator(data, results, benchmark, forecast)
+                            with st.spinner("AI 分析中..."):
+                                ai_text = narrator.generate(api_key, ai_provider.lower())
+                            st.markdown(ai_text)
+                            st.download_button("📥 下载", ai_text, "ai_memo.md", "text/markdown", key="dl_ai_memo_strat")
+                    narrator = AINarrator(data, results, benchmark, forecast)
+                    memo = narrator._template_narrative()
+                    with st.expander("📄 内置战略备忘录", expanded=not ai_enabled):
+                        st.markdown(memo)
 
             st.stop()
 
