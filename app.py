@@ -839,6 +839,27 @@ if HAS_V10_GATEWAY:
 
         st.markdown("---")
 
+        # ── AI 模型配置 (V10 Agent 通用) ──
+        if _active != "_collab" and _active not in _needs_upload:
+            _ai_cfg_col1, _ai_cfg_col2, _ai_cfg_col3 = st.columns([1, 1, 2])
+            with _ai_cfg_col1:
+                _v10_provider = st.selectbox("AI模型", ["Claude", "DeepSeek"],
+                    key="v10_provider", label_visibility="collapsed")
+            with _ai_cfg_col2:
+                _v10_api_key = st.text_input("API Key", type="password",
+                    placeholder="sk-ant-... (可选，启用AI智能回答)",
+                    key="v10_api_key", label_visibility="collapsed")
+            with _ai_cfg_col3:
+                if _v10_api_key:
+                    st.markdown(f"""<div style="font-size:0.55rem;color:#4ade80;font-family:'JetBrains Mono',monospace;
+                        padding:8px 0;">✅ AI 智能回答已启用 · {_v10_provider}</div>""", unsafe_allow_html=True)
+                else:
+                    st.markdown("""<div style="font-size:0.55rem;color:#555;font-family:'JetBrains Mono',monospace;
+                        padding:8px 0;">💡 输入 API Key 启用 AI 智能回答（无Key也可使用基础功能）</div>""", unsafe_allow_html=True)
+        else:
+            _v10_provider = "Claude"
+            _v10_api_key = ""
+
         # 初始化该 Agent 对话历史
         _chat_key = f"chat_{_active}"
         if _chat_key not in st.session_state.v10_chat_history:
@@ -1257,7 +1278,7 @@ if HAS_V10_GATEWAY:
                     if st.button(f"⚡ {_scfg['name']}", key=f"collab_{_sid}", use_container_width=True):
                         _trig = _scfg["trigger_keywords"][0]
                         _history.append({"role": "user", "content": f"[协作] {_scfg['name']}: {_trig}"})
-                        _resp = _gw.ask(_trig, user="admin")
+                        _resp = _gw.ask(_trig, user="admin", provider=_v10_provider.lower(), api_key=_v10_api_key)
                         if _resp["type"] == "collaboration":
                             _res = _resp["result"]
                             _disp = _res.get("synthesis", "")
@@ -1288,7 +1309,7 @@ if HAS_V10_GATEWAY:
                     with _qcols[_i]:
                         if st.button(f"{_label}", key=f"aq_{_active}_{_i}", use_container_width=True):
                             _history.append({"role": "user", "content": _query})
-                            _resp = _gw.ask(_query, user="admin")
+                            _resp = _gw.ask(_query, user="admin", provider=_v10_provider.lower(), api_key=_v10_api_key)
                             _ans = _resp.get("answer", "")
                             try:
                                 _disp = json.dumps(json.loads(_ans) if isinstance(_ans, str) else _ans,
@@ -1321,7 +1342,7 @@ if HAS_V10_GATEWAY:
         _v10q = st.chat_input(f"向 {_cn} 提问...", key=f"chat_input_{_active}")
         if _v10q:
             _history.append({"role": "user", "content": _v10q})
-            _resp = _gw.ask(_v10q, user="admin")
+            _resp = _gw.ask(_v10q, user="admin", provider=_v10_provider.lower(), api_key=_v10_api_key)
             if _resp["type"] == "collaboration":
                 _res = _resp["result"]
                 _disp = _res.get("synthesis", "")
@@ -1886,7 +1907,9 @@ if HAS_V10_GATEWAY:
 
                 # 调用 Gateway
                 with st.spinner("🔄 智能路由中..."):
-                    resp = gw.ask(_v10_input, user=st.session_state.get("auth_user", {}).get("username", "admin"))
+                    resp = gw.ask(_v10_input, user=st.session_state.get("auth_user", {}).get("username", "admin"),
+                                  provider=st.session_state.get("ai_provider", "claude").lower(),
+                                  api_key=st.session_state.get("api_key", ""))
 
                 # 解析响应
                 if resp["type"] == "collaboration":
@@ -1979,7 +2002,9 @@ if HAS_V10_GATEWAY:
                         # 触发协作场景
                         _trigger_q = sconfig["trigger_keywords"][0]
                         st.session_state.v10_chat_history.append({"role": "user", "content": f"[协作] {_trigger_q}"})
-                        resp = gw.ask(_trigger_q, user="admin")
+                        resp = gw.ask(_trigger_q, user="admin",
+                                      provider=st.session_state.get("ai_provider", "claude").lower(),
+                                      api_key=st.session_state.get("api_key", ""))
                         if resp["type"] == "collaboration":
                             _result = resp["result"]
                             _display = _result.get("synthesis", "")
@@ -2011,7 +2036,9 @@ if HAS_V10_GATEWAY:
                 with _eq_cols[i]:
                     if st.button(label, key=f"quick_{i}", use_container_width=True):
                         st.session_state.v10_chat_history.append({"role": "user", "content": query})
-                        resp = gw.ask(query, user="admin")
+                        resp = gw.ask(query, user="admin",
+                                      provider=st.session_state.get("ai_provider", "claude").lower(),
+                                      api_key=st.session_state.get("api_key", ""))
                         if resp["type"] == "single_agent":
                             _answer = resp.get("answer", "")
                             try:

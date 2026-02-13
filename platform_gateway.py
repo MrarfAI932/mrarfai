@@ -28,6 +28,19 @@ import asyncio
 from datetime import datetime
 from typing import Dict, List, Any, Optional, Callable
 from dataclasses import dataclass, field
+
+# ── LLM Providers (可选) ──
+try:
+    import anthropic
+    HAS_ANTHROPIC = True
+except ImportError:
+    HAS_ANTHROPIC = False
+
+try:
+    from openai import OpenAI
+    HAS_OPENAI = True
+except ImportError:
+    HAS_OPENAI = False
 from collections import defaultdict
 
 logger = logging.getLogger("mrarfai.gateway")
@@ -511,14 +524,155 @@ class PlatformGateway:
         )
         logger.info(f"已注册 {agent_count} 个Agent, {total_skills} 个Skills")
 
-    def ask(self, query: str, user: str = "anonymous") -> Dict:
+    # ── LLM Agent 角色定义 ──
+    _AGENT_ROLES = {
+        "procurement": "采购管理专家，擅长供应商评估、PO跟踪、比价分析、成本优化。你为ODM手机制造企业(禾苗通讯/SPROCOMM)提供采购决策支持。",
+        "quality": "品质管控专家，擅长良率监控、退货分析、投诉分类、缺陷根因追溯。你为ODM手机产线提供品质保障分析。",
+        "finance": "财务分析专家，擅长应收账款管理、毛利分析、现金流预测。你为ODM企业提供财务洞察和风险预警。",
+        "market": "市场情报专家，擅长竞品分析(华勤/闻泰/龙旗)、行业趋势、舆情追踪。你为ODM企业提供市场战略参考。",
+        "sales": "销售分析专家，擅长客户分析、营收趋势、价量分解、区域洞察。",
+        "risk": "风控预警专家，擅长流失预警、异常检测、风险评分。",
+        "strategist": "战略顾问，擅长行业对标、增长策略、营收预测。",
+    }
+
+    def _llm_synthesize(self, query: str, agent_name: str, raw_data: str,
+                         provider: str = "claude", api_key: str = "") -> str:
+        """
+        用 LLM 将结构化数据转为自然语言回答
+
+        - 有 API Key → 调用 Claude/DeepSeek 生成智能回答
+        - 无 API Key → 原样返回 raw_data (JSON)
+        """
+        if not api_key:
+            return raw_data
+
+        role = self._AGENT_ROLES.get(agent_name, "AI助手")
+        system_prompt = (
+            f"你是MRARFAI企业智能平台的{role}\n\n"
+            "规则:\n"
+            "1. 基于提供的数据回答用户问题，用中文\n"
+            "2. 简洁专业，先给结论，再展开关键数据\n"
+            "3. 用 markdown 格式，善用加粗、列表、表格\n"
+            "4. 数据要精确引用(金额、百分比、排名)\n"
+            "5. 最后给出1-2条可执行的建议\n"
+            "6. 不要编造数据中没有的信息"
+        )
+        user_prompt = f"用户问题: {query}\n\n以下是系统查询到的数据:\n```json\n{raw_data[:3000]}\n```"
+
+        try:
+            provider_lower = provider.lower() if provider else "claude"
+
+            if provider_lower == "claude" and HAS_ANTHROPIC:
+                client = anthropic.Anthropic(api_key=api_key)
+                resp = client.messages.create(
+                    model="claude-sonnet-4-20250514",
+                    max_tokens=1500,
+                    system=system_prompt,
+                    messages=[{"role": "user", "content": user_prompt}],
+                )
+                return resp.content[0].text
+
+            elif provider_lower == "deepseek" and HAS_OPENAI:
+                client = OpenAI(api_key=api_key, base_url="https://api.deepseek.com/v1")
+                resp = client.chat.completions.create(
+                    model="deepseek-chat",
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt},
+                    ],
+                    temperature=0.3,
+                    max_tokens=1500,
+                )
+                return resp.choices[0].message.content
+
+            else:
+                logger.warning(f"LLM provider '{provider}' 不可用，回退原始数据")
+                return raw_data
+
+        except Exception as e:
+            err = str(e).lower()
+            if "api_key" in err or "authentication" in err or "401" in err:
+                return f"🔑 API Key 无效或已过期\n\n---\n原始数据:\n{raw_data[:500]}"
+            elif "rate_limit" in err or "429" in err:
+                return f"⏳ API 请求过于频繁，请稍等30秒后重试\n\n---\n原始数据:\n{raw_data[:500]}"
+            elif "insufficient_quota" in err or "402" in err:
+                return f"💳 API 额度不足\n\n---\n原始数据:\n{raw_data[:500]}"
+            else:
+                logger.error(f"LLM调用失败: {e}")
+                return f"⚠️ AI 分析暂时不可用: {str(e)[:100]}\n\n---\n原始数据:\n{raw_data[:500]}"
+
+    def _llm_synthesize_collab(self, scenario: Dict, results: Dict, query: str,
+                                provider: str = "claude", api_key: str = "") -> str:
+        """用 LLM 综合多 Agent 协作结果"""
+        if not api_key:
+            return self.collaboration._synthesize(scenario, results, query)
+
+        system_prompt = (
+            "你是MRARFAI企业智能平台的协作分析引擎。\n"
+            "多个AI Agent已经分别完成各自领域的分析，你需要综合所有结果。\n\n"
+            "规则:\n"
+            "1. 先给出综合结论（1-2句）\n"
+            "2. 按Agent分述关键发现\n"
+            "3. 指出跨领域的关联洞察\n"
+            "4. 给出综合建议\n"
+            "5. 用 markdown 格式"
+        )
+
+        agent_data = ""
+        for agent, result in results.items():
+            role = self._AGENT_ROLES.get(agent, agent)
+            agent_data += f"\n### {agent.upper()} ({role}):\n{str(result)[:800]}\n"
+
+        user_prompt = (
+            f"协作场景: {scenario['name']} — {scenario['description']}\n"
+            f"用户问题: {query}\n"
+            f"参与Agent: {' → '.join(scenario['chain'])}\n\n"
+            f"各Agent分析结果:\n{agent_data}"
+        )
+
+        try:
+            provider_lower = provider.lower() if provider else "claude"
+
+            if provider_lower == "claude" and HAS_ANTHROPIC:
+                client = anthropic.Anthropic(api_key=api_key)
+                resp = client.messages.create(
+                    model="claude-sonnet-4-20250514",
+                    max_tokens=2000,
+                    system=system_prompt,
+                    messages=[{"role": "user", "content": user_prompt}],
+                )
+                return resp.content[0].text
+
+            elif provider_lower == "deepseek" and HAS_OPENAI:
+                client = OpenAI(api_key=api_key, base_url="https://api.deepseek.com/v1")
+                resp = client.chat.completions.create(
+                    model="deepseek-chat",
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt},
+                    ],
+                    temperature=0.3,
+                    max_tokens=2000,
+                )
+                return resp.choices[0].message.content
+
+            else:
+                return self.collaboration._synthesize(scenario, results, query)
+
+        except Exception as e:
+            logger.error(f"协作LLM综合失败: {e}")
+            return self.collaboration._synthesize(scenario, results, query)
+
+    def ask(self, query: str, user: str = "anonymous",
+            provider: str = "claude", api_key: str = "") -> Dict:
         """
         统一查询入口
 
         1. 路由到最优Agent
         2. 检测协作场景
         3. 执行查询
-        4. 审计日志
+        4. LLM智能合成 (有API Key时)
+        5. 审计日志
         """
         start = time.time()
 
@@ -542,6 +696,13 @@ class PlatformGateway:
             if scenario:
                 # 跨Agent协作
                 result = self.collaboration.execute_chain(scenario, query)
+
+                # LLM 综合 (有 Key 时)
+                if api_key:
+                    result["synthesis"] = self._llm_synthesize_collab(
+                        scenario, {k: v for k, v in result.get("agent_results", {}).items()},
+                        query, provider, api_key)
+
                 response = {
                     "type": "collaboration",
                     "scenario": scenario["name"],
@@ -552,13 +713,17 @@ class PlatformGateway:
                 # 单Agent查询
                 engine = self.collaboration.engines.get(agent_name)
                 if engine:
-                    answer = engine.answer(query)
+                    raw_answer = engine.answer(query)
                 else:
-                    answer = json.dumps({
+                    raw_answer = json.dumps({
                         "agent": agent_name,
                         "query": query,
                         "note": "连接实际数据源后返回真实分析",
                     }, ensure_ascii=False)
+
+                # LLM 智能合成 (有 Key 时转自然语言)
+                answer = self._llm_synthesize(
+                    query, agent_name, raw_answer, provider, api_key)
 
                 response = {
                     "type": "single_agent",
