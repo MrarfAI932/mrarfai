@@ -18,6 +18,25 @@ import numpy as np
 import json, os, tempfile
 from datetime import datetime
 
+# ── 加载 .env 配置 (内置 API Key) ──
+def _load_env():
+    """从 .env 文件加载环境变量"""
+    env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
+    if os.path.exists(env_path):
+        with open(env_path, "r") as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith("#") and "=" in line:
+                    k, v = line.split("=", 1)
+                    k, v = k.strip(), v.strip()
+                    if v and k not in os.environ:
+                        os.environ[k] = v
+_load_env()
+
+# 内置 AI 配置
+_DEFAULT_PROVIDER = os.environ.get("AI_PROVIDER", "Claude")
+_DEFAULT_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "") or os.environ.get("DEEPSEEK_API_KEY", "")
+
 try:
     import plotly.graph_objects as go
     import plotly.express as px
@@ -839,26 +858,27 @@ if HAS_V10_GATEWAY:
 
         st.markdown("---")
 
-        # ── AI 模型配置 (V10 Agent 通用) ──
+        # ── AI 模型配置 (自动从 .env 加载，用户可覆盖) ──
         if _active != "_collab" and _active not in _needs_upload:
-            _ai_cfg_col1, _ai_cfg_col2, _ai_cfg_col3 = st.columns([1, 1, 2])
-            with _ai_cfg_col1:
-                _v10_provider = st.selectbox("AI模型", ["Claude", "DeepSeek"],
-                    key="v10_provider", label_visibility="collapsed")
-            with _ai_cfg_col2:
-                _v10_api_key = st.text_input("API Key", type="password",
-                    placeholder="sk-ant-... (可选，启用AI智能回答)",
-                    key="v10_api_key", label_visibility="collapsed")
-            with _ai_cfg_col3:
-                if _v10_api_key:
-                    st.markdown(f"""<div style="font-size:0.55rem;color:#4ade80;font-family:'JetBrains Mono',monospace;
-                        padding:8px 0;">✅ AI 智能回答已启用 · {_v10_provider}</div>""", unsafe_allow_html=True)
-                else:
-                    st.markdown("""<div style="font-size:0.55rem;color:#555;font-family:'JetBrains Mono',monospace;
-                        padding:8px 0;">💡 输入 API Key 启用 AI 智能回答（无Key也可使用基础功能）</div>""", unsafe_allow_html=True)
+            _v10_provider = _DEFAULT_PROVIDER
+            _v10_api_key = _DEFAULT_API_KEY
+            if _v10_api_key:
+                # 已内置 Key，显示状态
+                st.markdown(f"""<div style="font-size:0.55rem;color:#4ade80;font-family:'JetBrains Mono',monospace;
+                    padding:4px 0 8px 0;">✅ AI 智能回答已启用 · {_v10_provider} · Key 已内置</div>""", unsafe_allow_html=True)
+            else:
+                # 无内置 Key，显示输入框
+                _ai_cfg_col1, _ai_cfg_col2 = st.columns([1, 3])
+                with _ai_cfg_col1:
+                    _v10_provider = st.selectbox("AI模型", ["Claude", "DeepSeek"],
+                        key="v10_provider", label_visibility="collapsed")
+                with _ai_cfg_col2:
+                    _v10_api_key = st.text_input("API Key", type="password",
+                        placeholder="sk-ant-... (在 .env 文件中配置可永久保存)",
+                        key="v10_api_key", label_visibility="collapsed")
         else:
-            _v10_provider = "Claude"
-            _v10_api_key = ""
+            _v10_provider = _DEFAULT_PROVIDER
+            _v10_api_key = _DEFAULT_API_KEY
 
         # 初始化该 Agent 对话历史
         _chat_key = f"chat_{_active}"
