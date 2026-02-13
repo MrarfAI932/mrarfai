@@ -604,6 +604,22 @@ button[kind="headerNoPadding"] { display: none !important; }
     pointer-events:none; z-index:0;
 }
 
+/* ── 移动端适配 ── */
+@media (max-width: 768px) {
+    .block-container { padding: 0.5rem 0.8rem 2rem !important; }
+    .stTabs [data-baseweb="tab"] { font-size: 0.5rem !important; padding: 0.5rem 0.5rem !important; letter-spacing: 0.05em !important; }
+    .stTabs [data-baseweb="tab-list"] { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .upload-zone { padding: 16px; max-width: 100%; }
+    .agent-card { padding: 0.5rem 0.6rem; }
+    .top-bar { padding: 6px 10px; gap: 8px; }
+    [data-testid="stDataFrame"] { overflow-x: auto !important; }
+    .js-plotly-plot { overflow-x: auto !important; }
+}
+@media (max-width: 480px) {
+    .block-container { padding: 0.3rem 0.5rem 1.5rem !important; }
+    .stTabs [data-baseweb="tab"] { font-size: 0.45rem !important; padding: 0.4rem 0.35rem !important; }
+}
+
 </style>""", unsafe_allow_html=True)
 
 # ============================================================
