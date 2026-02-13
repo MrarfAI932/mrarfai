@@ -29,6 +29,79 @@ def _hash_pw(password: str) -> str:
     """SHA-256 哈希密码"""
     return hashlib.sha256(password.encode()).hexdigest()
 
+# ============================================================
+# 角色 → Agent 权限映射
+# ============================================================
+ROLE_PERMISSIONS = {
+    "admin": {
+        "agents": ["sales", "procurement", "quality", "finance", "market", "risk", "strategist"],
+        "collab": True,
+        "upload": True,
+        "export": True,
+        "label": "管理员",
+    },
+    "sales_manager": {
+        "agents": ["sales", "risk", "market"],
+        "collab": True,
+        "upload": True,
+        "export": True,
+        "label": "销售经理",
+    },
+    "procurement_manager": {
+        "agents": ["procurement", "quality", "finance"],
+        "collab": True,
+        "upload": True,
+        "export": True,
+        "label": "采购经理",
+    },
+    "quality_manager": {
+        "agents": ["quality"],
+        "collab": False,
+        "upload": True,
+        "export": True,
+        "label": "品质经理",
+    },
+    "finance_manager": {
+        "agents": ["finance"],
+        "collab": False,
+        "upload": True,
+        "export": True,
+        "label": "财务经理",
+    },
+    "viewer": {
+        "agents": ["sales", "market"],
+        "collab": False,
+        "upload": False,
+        "export": False,
+        "label": "只读访客",
+    },
+}
+
+def get_role_permissions(role: str) -> dict:
+    """获取角色的权限配置"""
+    return ROLE_PERMISSIONS.get(role, ROLE_PERMISSIONS["viewer"])
+
+def get_allowed_agents(role: str) -> list:
+    """获取角色可访问的 Agent 列表"""
+    return get_role_permissions(role).get("agents", [])
+
+def can_access_agent(role: str, agent_name: str) -> bool:
+    """检查角色是否可访问指定 Agent"""
+    return agent_name in get_allowed_agents(role)
+
+def can_use_collab(role: str) -> bool:
+    """检查角色是否可使用跨 Agent 协作"""
+    return get_role_permissions(role).get("collab", False)
+
+def can_upload(role: str) -> bool:
+    """检查角色是否可上传数据"""
+    return get_role_permissions(role).get("upload", False)
+
+def can_export(role: str) -> bool:
+    """检查角色是否可导出报告"""
+    return get_role_permissions(role).get("export", False)
+
+
 # 默认用户 — 可通过 users.json 覆盖
 DEFAULT_USERS = {
     "admin": {
@@ -41,6 +114,30 @@ DEFAULT_USERS = {
         "password_hash": _hash_pw("sprocomm888"),
         "role": "admin",
         "display_name": "禾苗通讯",
+        "company": "Sprocomm",
+    },
+    "sales": {
+        "password_hash": _hash_pw("sales123"),
+        "role": "sales_manager",
+        "display_name": "销售部",
+        "company": "Sprocomm",
+    },
+    "procurement": {
+        "password_hash": _hash_pw("proc123"),
+        "role": "procurement_manager",
+        "display_name": "采购部",
+        "company": "Sprocomm",
+    },
+    "quality": {
+        "password_hash": _hash_pw("quality123"),
+        "role": "quality_manager",
+        "display_name": "品质部",
+        "company": "Sprocomm",
+    },
+    "finance": {
+        "password_hash": _hash_pw("finance123"),
+        "role": "finance_manager",
+        "display_name": "财务部",
         "company": "Sprocomm",
     },
     "viewer": {

@@ -125,8 +125,14 @@ st.set_page_config(page_title="Sprocomm AI · MRARFAI v10.0", page_icon="🌿", 
 # ============================================================
 # 登录门禁
 # ============================================================
-from auth import require_login, get_current_user, logout, is_admin
+from auth import (require_login, get_current_user, logout, is_admin,
+                   get_allowed_agents, can_access_agent, can_use_collab,
+                   can_upload, can_export, get_role_permissions, ROLE_PERMISSIONS)
 require_login()  # 未登录 → 显示登录页 → st.stop()
+_current_user = get_current_user()
+_user_role = _current_user.get("role", "viewer") if _current_user else "viewer"
+_allowed_agents = get_allowed_agents(_user_role)
+_role_perms = get_role_permissions(_user_role)
 
 
 # ============================================================
@@ -632,7 +638,7 @@ with _bar1:
         <div style="margin-left:auto; display:flex; align-items:center; gap:8px;">
             <span style="font-family:'JetBrains Mono',monospace; font-size:0.55rem;
                  color:#6a6a6a; letter-spacing:0.05em;">
-                👤 {_user['display_name']} · <span style="color:#FFFFFF;">{_user['role'].upper()}</span>
+                👤 {_user['display_name']} · <span style="color:#FFFFFF;">{_role_perms.get('label', _user['role'].upper())}</span>
             </span>
         </div>
     </div>
@@ -762,21 +768,26 @@ if HAS_V10_GATEWAY:
                     <span style="font-family:'Space Grotesk',sans-serif;font-size:1rem;
                           font-weight:700;color:#FFF;letter-spacing:0.06em;">COMMAND CENTER</span>
                     <span style="font-size:0.5rem;color:#555;font-family:'JetBrains Mono',monospace;
-                          border:1px solid #333;padding:2px 6px;">V10.0 · 7 AGENTS · 20 SKILLS</span>
+                          border:1px solid #333;padding:2px 6px;">V10.0 · {len(_allowed_agents)} AGENTS AVAILABLE</span>
                 </div>
                 <div style="font-size:0.6rem;color:#555;font-family:'JetBrains Mono',monospace;">
-                    选择一个 Agent 进入专属工作台　｜　每个 Agent 拥有独立的分析能力和对话界面
+                    选择一个 Agent 进入专属工作台　｜　当前角色: {_role_perms.get('label', _user_role)}
                 </div>
             </div>
             """, unsafe_allow_html=True)
 
-            # Agent 卡片 — 可点击的按钮
-            _row1 = st.columns(4)
-            _row2 = st.columns(4)
-            _all_agents = list(_card["agents"])
+            # Agent 卡片 — 按角色过滤可见 Agent
+            _visible_agents = [a for a in _card["agents"] if a in _allowed_agents]
+            # 如果有协作权限，预留一个 slot 给协作卡片
+            _show_collab = can_use_collab(_user_role)
+            _total_cards = len(_visible_agents) + (1 if _show_collab else 0)
+            _row1 = st.columns(min(4, _total_cards) if _total_cards > 0 else 4)
+            _row2 = st.columns(4) if _total_cards > 4 else []
 
-            for _i, _name in enumerate(_all_agents):
-                _col = _row1[_i] if _i < 4 else _row2[_i - 4]
+            for _i, _name in enumerate(_visible_agents):
+                _col = _row1[_i] if _i < len(_row1) else _row2[_i - len(_row1)] if _i - len(_row1) < len(_row2) else None
+                if _col is None:
+                    continue
                 _icon = _agent_icons.get(_name, "🤖")
                 _cn = _agent_names_cn.get(_name, _name)
                 _desc = _agent_desc.get(_name, "")
@@ -808,30 +819,32 @@ if HAS_V10_GATEWAY:
                         st.session_state.active_agent = _name
                         st.rerun()
 
-            # 最下面一行：协作场景
-            if len(_all_agents) < 8:
-                # 用剩余的 _row2 slot 放协作入口
-                with _row2[3]:
-                    st.markdown(f"""
-                    <div style="background:#0d1117;border:1px solid rgba(255,255,255,0.08);
-                         padding:16px;text-align:center;min-height:160px;">
-                        <div style="font-size:2rem;margin-bottom:4px;">⚡</div>
-                        <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;
-                             font-size:0.8rem;color:#FFF;margin-bottom:4px;">跨Agent协作</div>
-                        <div style="font-family:'JetBrains Mono',monospace;font-size:0.45rem;
-                             color:#666;margin-bottom:8px;line-height:1.4;">
-                             出货异常追踪 · 智能报价 · 月度复盘 · 供应商延迟</div>
-                        <div style="font-family:'JetBrains Mono',monospace;font-size:0.45rem;color:#555;">
-                            4 scenarios</div>
-                        <div style="display:flex;align-items:center;justify-content:center;gap:4px;margin-top:4px;">
-                            <div style="width:5px;height:5px;border-radius:50%;background:#4ade80;"></div>
-                            <span style="font-size:0.4rem;color:#4ade80;font-family:'JetBrains Mono',monospace;">
-                                ONLINE</span>
-                        </div>
-                    </div>""", unsafe_allow_html=True)
-                    if st.button("进入 跨Agent协作", key="enter_collab", use_container_width=True):
-                        st.session_state.active_agent = "_collab"
-                        st.rerun()
+            # 协作卡片 — 仅有协作权限的角色可见
+            if _show_collab:
+                _collab_idx = len(_visible_agents)
+                _collab_col = _row1[_collab_idx] if _collab_idx < len(_row1) else (_row2[_collab_idx - len(_row1)] if _row2 and _collab_idx - len(_row1) < len(_row2) else None)
+                if _collab_col:
+                    with _collab_col:
+                        st.markdown(f"""
+                        <div style="background:#0d1117;border:1px solid rgba(255,255,255,0.08);
+                             padding:16px;text-align:center;min-height:160px;">
+                            <div style="font-size:2rem;margin-bottom:4px;">⚡</div>
+                            <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;
+                                 font-size:0.8rem;color:#FFF;margin-bottom:4px;">跨Agent协作</div>
+                            <div style="font-family:'JetBrains Mono',monospace;font-size:0.45rem;
+                                 color:#666;margin-bottom:8px;line-height:1.4;">
+                                 出货异常追踪 · 智能报价 · 月度复盘 · 供应商延迟</div>
+                            <div style="font-family:'JetBrains Mono',monospace;font-size:0.45rem;color:#555;">
+                                4 scenarios</div>
+                            <div style="display:flex;align-items:center;justify-content:center;gap:4px;margin-top:4px;">
+                                <div style="width:5px;height:5px;border-radius:50%;background:#4ade80;"></div>
+                                <span style="font-size:0.4rem;color:#4ade80;font-family:'JetBrains Mono',monospace;">
+                                    ONLINE</span>
+                            </div>
+                        </div>""", unsafe_allow_html=True)
+                        if st.button("进入 跨Agent协作", key="enter_collab", use_container_width=True):
+                            st.session_state.active_agent = "_collab"
+                            st.rerun()
 
             st.stop()
 
@@ -839,6 +852,16 @@ if HAS_V10_GATEWAY:
         _active = st.session_state.active_agent
         _icon = _agent_icons.get(_active, "⚡")
         _cn = _agent_names_cn.get(_active, "跨Agent协作")
+
+        # 权限守卫 — 阻止未授权访问
+        if _active == "_collab" and not can_use_collab(_user_role):
+            st.error(f"⚠ 当前角色「{_role_perms.get('label', _user_role)}」无权使用跨Agent协作")
+            st.session_state.active_agent = None
+            st.rerun()
+        elif _active != "_collab" and not can_access_agent(_user_role, _active):
+            st.error(f"⚠ 当前角色「{_role_perms.get('label', _user_role)}」无权访问 {_cn}")
+            st.session_state.active_agent = None
+            st.rerun()
 
         # 返回按钮 + Agent 标题
         _back_col, _title_col = st.columns([1, 5])
@@ -888,6 +911,9 @@ if HAS_V10_GATEWAY:
 
         # ── 销售/风控/战略: 需要上传 Excel 的 Agent ──
         if _active in _needs_upload:
+            if not can_upload(_user_role):
+                st.warning(f"⚠ 当前角色「{_role_perms.get('label', _user_role)}」无上传权限，请联系管理员")
+                st.stop()
             st.markdown(f"""<div style="font-size:0.65rem;color:#888;font-family:'JetBrains Mono',monospace;
                 margin-bottom:12px;">上传 Sprocomm 金额报表 + 数量报表 (Excel) 解锁全部分析功能</div>""",
                 unsafe_allow_html=True)
@@ -1317,7 +1343,7 @@ if HAS_V10_GATEWAY:
         else:
             # ── V10 独立 Agent 界面 ──
 
-            # ── Excel 数据上传（替换样本数据） ──
+            # ── Excel 数据上传（替换样本数据 — 仅有上传权限时显示） ──
             _upload_hints = {
                 "procurement": "Sheet1「供应商」: 名称|类别|交期天数|质量评分|价格指数|准时率|不良率|信用等级\nSheet2「订单」: PO号|供应商|物料|数量|总额(万)|状态|创建日期|期望交期",
                 "finance": "Sheet1「应收」: 客户|发票号|金额(万)|货币|到期日|状态|逾期天数\nSheet2「毛利」: 产品|客户|营收(万)|成本(万)",
@@ -1325,53 +1351,58 @@ if HAS_V10_GATEWAY:
                 "market": "Sheet1「竞品」: 公司|股票代码|营收(亿)|增速%|主要客户(逗号分隔)|优势(逗号分隔)|劣势(逗号分隔)|市场份额%",
             }
             _data_key = f"{_active}_custom_data"
-            with st.expander(f"📎 上传自定义数据（Excel） — 替换内置样本数据", expanded=False):
-                st.markdown(f"""<div style="font-size:0.55rem;color:#888;font-family:'JetBrains Mono',monospace;
-                    white-space:pre-line;line-height:1.5;">{_upload_hints.get(_active, '')}</div>""", unsafe_allow_html=True)
-                _uploaded_data = st.file_uploader(
-                    "上传 Excel", type=["xlsx"], key=f"upload_{_active}",
-                    label_visibility="collapsed")
-                if _uploaded_data:
-                    try:
-                        _xls = pd.ExcelFile(_uploaded_data)
-                        _sheets = _xls.sheet_names
-                        _dfs = {s: pd.read_excel(_xls, s) for s in _sheets}
-                        st.session_state[_data_key] = _dfs
-
-                        # 用 from_dataframes 创建新引擎
-                        _sheet_list = list(_dfs.values())
-                        if _active == "procurement":
-                            from agent_procurement import ProcurementEngine as _PE
-                            _new_engine = _PE.from_dataframes(
-                                suppliers_df=_sheet_list[0] if len(_sheet_list) > 0 else None,
-                                orders_df=_sheet_list[1] if len(_sheet_list) > 1 else None)
-                            _gw.update_engine("procurement", _new_engine)
-                        elif _active == "finance":
-                            from agent_finance import FinanceEngine as _FE
-                            _new_engine = _FE.from_dataframes(
-                                ar_df=_sheet_list[0] if len(_sheet_list) > 0 else None,
-                                margin_df=_sheet_list[1] if len(_sheet_list) > 1 else None)
-                            _gw.update_engine("finance", _new_engine)
-                        elif _active == "quality":
-                            from agent_quality import QualityEngine as _QE
-                            _new_engine = _QE.from_dataframes(
-                                yields_df=_sheet_list[0] if len(_sheet_list) > 0 else None,
-                                returns_df=_sheet_list[1] if len(_sheet_list) > 1 else None)
-                            _gw.update_engine("quality", _new_engine)
-                        elif _active == "market":
-                            from agent_market import MarketEngine as _ME
-                            _new_engine = _ME.from_dataframes(
-                                competitors_df=_sheet_list[0] if len(_sheet_list) > 0 else None)
-                            _gw.update_engine("market", _new_engine)
-
-                        st.success(f"✅ 数据已加载！{len(_sheets)} 个Sheet · {sum(len(df) for df in _dfs.values())} 条记录")
-                        for _sn, _sdf in _dfs.items():
-                            st.caption(f"Sheet「{_sn}」: {len(_sdf)} 行 × {len(_sdf.columns)} 列")
-                    except Exception as _ue:
-                        st.error(f"⚠️ Excel 解析失败: {_ue}")
-                elif _data_key in st.session_state:
+            if not can_upload(_user_role):
+                if _data_key in st.session_state:
                     _dfs = st.session_state[_data_key]
                     st.info(f"📊 使用已上传的自定义数据 ({sum(len(df) for df in _dfs.values())} 条记录)")
+            else:
+                with st.expander(f"📎 上传自定义数据（Excel） — 替换内置样本数据", expanded=False):
+                    st.markdown(f"""<div style="font-size:0.55rem;color:#888;font-family:'JetBrains Mono',monospace;
+                        white-space:pre-line;line-height:1.5;">{_upload_hints.get(_active, '')}</div>""", unsafe_allow_html=True)
+                    _uploaded_data = st.file_uploader(
+                        "上传 Excel", type=["xlsx"], key=f"upload_{_active}",
+                        label_visibility="collapsed")
+                    if _uploaded_data:
+                        try:
+                            _xls = pd.ExcelFile(_uploaded_data)
+                            _sheets = _xls.sheet_names
+                            _dfs = {s: pd.read_excel(_xls, s) for s in _sheets}
+                            st.session_state[_data_key] = _dfs
+
+                            # 用 from_dataframes 创建新引擎
+                            _sheet_list = list(_dfs.values())
+                            if _active == "procurement":
+                                from agent_procurement import ProcurementEngine as _PE
+                                _new_engine = _PE.from_dataframes(
+                                    suppliers_df=_sheet_list[0] if len(_sheet_list) > 0 else None,
+                                    orders_df=_sheet_list[1] if len(_sheet_list) > 1 else None)
+                                _gw.update_engine("procurement", _new_engine)
+                            elif _active == "finance":
+                                from agent_finance import FinanceEngine as _FE
+                                _new_engine = _FE.from_dataframes(
+                                    ar_df=_sheet_list[0] if len(_sheet_list) > 0 else None,
+                                    margin_df=_sheet_list[1] if len(_sheet_list) > 1 else None)
+                                _gw.update_engine("finance", _new_engine)
+                            elif _active == "quality":
+                                from agent_quality import QualityEngine as _QE
+                                _new_engine = _QE.from_dataframes(
+                                    yields_df=_sheet_list[0] if len(_sheet_list) > 0 else None,
+                                    returns_df=_sheet_list[1] if len(_sheet_list) > 1 else None)
+                                _gw.update_engine("quality", _new_engine)
+                            elif _active == "market":
+                                from agent_market import MarketEngine as _ME
+                                _new_engine = _ME.from_dataframes(
+                                    competitors_df=_sheet_list[0] if len(_sheet_list) > 0 else None)
+                                _gw.update_engine("market", _new_engine)
+
+                            st.success(f"✅ 数据已加载！{len(_sheets)} 个Sheet · {sum(len(df) for df in _dfs.values())} 条记录")
+                            for _sn, _sdf in _dfs.items():
+                                st.caption(f"Sheet「{_sn}」: {len(_sdf)} 行 × {len(_sdf.columns)} 列")
+                        except Exception as _ue:
+                            st.error(f"⚠️ Excel 解析失败: {_ue}")
+                    elif _data_key in st.session_state:
+                        _dfs = st.session_state[_data_key]
+                        st.info(f"📊 使用已上传的自定义数据 ({sum(len(df) for df in _dfs.values())} 条记录)")
 
             # ── 快捷功能按钮 ──
             _quick_queries = {
