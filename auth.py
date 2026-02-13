@@ -374,6 +374,16 @@ def _render_login_page():
         transform: translateY(0px);
         box-shadow: 0 1px 4px rgba(255,255,255,0.15);
     }
+    /* ── 移动端适配 ── */
+    @media (max-width: 768px) {
+        .login-container { max-width: 90vw; padding: 24px 20px; margin-top: 10vh; }
+        .login-title { font-size: 1rem; }
+        .login-subtitle { font-size: 0.5rem; }
+    }
+    @media (max-width: 480px) {
+        .login-container { max-width: 95vw; padding: 20px 16px; margin-top: 6vh; }
+        .login-title { font-size: 0.9rem; }
+    }
     </style>""", unsafe_allow_html=True)
 
     # 读取 logo base64
