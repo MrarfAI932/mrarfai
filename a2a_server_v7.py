@@ -683,10 +683,11 @@ class MRARFAIAgentRegistry:
 # 预建 MRARFAI Agent Cards
 # ============================================================
 
-def create_mrarfai_agent_cards(base_url: str = "http://localhost:9999") -> Dict[str, AgentCard]:
-    """创建 MRARFAI 标准 Agent Cards"""
+def create_mrarfai_agent_cards(base_url: str = "http://localhost:9999",
+                                include_v10: bool = True) -> Dict[str, AgentCard]:
+    """创建 MRARFAI 标准 Agent Cards (V9 + V10)"""
 
-    return {
+    cards = {
         "analyst": AgentCard(
             name="MRARFAI 数据分析师",
             description="禾苗科技销售数据深度分析 — 客户分级、营收趋势、价量分解、区域洞察",
@@ -777,6 +778,42 @@ def create_mrarfai_agent_cards(base_url: str = "http://localhost:9999") -> Dict[
         ),
     }
 
+    # V10 新 Agent Cards
+    if include_v10:
+        try:
+            from agent_procurement import create_procurement_card
+            card = create_procurement_card(base_url)
+            if card:
+                cards["procurement"] = card
+        except ImportError:
+            pass
+
+        try:
+            from agent_quality import create_quality_card
+            card = create_quality_card(base_url)
+            if card:
+                cards["quality"] = card
+        except ImportError:
+            pass
+
+        try:
+            from agent_finance import create_finance_card
+            card = create_finance_card(base_url)
+            if card:
+                cards["finance"] = card
+        except ImportError:
+            pass
+
+        try:
+            from agent_market import create_market_card
+            card = create_market_card(base_url)
+            if card:
+                cards["market"] = card
+        except ImportError:
+            pass
+
+    return cards
+
 
 # ============================================================
 # 快速初始化
@@ -784,7 +821,7 @@ def create_mrarfai_agent_cards(base_url: str = "http://localhost:9999") -> Dict[
 
 def init_mrarfai_a2a(pipeline_fn: Callable = None) -> MRARFAIAgentRegistry:
     """
-    一键初始化 MRARFAI A2A 生态
+    一键初始化 MRARFAI A2A 生态 (V9 + V10)
 
     Usage:
         registry = init_mrarfai_a2a(pipeline_fn=my_pipeline)
@@ -793,17 +830,42 @@ def init_mrarfai_a2a(pipeline_fn: Callable = None) -> MRARFAIAgentRegistry:
     registry = MRARFAIAgentRegistry()
     cards = create_mrarfai_agent_cards()
 
-    # 注册分析师
+    # V9 Agents
     registry.register("analyst", cards["analyst"],
                        MRARFAIAnalystExecutor(pipeline_fn))
-
-    # 注册风险Agent
     registry.register("risk", cards["risk"],
                        MRARFAIRiskExecutor())
-
-    # 注册战略Agent
     registry.register("strategist", cards["strategist"],
                        MRARFAIStrategistExecutor())
+
+    # V10 新 Agents
+    if "procurement" in cards:
+        try:
+            from agent_procurement import ProcurementExecutor
+            registry.register("procurement", cards["procurement"], ProcurementExecutor())
+        except ImportError:
+            pass
+
+    if "quality" in cards:
+        try:
+            from agent_quality import QualityExecutor
+            registry.register("quality", cards["quality"], QualityExecutor())
+        except ImportError:
+            pass
+
+    if "finance" in cards:
+        try:
+            from agent_finance import FinanceExecutor
+            registry.register("finance", cards["finance"], FinanceExecutor())
+        except ImportError:
+            pass
+
+    if "market" in cards:
+        try:
+            from agent_market import MarketExecutor
+            registry.register("market", cards["market"], MarketExecutor())
+        except ImportError:
+            pass
 
     logger.info(f"✅ MRARFAI A2A 已初始化: {len(registry.list_agents())} Agents")
     return registry

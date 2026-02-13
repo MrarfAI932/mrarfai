@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-MRARFAI v9.0 — Sprocomm 禾苗 Sales Intelligence
+MRARFAI v10.0 — Sprocomm 禾苗 Enterprise Agent Platform
 ================================================
 V9.0 核心升级:
   - RLM (Recursive Language Models) 数据上下文 5K→500K+
@@ -46,6 +46,13 @@ try:
     HAS_WECHAT = True
 except ImportError:
     HAS_WECHAT = False
+
+# ── V10 Platform Gateway (可选) ──
+try:
+    from platform_gateway import get_gateway, PlatformGateway
+    HAS_V10_GATEWAY = True
+except ImportError:
+    HAS_V10_GATEWAY = False
 
 MONTHS = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月']
 
@@ -94,7 +101,7 @@ def fmt(v, unit="万"):
 # ============================================================
 # 页面配置
 # ============================================================
-st.set_page_config(page_title="Sprocomm AI · MRARFAI v9.0", page_icon="🌿", layout="wide", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="Sprocomm AI · MRARFAI v10.0", page_icon="🌿", layout="wide", initial_sidebar_state="collapsed")
 
 # ============================================================
 # 登录门禁
@@ -310,9 +317,8 @@ button[kind="headerNoPadding"] { display: none !important; }
 
 /* ── Logo Box (reused in top bar) ── */
 .sidebar-logo-box {
-    width:32px; height:32px; background:#00FF88;
+    width:32px; height:32px; background:transparent;
     display:flex; align-items:center; justify-content:center; flex-shrink:0;
-    box-shadow:0 0 10px rgba(0,255,136,0.30), 0 0 20px rgba(0,255,136,0.08);
 }
 /* ── File uploader styling ── */
 .stFileUploader {
@@ -583,23 +589,31 @@ _user = get_current_user()
 # Top bar — logo + user + logout
 _bar1, _bar2 = st.columns([5, 1])
 with _bar1:
+    # 读取 topbar logo
+    _topbar_logo_b64 = ""
+    try:
+        with open("logo_b64.txt", "r") as _tf:
+            _topbar_logo_b64 = _tf.read().strip()
+    except Exception:
+        pass
+    _topbar_logo_html = f'<img src="data:image/png;base64,{_topbar_logo_b64}" style="width:28px;height:auto;filter:brightness(0) invert(1);" />' if _topbar_logo_b64 else '<span style="font-weight:700;font-size:0.85rem;color:#FFF;">M</span>'
+
     st.markdown(f"""
     <div style="display:flex; align-items:center; gap:12px; padding:4px 0;">
-        <div class="sidebar-logo-box">
-            <span style="font-family:'Space Grotesk',sans-serif; font-weight:700;
-                  font-size:0.85rem; color:#0C0C0C;">S</span>
+        <div style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;">
+            {_topbar_logo_html}
         </div>
         <div>
             <span style="font-size:0.88rem; font-weight:700; color:#FFFFFF;
                  letter-spacing:0.1em; font-family:'Space Grotesk',sans-serif;
-                 text-transform:uppercase;">SPROCOMM AI</span>
+                 text-transform:uppercase;">MRARFAI</span>
             <span style="font-size:0.5rem; color:#6a6a6a; font-family:'JetBrains Mono',monospace;
-                 letter-spacing:0.08em; margin-left:12px;">MRARFAI v9.0 · RLM</span>
+                 letter-spacing:0.08em; margin-left:12px;">V10.0 · Enterprise Agent Platform</span>
         </div>
         <div style="margin-left:auto; display:flex; align-items:center; gap:8px;">
             <span style="font-family:'JetBrains Mono',monospace; font-size:0.55rem;
                  color:#6a6a6a; letter-spacing:0.05em;">
-                👤 {_user['display_name']} · <span style="color:{SP_GREEN};">{_user['role'].upper()}</span>
+                👤 {_user['display_name']} · <span style="color:#FFFFFF;">{_user['role'].upper()}</span>
             </span>
         </div>
     </div>
@@ -653,57 +667,452 @@ def run_full_analysis(rev_bytes, qty_bytes):
     return data, results, bench, forecast
 
 
-# ── MRARFAI 品牌 + Agent 名字 ──
-_bl, _bc, _br = st.columns([1, 3, 1])
+# ── 读取 Logo base64 ──
+_logo_b64 = ""
+try:
+    with open("logo_b64.txt", "r") as _lf:
+        _logo_b64 = _lf.read().strip()
+except Exception:
+    pass
+
+# ── MRARFAI Logo + 品牌 (居中) ──
+_bl, _bc, _br = st.columns([1, 2, 1])
 with _bc:
-    st.markdown(f"""
-    <div style="text-align:center;padding:16px 0 4px 0;">
-        <div style="font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:1.3rem;
-              color:#FFFFFF;letter-spacing:0.18em;">MRARFAI</div>
-        <div style="display:flex;justify-content:center;gap:16px;margin-top:8px;flex-wrap:wrap;">
-            <span style="font-family:'JetBrains Mono',monospace;font-size:0.5rem;color:{SP_GREEN};letter-spacing:0.05em;">📊 数据分析师</span>
-            <span style="font-family:'JetBrains Mono',monospace;font-size:0.5rem;color:{SP_RED};letter-spacing:0.05em;">🛡 风控专家</span>
-            <span style="font-family:'JetBrains Mono',monospace;font-size:0.5rem;color:{SP_BLUE};letter-spacing:0.05em;">💡 策略师</span>
-            <span style="font-family:'JetBrains Mono',monospace;font-size:0.5rem;color:#8a8a8a;letter-spacing:0.05em;">🖊 报告员</span>
-            <span style="font-family:'JetBrains Mono',monospace;font-size:0.5rem;color:{SP_GREEN};letter-spacing:0.05em;">🔍 质量审查</span>
+    if _logo_b64:
+        st.markdown(f"""
+        <div style="text-align:center;padding:32px 0 8px 0;">
+            <img src="data:image/png;base64,{_logo_b64}"
+                 style="width:120px;height:auto;filter:brightness(0) invert(1);margin-bottom:8px;" />
         </div>
-    </div>
-    """, unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
+    else:
+        st.markdown(f"""
+        <div style="text-align:center;padding:32px 0 8px 0;">
+            <div style="font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:2rem;
+                  color:#FFFFFF;letter-spacing:0.18em;">MRARFAI</div>
+        </div>
+        """, unsafe_allow_html=True)
 
-# ── 居中上传框 ──
-_ul, _uc, _ur = st.columns([1, 3, 1])
-with _uc:
-    uploaded_files = st.file_uploader(
-        "上传报表", type=['xlsx'],
-        accept_multiple_files=True, key='files',
-        label_visibility="collapsed",
-    )
-
-# ── 底部行：右对齐 AI叙事 + Multi-Agent ──
-_fl, _fc, _fr = st.columns([1, 3, 1])
-with _fc:
-    _b1, _b2, _b3 = st.columns([2, 1, 1])
-    with _b2:
-        ai_enabled = st.toggle("AI 叙事", value=False, key="ai_toggle")
-    with _b3:
-        use_multi = st.toggle("Multi-Agent", value=False, key="use_multi_agent")
-
-# ── AI 叙事展开配置 ──
-if ai_enabled:
-    _al, _ac, _ar = st.columns([1, 3, 1])
-    with _ac:
-        _ai1, _ai2 = st.columns(2)
-        with _ai1:
-            ai_provider = st.selectbox("模型", ['DeepSeek', 'Claude'], label_visibility="collapsed", key="ai_prov")
-        with _ai2:
-            api_key = st.text_input("Key", type="password", label_visibility="collapsed", placeholder="sk-...", key="ai_key")
-else:
-    ai_provider, api_key = 'DeepSeek', None
-
+# ============================================================
+# V10 COMMAND CENTER — 统一 Agent 平台 (不需要上传文件)
+# ============================================================
+ai_provider, api_key = 'DeepSeek', None
 st.session_state["ai_provider"] = ai_provider
 st.session_state["api_key"] = api_key or ""
 
-# ── 等待 2 个文件 ──
+if HAS_V10_GATEWAY:
+    try:
+        _gw = get_gateway()
+        _card = _gw.get_platform_card()
+
+        _agent_icons = {
+            "sales": "📈", "procurement": "🛒", "quality": "🔍",
+            "finance": "💰", "market": "📊", "risk": "🚨", "strategist": "🔮",
+        }
+        _agent_names_cn = {
+            "sales": "销售分析", "procurement": "采购管理", "quality": "品质检测",
+            "finance": "财务分析", "market": "市场情报", "risk": "风控预警", "strategist": "战略顾问",
+        }
+        _agent_desc = {
+            "sales": "客户分析 · 价量分解 · 增长机会 · 流失预警",
+            "procurement": "供应商评估 · PO跟踪 · 比价分析 · 延迟预警",
+            "quality": "良率监控 · 退货分析 · 投诉分类 · 根因追溯",
+            "finance": "应收跟踪 · 毛利分析 · 现金流预测 · 发票匹配",
+            "market": "竞品监控 · 行业趋势 · 舆情追踪 · 市场全景",
+            "risk": "流失预警 · 异常检测 · 风险评分 · 健康诊断",
+            "strategist": "行业对标 · 场景预测 · 增长策略 · CEO备忘录",
+        }
+        # 哪些 Agent 有独立 engine（可直接使用）
+        _has_engine = {"procurement", "quality", "finance", "market"}
+        # sales 需要上传文件
+        _needs_upload = {"sales", "risk", "strategist"}
+
+        # 初始化状态
+        if "active_agent" not in st.session_state:
+            st.session_state.active_agent = None
+        if "v10_chat_history" not in st.session_state:
+            st.session_state.v10_chat_history = {}
+
+        # ── 如果没有选择 Agent，显示主面板 ──
+        if st.session_state.active_agent is None:
+            # Command Center 标题
+            st.markdown("""
+            <div style="background:linear-gradient(135deg,#0d1117,#161b22);padding:20px 24px;
+                        border:1px solid rgba(255,255,255,0.08);margin-bottom:20px;">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+                    <span style="font-family:'Space Grotesk',sans-serif;font-size:1rem;
+                          font-weight:700;color:#FFF;letter-spacing:0.06em;">COMMAND CENTER</span>
+                    <span style="font-size:0.5rem;color:#555;font-family:'JetBrains Mono',monospace;
+                          border:1px solid #333;padding:2px 6px;">V10.0 · 7 AGENTS · 20 SKILLS</span>
+                </div>
+                <div style="font-size:0.6rem;color:#555;font-family:'JetBrains Mono',monospace;">
+                    选择一个 Agent 进入专属工作台　｜　每个 Agent 拥有独立的分析能力和对话界面
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            # Agent 卡片 — 可点击的按钮
+            _row1 = st.columns(4)
+            _row2 = st.columns(4)
+            _all_agents = list(_card["agents"])
+
+            for _i, _name in enumerate(_all_agents):
+                _col = _row1[_i] if _i < 4 else _row2[_i - 4]
+                _icon = _agent_icons.get(_name, "🤖")
+                _cn = _agent_names_cn.get(_name, _name)
+                _desc = _agent_desc.get(_name, "")
+                _ac = _gw.registry.get_card(_name) if _gw.registry else None
+                _sk = len(_ac.skills) if _ac else 0
+                _available = _name in _has_engine
+                _status_color = "#4ade80" if _available else "#f59e0b"
+                _status_text = "ONLINE" if _available else "需上传Excel"
+
+                with _col:
+                    st.markdown(f"""
+                    <div style="background:#0d1117;border:1px solid rgba(255,255,255,0.08);
+                         padding:16px;text-align:center;min-height:160px;">
+                        <div style="font-size:2rem;margin-bottom:4px;">{_icon}</div>
+                        <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;
+                             font-size:0.8rem;color:#FFF;margin-bottom:4px;">{_cn}</div>
+                        <div style="font-family:'JetBrains Mono',monospace;font-size:0.45rem;
+                             color:#666;margin-bottom:8px;line-height:1.4;">{_desc}</div>
+                        <div style="font-family:'JetBrains Mono',monospace;font-size:0.45rem;color:#555;">
+                            {_sk} skills</div>
+                        <div style="display:flex;align-items:center;justify-content:center;gap:4px;margin-top:4px;">
+                            <div style="width:5px;height:5px;border-radius:50%;background:{_status_color};"></div>
+                            <span style="font-size:0.4rem;color:{_status_color};font-family:'JetBrains Mono',monospace;">
+                                {_status_text}</span>
+                        </div>
+                    </div>""", unsafe_allow_html=True)
+
+                    if st.button(f"进入 {_cn}", key=f"enter_{_name}", use_container_width=True):
+                        st.session_state.active_agent = _name
+                        st.rerun()
+
+            # 最下面一行：协作场景
+            if len(_all_agents) < 8:
+                # 用剩余的 _row2 slot 放协作入口
+                with _row2[3]:
+                    st.markdown(f"""
+                    <div style="background:#0d1117;border:1px solid rgba(255,255,255,0.08);
+                         padding:16px;text-align:center;min-height:160px;">
+                        <div style="font-size:2rem;margin-bottom:4px;">⚡</div>
+                        <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;
+                             font-size:0.8rem;color:#FFF;margin-bottom:4px;">跨Agent协作</div>
+                        <div style="font-family:'JetBrains Mono',monospace;font-size:0.45rem;
+                             color:#666;margin-bottom:8px;line-height:1.4;">
+                             出货异常追踪 · 智能报价 · 月度复盘 · 供应商延迟</div>
+                        <div style="font-family:'JetBrains Mono',monospace;font-size:0.45rem;color:#555;">
+                            4 scenarios</div>
+                        <div style="display:flex;align-items:center;justify-content:center;gap:4px;margin-top:4px;">
+                            <div style="width:5px;height:5px;border-radius:50%;background:#4ade80;"></div>
+                            <span style="font-size:0.4rem;color:#4ade80;font-family:'JetBrains Mono',monospace;">
+                                ONLINE</span>
+                        </div>
+                    </div>""", unsafe_allow_html=True)
+                    if st.button("进入 跨Agent协作", key="enter_collab", use_container_width=True):
+                        st.session_state.active_agent = "_collab"
+                        st.rerun()
+
+            st.stop()
+
+        # ── 选择了某个 Agent → 显示专属界面 ──
+        _active = st.session_state.active_agent
+        _icon = _agent_icons.get(_active, "⚡")
+        _cn = _agent_names_cn.get(_active, "跨Agent协作")
+
+        # 返回按钮 + Agent 标题
+        _back_col, _title_col = st.columns([1, 5])
+        with _back_col:
+            if st.button("← 返回", key="back_to_main", use_container_width=True):
+                st.session_state.active_agent = None
+                st.rerun()
+        with _title_col:
+            st.markdown(f"""
+            <div style="display:flex;align-items:center;gap:10px;padding:4px 0;">
+                <span style="font-size:1.5rem;">{_icon}</span>
+                <span style="font-family:'Space Grotesk',sans-serif;font-size:1.1rem;
+                      font-weight:700;color:#FFF;letter-spacing:0.04em;">{_cn}</span>
+                <span style="font-size:0.5rem;color:#555;font-family:'JetBrains Mono',monospace;
+                      border:1px solid #333;padding:2px 6px;">AGENT WORKSPACE</span>
+            </div>""", unsafe_allow_html=True)
+
+        st.markdown("---")
+
+        # 初始化该 Agent 对话历史
+        _chat_key = f"chat_{_active}"
+        if _chat_key not in st.session_state.v10_chat_history:
+            st.session_state.v10_chat_history[_chat_key] = []
+        _history = st.session_state.v10_chat_history[_chat_key]
+
+        # ── 销售/风控/战略: 需要上传 Excel 的 Agent ──
+        if _active in _needs_upload:
+            st.markdown(f"""<div style="font-size:0.65rem;color:#888;font-family:'JetBrains Mono',monospace;
+                margin-bottom:12px;">上传 Sprocomm 金额报表 + 数量报表 (Excel) 解锁全部分析功能</div>""",
+                unsafe_allow_html=True)
+
+            uploaded_files = st.file_uploader(
+                "上传报表", type=['xlsx'],
+                accept_multiple_files=True, key=f'files_{_active}',
+                label_visibility="collapsed",
+            )
+
+            _fl2, _fc2, _fr2 = st.columns([1, 2, 1])
+            with _fc2:
+                _b21, _b22 = st.columns(2)
+                with _b21:
+                    ai_enabled = st.toggle("AI 叙事", value=False, key=f"ai_toggle_{_active}")
+                with _b22:
+                    use_multi = st.toggle("Multi-Agent", value=False, key=f"multi_{_active}")
+
+            if ai_enabled:
+                _al2, _ac2, _ar2 = st.columns([1, 3, 1])
+                with _ac2:
+                    _ai21, _ai22 = st.columns(2)
+                    with _ai21:
+                        ai_provider = st.selectbox("模型", ['DeepSeek', 'Claude'], label_visibility="collapsed", key=f"aip_{_active}")
+                    with _ai22:
+                        api_key = st.text_input("Key", type="password", label_visibility="collapsed", placeholder="sk-...", key=f"aik_{_active}")
+            else:
+                ai_provider, api_key = 'DeepSeek', None
+
+            st.session_state["ai_provider"] = ai_provider
+            st.session_state["api_key"] = api_key or ""
+
+            if not uploaded_files or len(uploaded_files) < 2:
+                st.info("📎 请上传 2 个 Excel 文件（金额报表 + 数量报表）")
+                st.stop()
+
+            # ── 加载数据后跳到下面的 tabs 逻辑 ──
+            # 这里 break 出 V10 Gateway 块，让下面的原始 tab 逻辑接管
+            # 先做文件分类
+            _detections = []
+            for f in uploaded_files[:2]:
+                fb = f.read(); f.seek(0)
+                _detections.append((f.name, _detect_file_type(fb), fb))
+
+            _rev_found = _qty_found = None
+            _leftovers = []
+            for name, ftype, fb in _detections:
+                if ftype == 'revenue' and not _rev_found:
+                    _rev_found = (name, fb)
+                elif ftype == 'quantity' and not _qty_found:
+                    _qty_found = (name, fb)
+                else:
+                    _leftovers.append((name, ftype, fb))
+            for name, ftype, fb in _leftovers:
+                if not _rev_found:
+                    _rev_found = (name, fb)
+                elif not _qty_found:
+                    _qty_found = (name, fb)
+
+            if not _rev_found or not _qty_found:
+                _info = " / ".join([f"{n}→{t}" for n, t, _ in _detections])
+                st.error(f"⚠ 无法识别文件类型（{_info}），请上传金额报表 + 数量报表")
+                st.stop()
+
+            _rev_bytes = _rev_found[1]
+            _qty_bytes = _qty_found[1]
+            st.caption(f"✓ 金额: {_rev_found[0]}　|　✓ 数量: {_qty_found[0]}")
+
+            with st.spinner("🌿 数据加载 + 深度分析中..."):
+                try:
+                    data, results, benchmark, forecast = run_full_analysis(_rev_bytes, _qty_bytes)
+                except Exception as e:
+                    st.error(f"⚠️ 数据加载失败: {e}")
+                    st.stop()
+
+            active = sum(1 for c in data['客户金额'] if c['年度金额'] > 0)
+            st.markdown(f"""<div class="status-bar"><div class="status-dot"></div>
+                <span class="status-text">DATA LOADED</span>
+                <span class="status-meta">{active} clients · V10.0 · {datetime.now().strftime('%H:%M:%S')}</span>
+            </div>""", unsafe_allow_html=True)
+
+            # 根据进入的 Agent 显示对应 tabs
+            if _active == "sales":
+                _sub_tabs = st.tabs(["🧠 Agent Chat", "📊 总览", "👥 客户分析", "💰 价量分解",
+                    "📈 增长机会", "🏭 产品结构", "🌍 区域分析", "📥 导出"])
+                with _sub_tabs[0]:
+                    render_chat_tab(data, results, benchmark, forecast, ai_provider, api_key)
+                with _sub_tabs[1]:
+                    yoy = data['总YoY']
+                    c1, c2, c3 = st.columns(3)
+                    c1.metric("全年营收", f"{data['总营收']:,.0f}万", f"+{yoy['增长率']*100:.1f}% YoY")
+                    qs = data['数量汇总']
+                    c2.metric("出货量", f"{qs['全年实际']/10000:,.0f}万台")
+                    c3.metric("客户数", f"{active}")
+                    st.markdown("**月度营收趋势**")
+                    import pandas as _pd2
+                    _month_data = _pd2.DataFrame(data['月度趋势'])
+                    st.line_chart(_month_data.set_index('月份')[['今年', '去年']] if '月份' in _month_data.columns else _month_data)
+                with _sub_tabs[2]:
+                    st.markdown("### 👥 客户分析")
+                    _cdf = _pd2.DataFrame(data['客户金额'])
+                    _cdf = _cdf.sort_values('年度金额', ascending=False)
+                    st.dataframe(_cdf.head(20), use_container_width=True, hide_index=True)
+                with _sub_tabs[3]:
+                    st.markdown("### 💰 价量分解")
+                    if results.get('价量分解'):
+                        _pvdf = _pd2.DataFrame(results['价量分解'])
+                        st.dataframe(_pvdf, use_container_width=True, hide_index=True)
+                with _sub_tabs[4]:
+                    st.markdown("### 📈 增长机会")
+                    if results.get('增长机会'):
+                        for opp in results['增长机会'][:10]:
+                            st.markdown(f"- **{opp.get('客户','')}**: {opp.get('机会','')}")
+                with _sub_tabs[5]:
+                    st.markdown("### 🏭 产品结构")
+                    if data.get('产品结构'):
+                        st.dataframe(_pd2.DataFrame(data['产品结构']), use_container_width=True, hide_index=True)
+                with _sub_tabs[6]:
+                    st.markdown("### 🌍 区域分析")
+                    if data.get('区域分析'):
+                        st.dataframe(_pd2.DataFrame(data['区域分析']), use_container_width=True, hide_index=True)
+                with _sub_tabs[7]:
+                    st.markdown("### 📥 导出")
+                    st.info("上传文件后，可在此导出分析报告")
+
+            elif _active == "risk":
+                _sub_tabs = st.tabs(["🚨 预警中心", "❤️ 健康评分", "🔬 异常检测"])
+                with _sub_tabs[0]:
+                    st.markdown("### 🚨 流失预警")
+                    if results.get('流失预警'):
+                        import pandas as _pd3
+                        st.dataframe(_pd3.DataFrame(results['流失预警']), use_container_width=True, hide_index=True)
+                with _sub_tabs[1]:
+                    st.markdown("### ❤️ 健康评分")
+                    st.info("基于多维度指标的客户健康评分")
+                with _sub_tabs[2]:
+                    st.markdown("### 🔬 异常检测")
+                    st.info("统计异常检测分析")
+
+            elif _active == "strategist":
+                _sub_tabs = st.tabs(["🌐 行业对标", "🔮 预测", "✏️ CEO备忘录"])
+                with _sub_tabs[0]:
+                    st.markdown("### 🌐 行业对标")
+                    if benchmark:
+                        import pandas as _pd4
+                        st.dataframe(_pd4.DataFrame(benchmark) if isinstance(benchmark, list) else _pd4.DataFrame([benchmark]),
+                                     use_container_width=True, hide_index=True)
+                with _sub_tabs[1]:
+                    st.markdown("### 🔮 营收预测")
+                    if forecast:
+                        st.json(forecast)
+                with _sub_tabs[2]:
+                    st.markdown("### ✏️ CEO备忘录")
+                    st.info("基于分析生成 CEO 周报/月报")
+
+            st.stop()
+
+        elif _active == "_collab":
+            # ── 协作场景界面 ──
+            _scenarios = _gw.collaboration.scenarios
+            st.markdown("""<div style="font-size:0.7rem;color:#888;font-family:'JetBrains Mono',monospace;
+                margin-bottom:12px;">选择协作场景，触发多Agent链式分析</div>""", unsafe_allow_html=True)
+
+            _sc_cols = st.columns(len(_scenarios))
+            for _i, (_sid, _scfg) in enumerate(_scenarios.items()):
+                with _sc_cols[_i]:
+                    _chain_icons = " → ".join([_agent_icons.get(a,"🤖") for a in _scfg["chain"]])
+                    if st.button(f"⚡ {_scfg['name']}", key=f"collab_{_sid}", use_container_width=True):
+                        _trig = _scfg["trigger_keywords"][0]
+                        _history.append({"role": "user", "content": f"[协作] {_scfg['name']}: {_trig}"})
+                        _resp = _gw.ask(_trig, user="admin")
+                        if _resp["type"] == "collaboration":
+                            _res = _resp["result"]
+                            _disp = _res.get("synthesis", "")
+                            for _aname, _ares in _res.get("agent_results", {}).items():
+                                _disp += f"\n\n**{_agent_icons.get(_aname,'🤖')} {_agent_names_cn.get(_aname,_aname)}**:\n"
+                                try:
+                                    _disp += json.dumps(json.loads(_ares) if isinstance(_ares, str) else _ares,
+                                                        ensure_ascii=False, indent=2)[:600]
+                                except Exception:
+                                    _disp += str(_ares)[:600]
+                            _history.append({"role": "assistant", "content": _disp,
+                                "agent": "platform", "duration": _resp.get("duration_ms",0)})
+                        st.rerun()
+                    st.caption(f"{_chain_icons}\n{_scfg['description']}")
+
+        else:
+            # ── V10 独立 Agent 界面 — 快捷功能按钮 ──
+            _quick_queries = {
+                "procurement": [("供应商评估", "供应商评估"), ("PO跟踪", "PO跟踪进度"), ("比价分析", "供应商比价分析"), ("延迟预警", "采购延迟预警")],
+                "quality": [("良率监控", "良率趋势如何"), ("退货分析", "退货率分析"), ("投诉分类", "客户投诉分类"), ("根因追溯", "品质根因追溯")],
+                "finance": [("应收跟踪", "应收账款逾期情况"), ("毛利分析", "毛利率分析"), ("现金流预测", "未来3个月现金流预测"), ("发票匹配", "发票匹配查询")],
+                "market": [("竞品监控", "竞品市场份额对比"), ("行业趋势", "2026行业趋势报告"), ("舆情追踪", "舆情追踪分析"), ("市场概览", "ODM市场全景")],
+            }
+            _qs = _quick_queries.get(_active, [])
+            if _qs:
+                _qcols = st.columns(len(_qs))
+                for _i, (_label, _query) in enumerate(_qs):
+                    with _qcols[_i]:
+                        if st.button(f"{_label}", key=f"aq_{_active}_{_i}", use_container_width=True):
+                            _history.append({"role": "user", "content": _query})
+                            _resp = _gw.ask(_query, user="admin")
+                            _ans = _resp.get("answer", "")
+                            try:
+                                _disp = json.dumps(json.loads(_ans) if isinstance(_ans, str) else _ans,
+                                                   ensure_ascii=False, indent=2)
+                            except Exception:
+                                _disp = str(_ans)
+                            _history.append({"role": "assistant", "content": _disp,
+                                "agent": _resp.get("agent",""), "duration": _resp.get("duration_ms",0)})
+                            st.rerun()
+
+        # ── 对话历史 ──
+        for _msg in _history:
+            if _msg["role"] == "user":
+                st.markdown(f"""<div style="background:#1a1f2e;padding:10px 14px;margin:6px 0;
+                    border-left:3px solid #FFF;font-size:0.82rem;color:#ccc;">
+                    🧑 {_msg['content']}</div>""", unsafe_allow_html=True)
+            else:
+                _du = _msg.get("duration", 0)
+                _ag = _msg.get("agent", _active)
+                _badge = f"""<span style="font-size:0.5rem;font-family:'JetBrains Mono',monospace;
+                    color:#888;border:1px solid #333;padding:1px 6px;">
+                    {_agent_icons.get(_ag,'🤖')} {_agent_names_cn.get(_ag,_ag)} · {_du:.0f}ms</span>"""
+                st.markdown(f"""<div style="background:#0d1117;padding:12px 16px;margin:6px 0;
+                    border:1px solid rgba(255,255,255,0.06);font-size:0.8rem;color:#ddd;">
+                    <div style="margin-bottom:6px;">{_badge}</div>
+                    <div style="white-space:pre-wrap;line-height:1.5;">{_msg['content']}</div>
+                </div>""", unsafe_allow_html=True)
+
+        # ── 自由输入框 ──
+        _v10q = st.chat_input(f"向 {_cn} 提问...", key=f"chat_input_{_active}")
+        if _v10q:
+            _history.append({"role": "user", "content": _v10q})
+            _resp = _gw.ask(_v10q, user="admin")
+            if _resp["type"] == "collaboration":
+                _res = _resp["result"]
+                _disp = _res.get("synthesis", "")
+                _history.append({"role": "assistant", "content": _disp,
+                    "agent": "platform", "duration": _resp.get("duration_ms",0)})
+            else:
+                _ans = _resp.get("answer", "")
+                try:
+                    _disp = json.dumps(json.loads(_ans) if isinstance(_ans, str) else _ans,
+                                       ensure_ascii=False, indent=2)
+                except Exception:
+                    _disp = str(_ans)
+                _history.append({"role": "assistant", "content": _disp,
+                    "agent": _resp.get("agent",""), "duration": _resp.get("duration_ms",0)})
+            st.rerun()
+
+        st.stop()
+
+    except Exception as _e:
+        st.error(f"V10 Command Center 加载失败: {_e}")
+        import traceback
+        st.code(traceback.format_exc())
+        st.stop()
+
+# ── Fallback: 无 V10 Gateway 时的旧模式 ──
+uploaded_files = st.file_uploader("上传报表", type=['xlsx'], accept_multiple_files=True, key='files', label_visibility="collapsed")
+ai_enabled = False
+use_multi = False
+ai_provider, api_key = 'DeepSeek', None
+st.session_state["ai_provider"] = ai_provider
+st.session_state["api_key"] = ""
 if not uploaded_files or len(uploaded_files) < 2:
     st.stop()
 
@@ -778,20 +1187,23 @@ st.markdown(f"""
 <div class="status-bar">
     <div class="status-dot"></div>
     <span class="status-text">DATA LOADED</span>
-    <span class="status-meta">{active} clients · 12 dimensions · V9.0 RLM · {datetime.now().strftime('%H:%M:%S')}</span>
+    <span class="status-meta">{active} clients · 12 dimensions · V10.0 Enterprise · {datetime.now().strftime('%H:%M:%S')}</span>
 </div>
 """, unsafe_allow_html=True)
 
 
 # ============================================================
-# Tabs — V9.0 布局
+# Tabs — V10.0 布局
 # ============================================================
-tabs = st.tabs([
+_tab_labels = [
     "🧠 Agent", "📊 总览", "👥 客户分析", "💰 价量分解", "🚨 预警中心",
     "📈 增长机会", "🏭 产品结构", "🌍 区域分析",
     "🌐 行业对标", "🔮 预测", "✏️ CEO备忘录",
     "❤️ 健康评分", "🔬 异常检测", "🔔 通知推送", "🎨 品牌设置", "📥 导出",
-])
+]
+if HAS_V10_GATEWAY:
+    _tab_labels.append("🏗️ V10 Platform")
+tabs = st.tabs(_tab_labels)
 
 
 # ---- Tab 0: Agent Chat ----
@@ -1138,8 +1550,9 @@ with tabs[15]:
         full = parts[0] + bench_section + forecast_section + memo + footer + parts[1]
     else:
         full = base_report + bench_section + forecast_section + memo
-    full = full.replace("Agent v2.0", "Agent v9.0").replace("智能分析系统 v2.0", "智能分析系统 v9.0")
-    full = full.replace("Agent v4.0", "Agent v9.0").replace("Agent v8.0", "Agent v9.0")
+    full = full.replace("Agent v2.0", "Agent v10.0").replace("智能分析系统 v2.0", "智能分析系统 v10.0")
+    full = full.replace("Agent v4.0", "Agent v10.0").replace("Agent v8.0", "Agent v10.0")
+    full = full.replace("Agent v9.0", "Agent v10.0")
     now = datetime.now().strftime('%Y%m%d')
     c1, c2, c3 = st.columns(3)
     with c1:
@@ -1152,3 +1565,235 @@ with tabs[15]:
         st.download_button("🤖 AI Prompt", gen.generate_ai_prompt(), "ai_prompt.txt", "text/plain", use_container_width=True)
     with st.expander("📖 报告预览"):
         st.markdown(full)
+
+
+# ---- Tab 16: V10 Platform (可选) ----
+if HAS_V10_GATEWAY:
+    with tabs[16]:
+        try:
+            gw = get_gateway()
+            card = gw.get_platform_card()
+            stats = gw.get_stats()
+
+            # ── 顶部：统一智能对话入口 ──
+            st.markdown("""
+            <div style="background:linear-gradient(135deg,#0d1117,#161b22);padding:24px 28px;
+                        border:1px solid rgba(255,255,255,0.08);margin-bottom:20px;">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+                    <span style="font-family:'Space Grotesk',sans-serif;font-size:1.1rem;
+                          font-weight:700;color:#FFF;letter-spacing:0.06em;">MRARFAI COMMAND CENTER</span>
+                    <span style="font-size:0.6rem;color:#555;font-family:'JetBrains Mono',monospace;
+                          border:1px solid #333;padding:2px 8px;">V10.0</span>
+                </div>
+                <div style="font-size:0.7rem;color:#555;font-family:'JetBrains Mono',monospace;">
+                    输入任何业务问题 → 自动路由到最佳 Agent → 返回分析结果
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            # 初始化对话历史
+            if "v10_chat_history" not in st.session_state:
+                st.session_state.v10_chat_history = []
+
+            # Agent 图标映射
+            _agent_icons = {
+                "sales": "📈", "procurement": "🛒", "quality": "🔍",
+                "finance": "💰", "market": "📊", "risk": "🚨", "strategist": "🔮",
+            }
+            _agent_names = {
+                "sales": "销售分析师", "procurement": "采购管理", "quality": "品质检测",
+                "finance": "财务分析", "market": "市场情报", "risk": "风控预警", "strategist": "战略顾问",
+            }
+
+            # 展示历史对话
+            for msg in st.session_state.v10_chat_history:
+                if msg["role"] == "user":
+                    st.markdown(f"""<div style="background:#1a1f2e;padding:12px 16px;margin:8px 0;
+                        border-left:3px solid #FFF;font-size:0.85rem;color:#ccc;">
+                        🧑 {msg['content']}</div>""", unsafe_allow_html=True)
+                else:
+                    agent = msg.get("agent", "platform")
+                    icon = _agent_icons.get(agent, "🤖")
+                    name = _agent_names.get(agent, agent)
+                    conf = msg.get("confidence", 0)
+                    duration = msg.get("duration", 0)
+                    _type = msg.get("type", "single_agent")
+
+                    # 路由信息
+                    _route_badge = f"""<span style="display:inline-block;font-size:0.55rem;
+                        font-family:'JetBrains Mono',monospace;color:#888;
+                        border:1px solid #333;padding:1px 6px;margin-left:8px;">
+                        {icon} {name} · 置信度 {conf:.0%} · {duration:.0f}ms</span>"""
+
+                    if _type == "collaboration":
+                        _route_badge = f"""<span style="display:inline-block;font-size:0.55rem;
+                            font-family:'JetBrains Mono',monospace;color:#f0b040;
+                            border:1px solid #665520;padding:1px 6px;margin-left:8px;">
+                            ⚡ 跨Agent协作 · {msg.get('scenario', '')} · {duration:.0f}ms</span>"""
+
+                    st.markdown(f"""<div style="background:#0d1117;padding:14px 18px;margin:8px 0;
+                        border:1px solid rgba(255,255,255,0.06);font-size:0.82rem;color:#ddd;">
+                        <div style="margin-bottom:8px;">{_route_badge}</div>
+                        <div style="white-space:pre-wrap;line-height:1.6;">{msg['content']}</div>
+                    </div>""", unsafe_allow_html=True)
+
+            # 输入框
+            _v10_input = st.chat_input("输入业务问题... 例如：竞品市场份额对比 / 应收账款逾期 / 良率趋势 / 供应商比价", key="v10_chat_input")
+
+            if _v10_input:
+                # 记录用户消息
+                st.session_state.v10_chat_history.append({"role": "user", "content": _v10_input})
+
+                # 调用 Gateway
+                with st.spinner("🔄 智能路由中..."):
+                    resp = gw.ask(_v10_input, user=st.session_state.get("auth_user", {}).get("username", "admin"))
+
+                # 解析响应
+                if resp["type"] == "collaboration":
+                    _result = resp["result"]
+                    _display = _result.get("synthesis", "")
+                    # 加上各 Agent 的摘要
+                    for _ag, _ar in _result.get("agent_results", {}).items():
+                        _display += f"\n\n**{_agent_icons.get(_ag, '🤖')} {_agent_names.get(_ag, _ag)}**:\n"
+                        try:
+                            _parsed = json.loads(_ar) if isinstance(_ar, str) else _ar
+                            _display += json.dumps(_parsed, ensure_ascii=False, indent=2)[:800]
+                        except Exception:
+                            _display += str(_ar)[:800]
+
+                    st.session_state.v10_chat_history.append({
+                        "role": "assistant", "content": _display,
+                        "agent": resp.get("routing", {}).get("agent", "platform"),
+                        "confidence": resp.get("routing", {}).get("confidence", 0),
+                        "duration": resp.get("duration_ms", 0),
+                        "type": "collaboration",
+                        "scenario": _result.get("scenario", ""),
+                    })
+                elif resp["type"] == "single_agent":
+                    _answer = resp.get("answer", "")
+                    try:
+                        _parsed = json.loads(_answer) if isinstance(_answer, str) else _answer
+                        _display = json.dumps(_parsed, ensure_ascii=False, indent=2)
+                    except Exception:
+                        _display = str(_answer)
+
+                    st.session_state.v10_chat_history.append({
+                        "role": "assistant", "content": _display,
+                        "agent": resp.get("agent", "unknown"),
+                        "confidence": resp.get("confidence", 0),
+                        "duration": resp.get("duration_ms", 0),
+                        "type": "single_agent",
+                    })
+                else:
+                    st.session_state.v10_chat_history.append({
+                        "role": "assistant", "content": f"❌ 错误: {resp.get('error', '未知')}",
+                        "agent": "platform", "confidence": 0, "duration": 0, "type": "error",
+                    })
+
+                st.rerun()
+
+            # ── 分割线 ──
+            st.markdown("---")
+
+            # ── Agent 状态面板 ──
+            st.markdown("""<div style="font-family:'Space Grotesk',sans-serif;font-size:0.9rem;
+                font-weight:700;color:#FFF;margin-bottom:12px;letter-spacing:0.04em;">
+                AGENT STATUS MATRIX</div>""", unsafe_allow_html=True)
+
+            _agent_cols = st.columns(len(card["agents"]))
+            for i, name in enumerate(card["agents"]):
+                agent_card_info = gw.registry.get_card(name) if gw.registry else None
+                icon = _agent_icons.get(name, "🤖")
+                display_name = _agent_names.get(name, name)
+                skills_count = len(agent_card_info.skills) if agent_card_info else 0
+
+                # 统计该 Agent 被调用的次数
+                _calls = sum(1 for m in st.session_state.v10_chat_history
+                             if m.get("role") == "assistant" and m.get("agent") == name)
+
+                with _agent_cols[i]:
+                    st.markdown(f"""
+                    <div style="background:#0d1117;border:1px solid rgba(255,255,255,0.08);
+                         padding:14px;text-align:center;">
+                        <div style="font-size:1.5rem;">{icon}</div>
+                        <div style="font-family:'Space Grotesk',sans-serif;font-weight:600;
+                             font-size:0.7rem;color:#FFF;margin:4px 0;">{display_name}</div>
+                        <div style="font-family:'JetBrains Mono',monospace;font-size:0.55rem;color:#555;">
+                            {skills_count} skills · {_calls} calls
+                        </div>
+                        <div style="width:6px;height:6px;border-radius:50%;background:#4ade80;
+                             margin:6px auto 0;"></div>
+                    </div>""", unsafe_allow_html=True)
+
+            # ── 快捷协作场景 ──
+            st.markdown("")
+            st.markdown("""<div style="font-family:'Space Grotesk',sans-serif;font-size:0.9rem;
+                font-weight:700;color:#FFF;margin-bottom:12px;letter-spacing:0.04em;">
+                CROSS-AGENT COLLABORATION</div>""", unsafe_allow_html=True)
+
+            _sc_cols = st.columns(len(gw.collaboration.scenarios))
+            for i, (sid, sconfig) in enumerate(gw.collaboration.scenarios.items()):
+                with _sc_cols[i]:
+                    chain_icons = " → ".join([_agent_icons.get(a, "🤖") for a in sconfig["chain"]])
+                    if st.button(f"⚡ {sconfig['name']}", key=f"collab_{sid}", use_container_width=True):
+                        # 触发协作场景
+                        _trigger_q = sconfig["trigger_keywords"][0]
+                        st.session_state.v10_chat_history.append({"role": "user", "content": f"[协作] {_trigger_q}"})
+                        resp = gw.ask(_trigger_q, user="admin")
+                        if resp["type"] == "collaboration":
+                            _result = resp["result"]
+                            _display = _result.get("synthesis", "")
+                            st.session_state.v10_chat_history.append({
+                                "role": "assistant", "content": _display,
+                                "agent": "platform", "confidence": 1.0,
+                                "duration": resp.get("duration_ms", 0),
+                                "type": "collaboration", "scenario": _result.get("scenario", ""),
+                            })
+                        st.rerun()
+                    st.caption(f"{chain_icons}\n{sconfig['description']}")
+
+            # ── 快捷示例问题 ──
+            st.markdown("")
+            st.markdown("""<div style="font-family:'Space Grotesk',sans-serif;font-size:0.9rem;
+                font-weight:700;color:#FFF;margin-bottom:8px;letter-spacing:0.04em;">
+                QUICK START</div>""", unsafe_allow_html=True)
+
+            _example_qs = [
+                ("🛒 供应商比价分析", "供应商比价分析"),
+                ("🔍 良率趋势如何？", "良率趋势如何？"),
+                ("💰 应收账款逾期", "应收账款逾期情况"),
+                ("📊 竞品市场份额", "竞品市场份额对比"),
+                ("💰 毛利率分析", "毛利率分析"),
+                ("📊 行业趋势", "2026行业趋势报告"),
+            ]
+            _eq_cols = st.columns(len(_example_qs))
+            for i, (label, query) in enumerate(_example_qs):
+                with _eq_cols[i]:
+                    if st.button(label, key=f"quick_{i}", use_container_width=True):
+                        st.session_state.v10_chat_history.append({"role": "user", "content": query})
+                        resp = gw.ask(query, user="admin")
+                        if resp["type"] == "single_agent":
+                            _answer = resp.get("answer", "")
+                            try:
+                                _parsed = json.loads(_answer) if isinstance(_answer, str) else _answer
+                                _display = json.dumps(_parsed, ensure_ascii=False, indent=2)
+                            except Exception:
+                                _display = str(_answer)
+                            st.session_state.v10_chat_history.append({
+                                "role": "assistant", "content": _display,
+                                "agent": resp.get("agent", "unknown"),
+                                "confidence": resp.get("confidence", 0),
+                                "duration": resp.get("duration_ms", 0), "type": "single_agent",
+                            })
+                        st.rerun()
+
+            # ── 审计日志 ──
+            audit_stats = stats.get("audit", {})
+            if audit_stats.get("total_requests", 0) > 0:
+                with st.expander("📋 Audit Log"):
+                    st.json(audit_stats)
+
+        except Exception as e:
+            st.error(f"V10 Platform 加载失败: {e}")
+            import traceback
+            st.code(traceback.format_exc())

@@ -133,13 +133,13 @@ def _render_login_page():
         to   { opacity: 1; transform: translateY(0); }
     }
     @keyframes glowPulse {
-        0%, 100% { box-shadow: 0 0 0 1px rgba(0,255,136,0.06); }
-        50%      { box-shadow: 0 0 18px rgba(0,255,136,0.10), 0 0 0 1px rgba(0,255,136,0.18); }
+        0%, 100% { box-shadow: 0 0 0 1px rgba(255,255,255,0.06); }
+        50%      { box-shadow: 0 0 18px rgba(255,255,255,0.10), 0 0 0 1px rgba(255,255,255,0.18); }
     }
     @keyframes scanLine {
         0%   { top: -2px; opacity: 0; }
-        10%  { opacity: 1; }
-        90%  { opacity: 1; }
+        10%  { opacity: 0.6; }
+        90%  { opacity: 0.6; }
         100% { top: 100%; opacity: 0; }
     }
     @keyframes titleShimmer {
@@ -147,8 +147,8 @@ def _render_login_page():
         100% { background-position: 200% center; }
     }
     @keyframes dotPulse {
-        0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(0,255,136,0.5); }
-        50%      { opacity: 0.7; box-shadow: 0 0 6px 3px rgba(0,255,136,0.2); }
+        0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(255,255,255,0.5); }
+        50%      { opacity: 0.7; box-shadow: 0 0 6px 3px rgba(255,255,255,0.2); }
     }
 
     /* ── Base ── */
@@ -160,8 +160,8 @@ def _render_login_page():
         content: "";
         position: fixed; inset: 0; z-index: 0; pointer-events: none;
         background-image:
-            linear-gradient(rgba(0,255,136,0.025) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(0,255,136,0.025) 1px, transparent 1px);
+            linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
         background-size: 60px 60px;
     }
     [data-testid="stSidebar"] { display: none; }
@@ -172,7 +172,7 @@ def _render_login_page():
 
     /* ── Login Container ── */
     .login-container {
-        max-width: 380px; margin: 10vh auto; padding: 40px;
+        max-width: 380px; margin: 20vh auto 0 auto; padding: 40px;
         border: 1px solid rgba(255,255,255,0.06);
         background: rgba(12,12,12,0.95);
         animation: fadeInUp 0.6s ease-out, glowPulse 4s ease-in-out 0.6s infinite;
@@ -182,7 +182,7 @@ def _render_login_page():
     .login-container::after {
         content: "";
         position: absolute; left: 0; right: 0; height: 1px;
-        background: linear-gradient(90deg, transparent, rgba(0,255,136,0.35), transparent);
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
         animation: scanLine 5s ease-in-out infinite;
         pointer-events: none;
     }
@@ -193,24 +193,23 @@ def _render_login_page():
         position: relative; z-index: 1;
     }
     .login-logo-box {
-        width: 40px; height: 40px; background: #00FF88;
+        width: 40px; height: 40px;
         display: flex; align-items: center; justify-content: center;
-        box-shadow: 0 0 12px rgba(0,255,136,0.35), 0 0 24px rgba(0,255,136,0.10);
     }
-    .login-logo-box span {
-        font-family: 'Space Grotesk', sans-serif; font-weight: 700;
-        font-size: 1.1rem; color: #0C0C0C;
+    .login-logo-box img {
+        width: 40px; height: auto;
+        filter: brightness(0) invert(1);
     }
     .login-title {
         font-family: 'Space Grotesk', sans-serif; font-weight: 700;
         font-size: 1.2rem; letter-spacing: 0.08em;
         text-transform: uppercase;
-        /* Shimmer gradient */
-        background: linear-gradient(90deg, #FFFFFF 30%, #00FF88 50%, #FFFFFF 70%);
-        background-size: 200% auto;
-        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-        background-clip: text;
-        animation: titleShimmer 4s linear infinite;
+        color: #FFFFFF;
+        display: flex; align-items: center; gap: 8px;
+    }
+    .login-title img.title-horse {
+        width: 36px; height: auto;
+        filter: brightness(0) invert(1);
     }
     .login-subtitle {
         font-family: 'JetBrains Mono', monospace; font-size: 0.55rem;
@@ -221,13 +220,13 @@ def _render_login_page():
     .login-badge {
         display: flex; align-items: center; gap: 6px;
         padding: 6px 10px; margin-bottom: 20px;
-        background: rgba(0,255,136,0.04); border: 1px solid rgba(0,255,136,0.12);
+        background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.12);
         font-family: 'JetBrains Mono', monospace; font-size: 0.5rem;
         color: #6a6a6a; letter-spacing: 0.1em; text-transform: uppercase;
         position: relative; z-index: 1;
     }
     .login-badge .badge-dot {
-        width: 5px; height: 5px; border-radius: 50%; background: #00FF88;
+        width: 5px; height: 5px; border-radius: 50%; background: #FFFFFF;
         animation: dotPulse 2s ease-in-out infinite;
     }
 
@@ -257,11 +256,11 @@ def _render_login_page():
         transition: border-color 0.2s, box-shadow 0.2s;
     }
     .login-container .stTextInput input:focus {
-        border-color: #00FF88 !important;
-        box-shadow: 0 0 0 1px rgba(0,255,136,0.25), 0 0 12px rgba(0,255,136,0.08) !important;
+        border-color: #FFFFFF !important;
+        box-shadow: 0 0 0 1px rgba(255,255,255,0.25), 0 0 12px rgba(255,255,255,0.08) !important;
     }
     .login-container .stButton button {
-        width: 100%; background: #00FF88 !important; color: #0C0C0C !important;
+        width: 100%; background: #FFFFFF !important; color: #0C0C0C !important;
         font-family: 'Space Grotesk', sans-serif !important; font-weight: 700 !important;
         font-size: 0.75rem !important; letter-spacing: 0.1em !important;
         text-transform: uppercase !important; border: none !important;
@@ -270,34 +269,46 @@ def _render_login_page():
         position: relative; z-index: 1;
     }
     .login-container .stButton button:hover {
-        background: #00cc6e !important;
+        background: #e0e0e0 !important;
         transform: translateY(-1px);
-        box-shadow: 0 4px 16px rgba(0,255,136,0.25);
+        box-shadow: 0 4px 16px rgba(255,255,255,0.25);
     }
     .login-container .stButton button:active {
         transform: translateY(0px);
-        box-shadow: 0 1px 4px rgba(0,255,136,0.15);
+        box-shadow: 0 1px 4px rgba(255,255,255,0.15);
     }
     </style>""", unsafe_allow_html=True)
 
-    # Login form
-    col1, col2, col3 = st.columns([1, 1.2, 1])
-    with col2:
-        st.markdown("""
-        <div class="login-container">
-            <div class="login-logo">
-                <div class="login-logo-box"><span>S</span></div>
-                <div>
-                    <div class="login-title">SPROCOMM AI</div>
-                    <div class="login-subtitle">MRARFAI v9.0 · Sales Intelligence</div>
-                </div>
-            </div>
-            <div class="login-badge">
-                <span class="badge-dot"></span>
-                SECURE ACCESS · V9.0
-            </div>
-        """, unsafe_allow_html=True)
+    # 读取 logo base64
+    _login_logo_b64 = ""
+    try:
+        import os as _os
+        _logo_path = _os.path.join(_os.path.dirname(__file__), "logo_b64.txt")
+        with open(_logo_path, "r") as _lf:
+            _login_logo_b64 = _lf.read().strip()
+    except Exception:
+        pass
 
+    _horse_img = f'<img class="title-horse" src="data:image/png;base64,{_login_logo_b64}" />' if _login_logo_b64 else ''
+
+    # Login form — 居中容器（只有一个马logo，在MRARFAI旁边）
+    st.markdown(f"""
+    <div class="login-container">
+        <div class="login-logo">
+            <div>
+                <div class="login-title">{_horse_img}MRARFAI</div>
+                <div class="login-subtitle">V10.0 · Enterprise Agent Platform</div>
+            </div>
+        </div>
+        <div class="login-badge">
+            <span class="badge-dot"></span>
+            SECURE ACCESS · V10.0
+        </div>
+    """, unsafe_allow_html=True)
+
+    # 用 columns 居中 input 区域
+    col1, col2, col3 = st.columns([1.2, 1, 1.2])
+    with col2:
         st.markdown('<div class="login-label">USERNAME</div>', unsafe_allow_html=True)
         username = st.text_input("用户名", label_visibility="collapsed", key="login_user",
                                   placeholder="username")
@@ -321,12 +332,12 @@ def _render_login_page():
                     st.markdown('<div class="login-error">⚠ 用户名或密码错误</div>',
                                unsafe_allow_html=True)
 
-        st.markdown("""
-            <div class="login-footer">
-                © 2026 MRARFAI · Powered by Multi-Agent Intelligence
-            </div>
+    st.markdown("""
+        <div class="login-footer">
+            © 2026 MRARFAI · Powered by Multi-Agent Intelligence
         </div>
-        """, unsafe_allow_html=True)
+    </div>
+    """, unsafe_allow_html=True)
 
 
 def require_login():

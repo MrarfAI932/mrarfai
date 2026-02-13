@@ -341,15 +341,15 @@ def make_anomaly_timeline(detection: dict):
         x=month_names,
         y=y_labels,
         colorscale=[
-            [0, 'rgba(30,41,59,0.8)'],
-            [0.3, 'rgba(250,204,21,0.4)'],
-            [0.6, 'rgba(249,115,22,0.6)'],
-            [1, 'rgba(239,68,68,0.8)'],
+            [0, 'rgba(17,17,17,0.8)'],
+            [0.3, 'rgba(255,136,0,0.35)'],
+            [0.6, 'rgba(217,64,64,0.55)'],
+            [1, 'rgba(217,64,64,0.85)'],
         ],
         showscale=True,
         colorbar=dict(
-            title=dict(text='异常程度', font=dict(color='#94a3b8', size=10)),
-            tickfont=dict(color='#94a3b8', size=9),
+            title=dict(text='异常程度', font=dict(color='#6a6a6a', size=10, family='JetBrains Mono')),
+            tickfont=dict(color='#6a6a6a', size=9, family='JetBrains Mono'),
         ),
         hovertemplate='%{y} · %{x}<br>异常分: %{z:.1f}<extra></extra>',
     ))
@@ -357,11 +357,11 @@ def make_anomaly_timeline(detection: dict):
     fig.update_layout(
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(0,0,0,0)',
-        font=dict(color='#e2e8f0'),
+        font=dict(color='#8a8a8a', family='JetBrains Mono'),
         margin=dict(l=80, r=20, t=10, b=40),
         height=max(200, len(customers) * 28 + 60),
-        xaxis=dict(tickfont=dict(color='#94a3b8', size=10)),
-        yaxis=dict(tickfont=dict(color='#94a3b8', size=10), autorange='reversed'),
+        xaxis=dict(tickfont=dict(color='#6a6a6a', size=10, family='JetBrains Mono')),
+        yaxis=dict(tickfont=dict(color='#6a6a6a', size=10, family='JetBrains Mono'), autorange='reversed'),
     )
     return fig
 
@@ -373,32 +373,32 @@ def make_anomaly_type_chart(detection: dict):
         return None
     
     colors = {
-        'Z-Score': '#ef4444',
-        'IQR异常': '#f59e0b',
+        'Z-Score': '#D94040',
+        'IQR异常': '#FF8800',
         '趋势断裂': '#8b5cf6',
-        '波动率异常': '#06b6d4',
+        '波动率异常': '#00A0C8',
     }
-    
+
     labels = list(type_dist.keys())
     values = list(type_dist.values())
-    bar_colors = [colors.get(l, '#6366f1') for l in labels]
-    
+    bar_colors = [colors.get(l, '#8b5cf6') for l in labels]
+
     fig = go.Figure(go.Bar(
         x=labels, y=values,
         marker=dict(color=bar_colors, opacity=0.8,
                    line=dict(width=1, color='rgba(255,255,255,0.1)')),
         text=values, textposition='outside',
-        textfont=dict(color='#e2e8f0', size=12),
+        textfont=dict(color='#8a8a8a', size=12, family='JetBrains Mono'),
     ))
-    
+
     fig.update_layout(
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(0,0,0,0)',
-        font=dict(color='#e2e8f0'),
+        font=dict(color='#8a8a8a', family='JetBrains Mono'),
         margin=dict(l=40, r=20, t=10, b=40),
         height=250,
-        xaxis=dict(gridcolor='rgba(148,163,184,0.05)', tickfont=dict(color='#94a3b8')),
-        yaxis=dict(gridcolor='rgba(148,163,184,0.08)', tickfont=dict(color='#94a3b8')),
+        xaxis=dict(gridcolor='rgba(255,255,255,0.04)', tickfont=dict(color='#6a6a6a', family='JetBrains Mono')),
+        yaxis=dict(gridcolor='rgba(255,255,255,0.04)', tickfont=dict(color='#6a6a6a', family='JetBrains Mono')),
     )
     return fig
 
@@ -412,21 +412,21 @@ def make_monthly_anomaly_chart(detection: dict):
     fig = go.Figure(go.Bar(
         x=months, y=values,
         marker=dict(
-            color=[f'rgba(239,68,68,{min(1, v/max(max(values),1)*0.8+0.2)})' for v in values],
+            color=[f'rgba(217,64,64,{min(1, v/max(max(values),1)*0.8+0.2)})' for v in values],
             line=dict(width=1, color='rgba(255,255,255,0.05)'),
         ),
         text=values, textposition='outside',
-        textfont=dict(color='#94a3b8', size=10),
+        textfont=dict(color='#6a6a6a', size=10, family='JetBrains Mono'),
     ))
-    
+
     fig.update_layout(
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(0,0,0,0)',
-        font=dict(color='#e2e8f0'),
+        font=dict(color='#8a8a8a', family='JetBrains Mono'),
         margin=dict(l=40, r=20, t=10, b=40),
         height=220,
-        xaxis=dict(gridcolor='rgba(148,163,184,0.05)', tickfont=dict(color='#94a3b8')),
-        yaxis=dict(gridcolor='rgba(148,163,184,0.08)', tickfont=dict(color='#94a3b8')),
+        xaxis=dict(gridcolor='rgba(255,255,255,0.04)', tickfont=dict(color='#6a6a6a', family='JetBrains Mono')),
+        yaxis=dict(gridcolor='rgba(255,255,255,0.04)', tickfont=dict(color='#6a6a6a', family='JetBrains Mono')),
     )
     return fig
 
@@ -455,25 +455,25 @@ def render_anomaly_dashboard(data: dict, results: dict):
     # 图表
     col1, col2 = st.columns([1, 1])
     with col1:
-        st.markdown("**异常类型分布**")
+        st.markdown('<div class="section-header">ANOMALY TYPE DISTRIBUTION</div>', unsafe_allow_html=True)
         chart = make_anomaly_type_chart(detection)
         if chart:
             st.plotly_chart(chart, use_container_width=True, key="anomaly_type_dist")
     with col2:
-        st.markdown("**月度异常分布**")
+        st.markdown('<div class="section-header">MONTHLY DISTRIBUTION</div>', unsafe_allow_html=True)
         chart = make_monthly_anomaly_chart(detection)
         if chart:
             st.plotly_chart(chart, use_container_width=True, key="anomaly_month_dist")
     
     # 热力图
-    st.markdown("**客户异常热力图** — 颜色越深异常越严重")
+    st.markdown('<div class="section-header">ANOMALY HEATMAP</div>', unsafe_allow_html=True)
     heatmap = make_anomaly_timeline(detection)
     if heatmap:
         st.plotly_chart(heatmap, use_container_width=True, key="anomaly_heatmap")
     
     # 系统性风险
     if detection['systemic_risks']:
-        st.markdown("#### ⚠️ 系统性风险事件")
+        st.markdown('<div class="section-header">SYSTEMIC RISK EVENTS</div>', unsafe_allow_html=True)
         st.markdown("多个客户同月份同时暴跌 (>30%)，可能是市场/行业层面的问题")
         for i, (idx, count, customers, avg_dec) in enumerate(detection['systemic_risks']):
             st.warning(
@@ -483,7 +483,7 @@ def render_anomaly_dashboard(data: dict, results: dict):
             )
     
     # 客户异常详情
-    st.markdown("#### 🔍 客户异常详情")
+    st.markdown('<div class="section-header">CLIENT ANOMALY DETAILS</div>', unsafe_allow_html=True)
     
     severity_filter = st.radio(
         "筛选", ["全部", "🔴 仅严重", "🟡 仅警告"],
