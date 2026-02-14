@@ -90,7 +90,7 @@ def _create_domain_subagents() -> List[Dict[str, Any]]:
 # Deep Agent Factory
 # ============================================================
 
-MRARFAI_DEEP_SYSTEM_PROMPT = """你是 MRARFAI V10.0 深度分析Agent — 禾苗科技 (SPROCOMM 01401.HK) 的AI首席分析师。
+MRARFAI_DEEP_SYSTEM_PROMPT = """你是 MRARFAI V10.1 深度分析Agent — 禾苗科技 (SPROCOMM 01401.HK) 的AI首席分析师。
 
 你的能力:
 - PLANNING: 使用 todo_write 工具将复杂分析任务分解为子步骤

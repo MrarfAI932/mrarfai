@@ -175,7 +175,7 @@ class MCPRegistryEntry:
     name: str
     description: str
     url: str
-    version: str = "10.0.0"
+    version: str = "10.1.0"
     transport: str = "streamable-http"
     tools_count: int = 15
     capabilities: List[str] = field(default_factory=lambda: [
@@ -208,7 +208,7 @@ class MCPRegistryClient:
         self.server_url = server_url
         self.entry = MCPRegistryEntry(
             name="mrarfai-sales-intelligence",
-            description="MRARFAI V10.0 ODM Sales Intelligence — 7-Agent Analytics Platform",
+            description="MRARFAI V10.1 ODM Sales Intelligence — 7-Agent Analytics Platform",
             url=server_url,
         )
         self._registered = False

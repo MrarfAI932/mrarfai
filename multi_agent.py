@@ -3292,7 +3292,7 @@ def get_platform_capabilities() -> dict:
 
 
 # ============================================================
-# 模块信息 — V10.0 统一版
+# 模块信息 — V10.1 统一版
 # ============================================================
 
 __version__ = "10.1.0"
@@ -3349,7 +3349,7 @@ if __name__ == "__main__":
     print(f"  ⑤ Memory 3D: {'✅' if HAS_MEM3D else '❌'}")
     print(f"  ⑥ Interpretability: {'✅' if HAS_INTERP else '❌'}")
     print(f"  ⑦ Evals V9: {'✅' if HAS_EVALS_V9 else '❌'}")
-    print(f"  --- V10.0 协议层 ---")
+    print(f"  --- V10.1 协议层 ---")
     print(f"  ⑧ Deep Agents: {'✅' if HAS_DEEP_AGENTS else '❌'}")
     print(f"  Pydantic Contracts: ✅")
     print(f"  Middleware: ✅")

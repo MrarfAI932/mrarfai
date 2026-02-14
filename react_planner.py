@@ -173,7 +173,7 @@ class HierarchicalPlanner:
 # ReAct Agent — Reason + Act + Observe Loop
 # ============================================================
 
-REACT_SYSTEM_PROMPT = """你是 MRARFAI V10.0 ReAct Agent。
+REACT_SYSTEM_PROMPT = """你是 MRARFAI V10.1 ReAct Agent。
 
 你使用 Reason-Act-Observe 循环来回答复杂问题:
 1. **Reason**: 分析当前信息，决定下一步行动
