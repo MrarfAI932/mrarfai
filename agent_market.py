@@ -21,6 +21,12 @@ from datetime import datetime
 from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, field
 
+from contracts import (
+    MarketCompetitorResponse, CompetitorProfile,
+    MarketSentimentResponse, SentimentSignal,
+    MarketReportResponse,
+)
+
 logger = logging.getLogger("mrarfai.agent.market")
 
 try:
@@ -164,49 +170,49 @@ class MarketEngine:
         else:
             targets = all_comps
 
-        return {
-            "competitors": [
-                {
-                    "name": c.name,
-                    "stock": c.stock_code,
-                    "revenue_2025": f"¥{c.revenue_2025:.0f}亿",
-                    "yoy_growth": f"{c.yoy_growth:.0%}",
-                    "market_share": f"{c.market_share:.0%}",
-                    "main_clients": c.main_clients,
-                    "strengths": c.strengths,
-                    "weaknesses": c.weaknesses,
-                }
+        return MarketCompetitorResponse(
+            competitors=[
+                CompetitorProfile(
+                    name=c.name,
+                    stock=c.stock_code,
+                    revenue_2025=f"¥{c.revenue_2025:.0f}亿",
+                    yoy_growth=f"{c.yoy_growth:.0%}",
+                    market_share=f"{c.market_share:.0%}",
+                    main_clients=c.main_clients,
+                    strengths=c.strengths,
+                    weaknesses=c.weaknesses,
+                )
                 for c in targets
             ],
-            "sprocomm_position": {
+            sprocomm_position={
                 "rank": "ODM Top 10 (按营收)",
                 "niche": "Feature Phone + Entry Smartphone 领域Top 3",
                 "competitive_advantage": "印度/非洲渠道 + Samsung/Nokia信任关系",
             },
-        }
+        ).model_dump()
 
     def summarize_report(self) -> Dict:
         """行业趋势报告"""
-        return {
-            "report_date": datetime.now().strftime("%Y年%m月"),
-            "market_size": "全球手机ODM市场约2,800亿元(2025)",
-            "yoy_growth": "整体+8%，智能手机+12%，功能机-12%",
-            "trends": self.trends,
-            "key_takeaway": "AI手机+印度本地化是2026两大确定性机会",
-        }
+        return MarketReportResponse(
+            report_date=datetime.now().strftime("%Y年%m月"),
+            market_size="全球手机ODM市场约2,800亿元(2025)",
+            growth_trend="整体+8%，智能手机+12%，功能机-12%",
+            key_drivers=["AI手机", "印度本地化"],
+            sprocomm_position="AI手机+印度本地化是2026两大确定性机会",
+        ).model_dump()
 
     def track_sentiment(self) -> Dict:
         """舆情追踪"""
         positive = sum(1 for s in self.sentiments if s["sentiment"] == "正面")
         negative = sum(1 for s in self.sentiments if s["sentiment"] == "负面")
-        return {
-            "total_signals": len(self.sentiments),
-            "positive": positive,
-            "negative": negative,
-            "neutral": len(self.sentiments) - positive - negative,
-            "sentiment_score": round((positive - negative) / len(self.sentiments), 2),
-            "signals": self.sentiments,
-        }
+        return MarketSentimentResponse(
+            total_signals=len(self.sentiments),
+            positive=positive,
+            negative=negative,
+            neutral=len(self.sentiments) - positive - negative,
+            sentiment_score=round((positive - negative) / len(self.sentiments), 2),
+            signals=[SentimentSignal(**s) for s in self.sentiments],
+        ).model_dump()
 
     def answer(self, question: str) -> str:
         """自然语言入口"""

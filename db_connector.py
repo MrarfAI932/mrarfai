@@ -121,6 +121,26 @@ class BaseConnector:
         """市场Agent: 查询竞品数据"""
         return []
 
+    def query_risk_clients(self) -> List[Dict]:
+        """风控Agent: 查询客户风险数据"""
+        return []
+
+    def query_anomalies(self) -> List[Dict]:
+        """风控Agent: 查询异常检测结果"""
+        return []
+
+    def query_health_scores(self) -> List[Dict]:
+        """风控Agent: 查询客户健康评分"""
+        return []
+
+    def query_industry_benchmark(self) -> List[Dict]:
+        """策略Agent: 查询行业对标数据"""
+        return []
+
+    def query_forecast(self) -> List[Dict]:
+        """策略Agent: 查询预测数据"""
+        return []
+
     def query_sales(self, start_date: str = "", end_date: str = "") -> List[Dict]:
         """销售Agent: 查询销售数据"""
         return []
@@ -459,6 +479,39 @@ def create_engines_from_db(config: DatabaseConfig = None) -> Dict:
             logger.info(f"DB → 市场Agent: {len(competitors_data)} competitors")
     except Exception as e:
         logger.error(f"DB→市场Engine失败: {e}")
+
+    # ── 风控 Agent ──
+    try:
+        risk_clients = connector.query_risk_clients()
+        anomalies = connector.query_anomalies()
+        health_scores = connector.query_health_scores()
+        if risk_clients or anomalies or health_scores:
+            from agent_risk import RiskEngine
+            engines["risk"] = RiskEngine(
+                risk_clients=risk_clients if risk_clients else None,
+                anomalies=anomalies if anomalies else None,
+                health_scores=health_scores if health_scores else None,
+            )
+            logger.info(f"DB → 风控Agent: {len(risk_clients)} clients, {len(anomalies)} anomalies")
+    except Exception as e:
+        logger.error(f"DB→风控Engine失败: {e}")
+
+    # ── 策略 Agent ──
+    try:
+        benchmark = connector.query_industry_benchmark()
+        forecast = connector.query_forecast()
+        if benchmark or forecast:
+            from agent_strategist import StrategistEngine
+            positioning = benchmark[0] if benchmark else None
+            competitive = benchmark[1] if len(benchmark) > 1 else None
+            engines["strategist"] = StrategistEngine(
+                positioning=positioning,
+                competitive=competitive,
+                forecast=forecast[0] if forecast else None,
+            )
+            logger.info(f"DB → 策略Agent: benchmark={len(benchmark)}, forecast={len(forecast)}")
+    except Exception as e:
+        logger.error(f"DB→策略Engine失败: {e}")
 
     connector.disconnect()
     return engines

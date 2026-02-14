@@ -26,6 +26,13 @@ from datetime import datetime
 from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, field
 
+from contracts import (
+    QualityYieldResponse, QualityReturnsResponse, QualityRootCauseResponse,
+    QualityComplaintsResponse,
+    YieldTrend, DefectCount, YieldAlert,
+    ReturnRecord as ReturnRecordContract,
+)
+
 logger = logging.getLogger("mrarfai.agent.quality")
 
 try:
@@ -199,12 +206,12 @@ class QualityEngine:
                     "severity": "高" if latest < 0.97 else "中",
                 })
 
-        return {
-            "filter": {"product": product or "全部", "line": line or "全部"},
-            "trends": trends,
-            "top_defects": [{"type": d[0], "count": d[1]} for d in top_defects],
-            "alerts": alerts,
-        }
+        return QualityYieldResponse(
+            filter={"product": product or "全部", "line": line or "全部"},
+            trends=[YieldTrend(**t) for t in trends],
+            top_defects=[DefectCount(type=d[0], count=d[1]) for d in top_defects],
+            alerts=[YieldAlert(**a) for a in alerts],
+        ).model_dump()
 
     def analyze_returns(self, customer: str = "") -> Dict:
         """退货分析"""
@@ -221,18 +228,18 @@ class QualityEngine:
         total_qty = sum(r.quantity for r in records)
         high_severity = [r for r in records if r.severity == "高"]
 
-        return {
-            "total_returns": total_qty,
-            "total_cases": len(records),
-            "high_severity_cases": len(high_severity),
-            "by_reason": {k: v for k, v in sorted(by_reason.items(), key=lambda x: -x[1])},
-            "by_customer": {k: v for k, v in sorted(by_customer.items(), key=lambda x: -x[1])},
-            "recent_high_severity": [
-                {"customer": r.customer, "product": r.product, "qty": r.quantity,
-                 "reason": r.reason, "date": r.date}
+        return QualityReturnsResponse(
+            total_returns=total_qty,
+            total_cases=len(records),
+            high_severity_cases=len(high_severity),
+            by_reason={k: v for k, v in sorted(by_reason.items(), key=lambda x: -x[1])},
+            by_customer={k: v for k, v in sorted(by_customer.items(), key=lambda x: -x[1])},
+            recent_high_severity=[
+                ReturnRecordContract(customer=r.customer, product=r.product, qty=r.quantity,
+                                     reason=r.reason, date=r.date)
                 for r in high_severity
             ],
-        }
+        ).model_dump()
 
     def classify_complaints(self) -> Dict:
         """投诉分类"""
@@ -250,7 +257,10 @@ class QualityEngine:
                 "cases": len(matched),
                 "details": [r.reason for r in matched],
             }
-        return {"classification": result, "total": sum(r.quantity for r in self.returns)}
+        return QualityComplaintsResponse(
+            classification=result,
+            total=sum(r.quantity for r in self.returns),
+        ).model_dump()
 
     def trace_root_cause(self, defect: str = "触控失灵") -> Dict:
         """根因追溯"""
@@ -277,21 +287,21 @@ class QualityEngine:
                 "qty": r.quantity,
             })
 
-        return {
-            "defect": defect,
-            "total_production_defects": sum(y.defect_types.get(defect, 0) for y in related_yields),
-            "total_customer_returns": sum(r.quantity for r in related_returns),
-            "affected_lines": list(set(y.line for y in related_yields)),
-            "affected_customers": list(set(r.customer for r in related_returns)),
-            "timeline": sorted(timeline, key=lambda x: x["date"]),
-            "probable_cause": f"12月{defect}缺陷激增，疑似新批次触控IC来料问题",
-            "recommended_actions": [
+        return QualityRootCauseResponse(
+            defect=defect,
+            total_production_defects=sum(y.defect_types.get(defect, 0) for y in related_yields),
+            total_customer_returns=sum(r.quantity for r in related_returns),
+            affected_lines=list(set(y.line for y in related_yields)),
+            affected_customers=list(set(r.customer for r in related_returns)),
+            timeline=sorted(timeline, key=lambda x: x["date"]),
+            probable_cause=f"12月{defect}缺陷激增，疑似新批次触控IC来料问题",
+            recommended_actions=[
                 "1. IQC加严触控IC来料检验",
                 "2. 联系供应商追溯批次",
                 "3. 对在库半成品抽检",
                 "4. 通知受影响客户并提供换货方案",
             ],
-        }
+        ).model_dump()
 
     def answer(self, question: str) -> str:
         """自然语言入口"""

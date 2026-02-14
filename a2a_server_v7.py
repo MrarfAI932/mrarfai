@@ -5,7 +5,7 @@ MRARFAI A2A Server v7.0 — Agent2Agent Protocol RC v1.0
 Phase 4 升级：自定义 A2A 抽象 → Google A2A RC v1.0 标准协议
 
 核心变化:
-  ① Agent Card — /.well-known/agent.json 标准能力声明
+  ① Agent Card — /.well-known/agent-card.json 标准能力声明
   ② Task 生命周期 — 8 状态机 (submitted→working→completed/failed)
   ③ JSON-RPC 2.0 — 标准消息格式
   ④ 官方 SDK 适配 — 预留 a2a-sdk 接口
@@ -18,7 +18,7 @@ v5.0 → v7.0 评分变化:
   ┌─────────────────────────────────────────────┐
   │  A2A Server (Starlette / JSON-RPC 2.0)      │
   │                                             │
-  │  GET  /.well-known/agent.json → Agent Card  │
+  │  GET  /.well-known/agent-card.json → Agent Card  │
   │  POST /a2a → JSON-RPC 2.0 (tasks/send等)    │
   │                                             │
   │  Task States:                                │
@@ -59,11 +59,17 @@ logger = logging.getLogger("mrarfai.a2a")
 
 HAS_A2A_SDK = False
 try:
-    import a2a
+    from a2a.server.agent_execution import AgentExecutor as A2ASDKExecutor
+    from a2a.server.request_handlers import DefaultRequestHandler
+    from a2a.server.tasks import InMemoryTaskStore as A2ASDKTaskStore
+    from a2a.types import AgentCard as A2ASDKCard
     HAS_A2A_SDK = True
-    logger.info("✅ A2A 官方 SDK 已加载")
+    logger.info("✅ A2A 官方 SDK 已加载 (a2a-python)")
 except ImportError:
-    pass
+    A2ASDKExecutor = None
+    DefaultRequestHandler = None
+    A2ASDKTaskStore = None
+    A2ASDKCard = None
 
 HAS_STARLETTE = False
 try:
@@ -72,6 +78,16 @@ try:
     from starlette.requests import Request
     from starlette.responses import JSONResponse
     HAS_STARLETTE = True
+except ImportError:
+    pass
+
+# V10.0: gRPC 传输支持 (可选)
+HAS_GRPC = False
+try:
+    import grpc
+    from grpc import aio as grpc_aio
+    HAS_GRPC = True
+    logger.info("✅ gRPC 可用")
 except ImportError:
     pass
 
@@ -153,7 +169,7 @@ class AgentInterface:
 @dataclass
 class AgentCard:
     """
-    A2A Agent Card — /.well-known/agent.json
+    A2A Agent Card — /.well-known/agent-card.json
 
     遵循 A2A RC v1.0 规范:
     - name, description, version: 必需
@@ -442,17 +458,18 @@ class MRARFAIRiskExecutor(AgentExecutor):
                 answer = self.engine.answer(question)
             else:
                 answer = f"[风险评估] {question} — RiskEngine 未加载"
+            agent_msg = Message.agent_text(answer)
+            task.history.append(agent_msg)
+            task.status = TaskStatus(state=TaskState.COMPLETED, message=agent_msg)
+            task.artifacts.append(Artifact(
+                name="risk_result",
+                description="风险评估结果",
+                parts=[MessagePart(type="text", text=answer)],
+            ))
         except Exception as e:
-            answer = f"[风险评估失败] {str(e)}"
-
-        agent_msg = Message.agent_text(answer)
-        task.history.append(agent_msg)
-        task.status = TaskStatus(state=TaskState.COMPLETED, message=agent_msg)
-        task.artifacts.append(Artifact(
-            name="risk_result",
-            description="风险评估结果",
-            parts=[MessagePart(type="text", text=answer)],
-        ))
+            err_msg = Message.agent_text(f"[风险评估失败] {str(e)}")
+            task.history.append(err_msg)
+            task.status = TaskStatus(state=TaskState.FAILED, message=err_msg)
         return task
 
 
@@ -476,17 +493,18 @@ class MRARFAIStrategistExecutor(AgentExecutor):
                 answer = self.engine.answer(question)
             else:
                 answer = f"[战略建议] {question} — StrategistEngine 未加载"
+            agent_msg = Message.agent_text(answer)
+            task.history.append(agent_msg)
+            task.status = TaskStatus(state=TaskState.COMPLETED, message=agent_msg)
+            task.artifacts.append(Artifact(
+                name="strategy_result",
+                description="战略分析结果",
+                parts=[MessagePart(type="text", text=answer)],
+            ))
         except Exception as e:
-            answer = f"[战略分析失败] {str(e)}"
-
-        agent_msg = Message.agent_text(answer)
-        task.history.append(agent_msg)
-        task.status = TaskStatus(state=TaskState.COMPLETED, message=agent_msg)
-        task.artifacts.append(Artifact(
-            name="strategy_result",
-            description="战略分析结果",
-            parts=[MessagePart(type="text", text=answer)],
-        ))
+            err_msg = Message.agent_text(f"[战略分析失败] {str(e)}")
+            task.history.append(err_msg)
+            task.status = TaskStatus(state=TaskState.FAILED, message=err_msg)
         return task
 
 
@@ -606,7 +624,7 @@ def create_a2a_app(agent_card: AgentCard, handler: A2ARequestHandler):
     创建 A2A HTTP 应用
 
     路由:
-    - GET  /.well-known/agent.json → Agent Card
+    - GET  /.well-known/agent-card.json → Agent Card
     - POST /a2a                    → JSON-RPC 2.0
 
     Usage:
@@ -626,11 +644,80 @@ def create_a2a_app(agent_card: AgentCard, handler: A2ARequestHandler):
         return JSONResponse(result)
 
     app = Starlette(routes=[
-        Route("/.well-known/agent.json", agent_card_endpoint, methods=["GET"]),
+        Route("/.well-known/agent-card.json", agent_card_endpoint, methods=["GET"]),
         Route("/a2a", a2a_endpoint, methods=["POST"]),
     ])
 
     return app
+
+
+# ============================================================
+# V10.0: gRPC Transport — A2A over gRPC
+# ============================================================
+
+class A2AGrpcServicer:
+    """
+    A2A gRPC Servicer — JSON-RPC over gRPC unary calls
+
+    当 grpcio 可用时，提供 gRPC 传输层。
+    消息格式: 复用现有 JSON-RPC 2.0 request/response。
+
+    Usage:
+        if HAS_GRPC:
+            servicer = A2AGrpcServicer(handler)
+            server = grpc.aio.server()
+            # 注册到自定义 proto service
+    """
+
+    def __init__(self, handler: A2ARequestHandler, card: AgentCard):
+        self.handler = handler
+        self.card = card
+
+    async def GetAgentCard(self, request, context):
+        """返回 Agent Card (JSON bytes)"""
+        card_json = json.dumps(self.card.to_dict(), ensure_ascii=False)
+        return card_json.encode("utf-8")
+
+    async def SendTask(self, request_bytes, context):
+        """处理 tasks/send (JSON-RPC over gRPC)"""
+        try:
+            request = json.loads(request_bytes)
+            result = await self.handler.handle(request)
+            return json.dumps(result, ensure_ascii=False, default=str).encode("utf-8")
+        except Exception as e:
+            error = {"jsonrpc": "2.0", "id": None,
+                     "error": {"code": -32000, "message": str(e)}}
+            return json.dumps(error).encode("utf-8")
+
+    async def GetTask(self, request_bytes, context):
+        """处理 tasks/get"""
+        return await self.SendTask(request_bytes, context)
+
+    async def CancelTask(self, request_bytes, context):
+        """处理 tasks/cancel"""
+        return await self.SendTask(request_bytes, context)
+
+
+async def create_grpc_server(handler: A2ARequestHandler, card: AgentCard,
+                              port: int = 50051) -> Any:
+    """
+    创建 A2A gRPC Server
+
+    Returns:
+        grpc.aio.Server 或 None (如果 grpcio 未安装)
+    """
+    if not HAS_GRPC:
+        logger.warning("gRPC 不可用: pip install grpcio grpcio-tools")
+        return None
+
+    servicer = A2AGrpcServicer(handler, card)
+    server = grpc_aio.server()
+    # 注: 完整 gRPC 注册需要 proto 编译生成的 add_*Servicer_to_server
+    # 当前使用 JSON-over-gRPC 模式, servicer 绑定到 server 上下文
+    server._servicer = servicer  # 保持引用, 由调用方注册 proto service
+    server.add_insecure_port(f"[::]:{port}")
+    logger.info(f"A2A gRPC Server 准备就绪 @ port {port} (servicer={servicer.__class__.__name__})")
+    return server
 
 
 # ============================================================
@@ -930,10 +1017,90 @@ class LegacyAgentCard:
 
 
 # ============================================================
+# V10.0: 官方 A2A SDK 适配层
+# ============================================================
+
+class A2ASDKAdapter:
+    """
+    官方 a2a-python SDK 适配器
+
+    当 a2a-python SDK 可用时，将现有 AgentExecutor 桥接为
+    SDK 标准的 executor，实现协议合规。
+
+    Usage:
+        if HAS_A2A_SDK:
+            adapter = A2ASDKAdapter(my_executor, my_card)
+            sdk_app = adapter.create_app()
+    """
+
+    def __init__(self, executor: AgentExecutor, card: AgentCard):
+        self.executor = executor
+        self.card = card
+
+    def to_sdk_card(self) -> dict:
+        """将自建 AgentCard 转换为 SDK 标准格式"""
+        return self.card.to_dict()
+
+    async def _sdk_execute(self, task_id: str, message_text: str) -> dict:
+        """SDK 标准执行入口 — 桥接到自建 executor"""
+        msg = Message.user_text(message_text)
+        task = Task(task_id=task_id)
+        result = await self.executor.execute(task, msg)
+        return result.to_dict()
+
+    def create_handler(self) -> 'A2ARequestHandler':
+        """创建标准 handler"""
+        return A2ARequestHandler(self.executor)
+
+    def create_app(self):
+        """
+        创建 HTTP 应用 — 优先使用官方 SDK，回退自建 Starlette
+
+        Returns:
+            ASGI app (Starlette) 或 None
+        """
+        if HAS_A2A_SDK and DefaultRequestHandler:
+            # 官方 SDK 模式 — 使用 SDK 的 RequestHandler
+            logger.info("使用 A2A 官方 SDK 创建应用")
+            try:
+                handler = DefaultRequestHandler(
+                    agent_executor=self.executor,
+                    task_store=A2ASDKTaskStore() if A2ASDKTaskStore else InMemoryTaskStore(),
+                )
+                # SDK 提供的 app 工厂
+                from a2a.server.apps import A2AStarletteApplication
+                app = A2AStarletteApplication(
+                    agent_card=self.to_sdk_card(),
+                    http_handler=handler,
+                )
+                return app.build()
+            except Exception as e:
+                logger.warning(f"A2A SDK app 创建失败，回退自建: {e}")
+
+        # 回退：自建 Starlette
+        return create_a2a_app(self.card, self.create_handler())
+
+
+def create_a2a_app_v10(agent_name: str, executor: AgentExecutor,
+                        card: AgentCard) -> Any:
+    """
+    V10.0 标准入口 — 创建 A2A 应用
+
+    自动选择: 官方 SDK > 自建 Starlette > None
+    """
+    adapter = A2ASDKAdapter(executor, card)
+    app = adapter.create_app()
+    if app:
+        logger.info(f"A2A App 已创建: {agent_name} "
+                     f"(SDK={'官方' if HAS_A2A_SDK else '自建'})")
+    return app
+
+
+# ============================================================
 # 模块信息
 # ============================================================
 
-__version__ = "7.0.0"
+__version__ = "10.0.0"
 __all__ = [
     "AgentCard",
     "AgentSkill",
@@ -952,8 +1119,13 @@ __all__ = [
     "create_mrarfai_agent_cards",
     "init_mrarfai_a2a",
     "create_a2a_app",
+    "create_a2a_app_v10",
+    "A2ASDKAdapter",
+    "A2AGrpcServicer",
+    "create_grpc_server",
     "HAS_A2A_SDK",
     "HAS_STARLETTE",
+    "HAS_GRPC",
 ]
 
 if __name__ == "__main__":

@@ -127,6 +127,12 @@ class ConnectionManager:
         raise ValueError(f"Unsupported engine: {cfg.engine}")
 
     def _release(self, conn):
+        # PostgreSQL/MySQL: 清除可能遗留的事务状态
+        if self.config.engine != "sqlite":
+            try:
+                conn.rollback()
+            except Exception:
+                pass
         if len(self._pool) < self.config.pool_size:
             self._pool.append(conn)
         else:
@@ -145,7 +151,7 @@ class ConnectionManager:
 # Schema Definition — 禾苗销售数据表结构
 # ============================================================
 
-SALES_SCHEMA = """
+SALES_SCHEMA_SQLITE = """
 -- 客户维度表
 CREATE TABLE IF NOT EXISTS dim_customer (
     customer_id     INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -182,6 +188,49 @@ CREATE TABLE IF NOT EXISTS fact_sales (
 CREATE INDEX IF NOT EXISTS idx_sales_year_month ON fact_sales(year, month);
 CREATE INDEX IF NOT EXISTS idx_sales_customer ON fact_sales(customer_id);
 """
+
+SALES_SCHEMA_POSTGRES = """
+CREATE TABLE IF NOT EXISTS dim_customer (
+    customer_id     SERIAL PRIMARY KEY,
+    customer_name   TEXT NOT NULL,
+    region          TEXT DEFAULT '',
+    industry        TEXT DEFAULT 'ODM',
+    tier            TEXT DEFAULT '',
+    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS dim_product (
+    product_id      SERIAL PRIMARY KEY,
+    product_name    TEXT NOT NULL,
+    category        TEXT DEFAULT '',
+    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS fact_sales (
+    sale_id         SERIAL PRIMARY KEY,
+    customer_id     INTEGER NOT NULL REFERENCES dim_customer(customer_id),
+    product_id      INTEGER REFERENCES dim_product(product_id),
+    year            INTEGER NOT NULL,
+    month           INTEGER NOT NULL,
+    revenue         DOUBLE PRECISION DEFAULT 0,
+    units           INTEGER DEFAULT 0,
+    cost            DOUBLE PRECISION DEFAULT 0
+);
+
+CREATE INDEX IF NOT EXISTS idx_sales_year_month ON fact_sales(year, month);
+CREATE INDEX IF NOT EXISTS idx_sales_customer ON fact_sales(customer_id);
+"""
+
+
+def get_sales_schema(engine: str = "sqlite") -> str:
+    """按引擎返回对应 DDL"""
+    if engine == "postgresql":
+        return SALES_SCHEMA_POSTGRES
+    return SALES_SCHEMA_SQLITE
+
+
+# 兼容旧引用
+SALES_SCHEMA = SALES_SCHEMA_SQLITE
 
 
 # ============================================================
@@ -248,7 +297,7 @@ QUERY_TEMPLATES = {
 
     "customer_churn_data": """
         SELECT c.customer_name,
-               GROUP_CONCAT(f.revenue ORDER BY f.month) as monthly_revenues
+               GROUP_CONCAT(f.revenue, ',') as monthly_revenues
         FROM fact_sales f
         JOIN dim_customer c ON f.customer_id = c.customer_id
         WHERE f.year = ?
@@ -300,18 +349,33 @@ class DataAdapter:
 
     def init_schema(self):
         """初始化数据库表结构"""
+        schema = get_sales_schema(self.config.engine)
         with self.conn_mgr.get_connection() as conn:
             if self.config.engine == "sqlite":
-                conn.executescript(SALES_SCHEMA)
+                conn.executescript(schema)
             else:
                 cursor = conn.cursor()
-                # MySQL/PG: 逐个执行
-                for stmt in SALES_SCHEMA.split(";"):
+                for stmt in schema.split(";"):
                     stmt = stmt.strip()
                     if stmt and not stmt.startswith("--"):
                         cursor.execute(stmt)
                 conn.commit()
-        logger.info("Schema initialized")
+        logger.info(f"Schema initialized (engine={self.config.engine})")
+
+    def _adapt_sql(self, sql: str) -> str:
+        """适配 SQL 方言差异 — 占位符 + 函数兼容"""
+        adapted = sql
+        if self.config.engine in ("postgresql", "mysql"):
+            adapted = adapted.replace("?", "%s")
+        # GROUP_CONCAT → STRING_AGG (PostgreSQL)
+        if self.config.engine == "postgresql" and "GROUP_CONCAT" in adapted:
+            import re
+            adapted = re.sub(
+                r"GROUP_CONCAT\((\w+(?:\.\w+)?),\s*'([^']*)'\)",
+                r"STRING_AGG(\1::text, '\2')",
+                adapted,
+            )
+        return adapted
 
     def query(self, template_name: str, params: list = None) -> List[dict]:
         """执行预置查询模板"""
@@ -330,9 +394,10 @@ class DataAdapter:
             if time.time() - ts < self._cache_ttl:
                 return result
 
+        adapted_sql = self._adapt_sql(sql)
         with self.conn_mgr.get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute(sql, params or [])
+            cursor.execute(adapted_sql, params or [])
             rows = cursor.fetchall()
             # 转为 dict list
             if rows and hasattr(rows[0], 'keys'):
@@ -374,30 +439,31 @@ class DataAdapter:
                         month_cols[m] = c
                         break
 
+            # 适配不同引擎的 SQL 语法
+            if self.config.engine == "postgresql":
+                upsert_sql = "INSERT INTO dim_customer (customer_name) VALUES (%s) ON CONFLICT DO NOTHING"
+                select_sql = "SELECT customer_id FROM dim_customer WHERE customer_name = %s"
+                insert_sql = "INSERT INTO fact_sales (customer_id, year, month, revenue) VALUES (%s, %s, %s, %s)"
+            else:
+                upsert_sql = "INSERT OR IGNORE INTO dim_customer (customer_name) VALUES (?)"
+                select_sql = "SELECT customer_id FROM dim_customer WHERE customer_name = ?"
+                insert_sql = "INSERT INTO fact_sales (customer_id, year, month, revenue) VALUES (?, ?, ?, ?)"
+
             for _, row in df.iterrows():
                 customer_name = str(row[name_col]).strip()
                 if not customer_name:
                     continue
 
                 # Upsert customer
-                cursor.execute(
-                    "INSERT OR IGNORE INTO dim_customer (customer_name) VALUES (?)",
-                    (customer_name,)
-                )
-                cursor.execute(
-                    "SELECT customer_id FROM dim_customer WHERE customer_name = ?",
-                    (customer_name,)
-                )
+                cursor.execute(upsert_sql, (customer_name,))
+                cursor.execute(select_sql, (customer_name,))
                 cid = cursor.fetchone()
                 customer_id = cid[0] if isinstance(cid, (tuple, list)) else cid["customer_id"]
 
                 # Insert monthly data
                 for month, col_name in month_cols.items():
                     revenue = float(row.get(col_name, 0) or 0)
-                    cursor.execute(
-                        "INSERT INTO fact_sales (customer_id, year, month, revenue) VALUES (?, ?, ?, ?)",
-                        (customer_id, year, month, revenue),
-                    )
+                    cursor.execute(insert_sql, (customer_id, year, month, revenue))
 
             conn.commit()
         logger.info(f"Imported {len(df)} rows for year {year}")

@@ -25,7 +25,22 @@ from datetime import datetime
 from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, field
 
+from contracts import (
+    RiskAnomalyResponse, RiskHealthResponse,
+    RiskChurnResponse, RiskAssessmentResponse,
+)
+
 logger = logging.getLogger("mrarfai.agent.risk")
+
+try:
+    from a2a_server_v7 import (
+        AgentExecutor, AgentCard, AgentSkill, AgentCapabilities,
+        AgentInterface, Task, TaskStatus, TaskState,
+        Message, MessagePart, Artifact,
+    )
+    HAS_A2A = True
+except ImportError:
+    HAS_A2A = False
 
 
 # ============================================================
@@ -112,12 +127,12 @@ class RiskEngine:
             filtered = self.anomalies
 
         severe = [a for a in filtered if a.get("severity") == "🔴"]
-        return {
-            "total_anomalies": len(filtered),
-            "severe": len(severe),
-            "anomalies": filtered[:15],
-            "risk_summary": f"发现 {len(filtered)} 个异常，其中 {len(severe)} 个严重",
-        }
+        return RiskAnomalyResponse(
+            total_anomalies=len(filtered),
+            severe=len(severe),
+            anomalies=filtered[:15],
+            risk_summary=f"发现 {len(filtered)} 个异常，其中 {len(severe)} 个严重",
+        ).model_dump()
 
     def evaluate_health(self, client_name: str = "") -> Dict:
         """健康评分"""
@@ -127,7 +142,12 @@ class RiskEngine:
             filtered = self.health_scores
 
         if not filtered:
-            return {"message": "无健康评分数据", "scores": []}
+            return RiskHealthResponse(
+                avg_score=0.0,
+                grade_distribution={},
+                scores=[],
+                critical_clients=[],
+            ).model_dump()
 
         avg = sum(s["总分"] for s in filtered) / len(filtered)
         grade_dist = {}
@@ -135,12 +155,12 @@ class RiskEngine:
             g = s["等级"]
             grade_dist[g] = grade_dist.get(g, 0) + 1
 
-        return {
-            "avg_score": round(avg, 1),
-            "grade_distribution": grade_dist,
-            "scores": filtered,
-            "critical_clients": [s for s in filtered if s["等级"] in ("D", "F")],
-        }
+        return RiskHealthResponse(
+            avg_score=round(avg, 1),
+            grade_distribution=grade_dist,
+            scores=filtered,
+            critical_clients=[s for s in filtered if s["等级"] in ("D", "F")],
+        ).model_dump()
 
     def churn_alert(self) -> Dict:
         """流失预警"""
@@ -151,14 +171,14 @@ class RiskEngine:
         high_amount = sum(c.get("年度金额", 0) for c in high)
         total_amount = sum(c.get("年度金额", 0) for c in self.risk_clients)
 
-        return {
-            "high_risk": len(high),
-            "medium_risk": len(medium),
-            "low_risk": len(low),
-            "high_risk_amount": f"¥{high_amount:,.0f}万",
-            "total_monitored": len(self.risk_clients),
-            "exposure_rate": f"{(high_amount / max(total_amount, 1)) * 100:.1f}%",
-            "alerts": [
+        return RiskChurnResponse(
+            high_risk=len(high),
+            medium_risk=len(medium),
+            low_risk=len(low),
+            high_risk_amount=f"¥{high_amount:,.0f}万",
+            total_monitored=len(self.risk_clients),
+            exposure_rate=f"{(high_amount / max(total_amount, 1)) * 100:.1f}%",
+            alerts=[
                 {
                     "客户": c.get("客户", ""),
                     "年度金额": f"¥{c.get('年度金额', 0):,.0f}万",
@@ -167,8 +187,8 @@ class RiskEngine:
                 }
                 for c in self.risk_clients
             ],
-            "action_required": [c.get("客户", "") for c in high],
-        }
+            action_required=[c.get("客户", "") for c in high],
+        ).model_dump()
 
     def comprehensive_assessment(self) -> Dict:
         """综合风险评估"""
@@ -185,22 +205,22 @@ class RiskEngine:
         else:
             overall = "🟢 低风险"
 
-        return {
-            "overall_risk": overall,
-            "anomaly_summary": anomaly["risk_summary"],
-            "health_avg": health.get("avg_score", 0),
-            "churn_high_risk": churn["high_risk"],
-            "churn_exposure": churn["exposure_rate"],
-            "top_risks": [
+        return RiskAssessmentResponse(
+            overall_risk=overall,
+            anomaly_summary=anomaly["risk_summary"],
+            health_avg=health.get("avg_score", 0),
+            churn_high_risk=churn["high_risk"],
+            churn_exposure=churn["exposure_rate"],
+            top_risks=[
                 f"{c.get('客户', '')} — {c.get('原因', '')}"
                 for c in self.risk_clients if c.get("风险") == "高"
             ][:5],
-            "recommendations": [
+            recommendations=[
                 "紧急拜访高风险客户：" + ", ".join(churn["action_required"][:3]),
                 f"关注 {anomaly['severe']} 个严重异常指标",
                 f"健康评分均值 {health.get('avg_score', 0):.1f}，D/F级客户需专项跟进",
             ],
-        }
+        ).model_dump()
 
     def answer(self, question: str) -> str:
         """自然语言入口"""
@@ -225,3 +245,77 @@ class RiskEngine:
             return json.dumps(self.churn_alert(), ensure_ascii=False, indent=2)
         else:
             return json.dumps(self.comprehensive_assessment(), ensure_ascii=False, indent=2)
+
+
+# ============================================================
+# A2A Executor
+# ============================================================
+
+class RiskExecutor(AgentExecutor if HAS_A2A else object):
+    """风控 Agent A2A 执行器"""
+
+    def __init__(self):
+        self.engine = RiskEngine()
+
+    async def execute(self, task: 'Task', message: 'Message') -> 'Task':
+        question = message.parts[0].text if message.parts else ""
+        task.status = TaskStatus(state=TaskState.WORKING)
+        task.history.append(message)
+
+        try:
+            answer = self.engine.answer(question)
+            agent_msg = Message.agent_text(answer)
+            task.history.append(agent_msg)
+            task.status = TaskStatus(state=TaskState.COMPLETED, message=agent_msg)
+            task.artifacts.append(Artifact(
+                name="risk_result",
+                description="风险分析结果",
+                parts=[MessagePart(type="text", text=answer)],
+            ))
+        except Exception as e:
+            task.status = TaskStatus(
+                state=TaskState.FAILED,
+                message=Message.agent_text(f"风险分析失败: {str(e)}"),
+            )
+        return task
+
+
+# ============================================================
+# Agent Card
+# ============================================================
+
+def create_risk_card(base_url: str = "http://localhost:9999") -> 'AgentCard':
+    """创建风控 Agent Card"""
+    if not HAS_A2A:
+        return None
+    return AgentCard(
+        name="MRARFAI 风控专家",
+        description="风控域智能Agent — 异常检测、健康评分、流失预警、综合风险评估",
+        version="10.0.0",
+        supported_interfaces=[AgentInterface(url=f"{base_url}/a2a/risk")],
+        capabilities=AgentCapabilities(streaming=False),
+        skills=[
+            AgentSkill(
+                id="anomaly_detection",
+                name="异常检测",
+                description="多维统计异常检测 — Z-Score、IQR、趋势断裂、波动率",
+                tags=["anomaly", "detection", "statistics"],
+                examples=["Samsung有什么异常？", "异常检测报告"],
+            ),
+            AgentSkill(
+                id="health_scoring",
+                name="健康评分",
+                description="客户健康度多维评分 — A/B/C/D/F等级",
+                tags=["health", "scoring", "customer"],
+                examples=["客户健康评分", "哪些客户是D级？"],
+            ),
+            AgentSkill(
+                id="churn_alert",
+                name="流失预警",
+                description="客户流失风险预警 — 高/中/低风险分级",
+                tags=["churn", "alert", "risk"],
+                examples=["高风险客户有哪些？", "流失预警报告"],
+            ),
+        ],
+        provider={"organization": "禾苗科技"},
+    )

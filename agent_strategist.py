@@ -25,7 +25,22 @@ from datetime import datetime
 from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, field
 
+from contracts import (
+    StrategistBenchmarkResponse, StrategistForecastResponse,
+    StrategistAdviceResponse, StrategistComprehensiveResponse,
+)
+
 logger = logging.getLogger("mrarfai.agent.strategist")
+
+try:
+    from a2a_server_v7 import (
+        AgentExecutor, AgentCard, AgentSkill, AgentCapabilities,
+        AgentInterface, Task, TaskStatus, TaskState,
+        Message, MessagePart, Artifact,
+    )
+    HAS_A2A = True
+except ImportError:
+    HAS_A2A = False
 
 
 # ============================================================
@@ -147,55 +162,55 @@ class StrategistEngine:
 
     def benchmark_industry(self) -> Dict:
         """行业对标分析"""
-        return {
-            "report_date": datetime.now().strftime("%Y年%m月"),
-            "positioning": self.positioning,
-            "competitive": self.competitive,
-            "key_insight": "禾苗增速领先但规模差距大，毛利率优势说明利基策略有效",
-        }
+        return StrategistBenchmarkResponse(
+            report_date=datetime.now().strftime("%Y年%m月"),
+            positioning=self.positioning,
+            competitive=self.competitive,
+            key_insight="禾苗增速领先但规模差距大，毛利率优势说明利基策略有效",
+        ).model_dump()
 
     def forecast_revenue(self) -> Dict:
         """营收预测"""
-        return {
-            "forecast": self.forecast,
-            "methodology": "同比外推(35%) + 季节性因子(35%) + 占比法(30%)",
-            "confidence": "基准场景置信度70%",
-        }
+        return StrategistForecastResponse(
+            forecast=self.forecast,
+            methodology="同比外推(35%) + 季节性因子(35%) + 占比法(30%)",
+            confidence="基准场景置信度70%",
+        ).model_dump()
 
     def strategic_advice(self) -> Dict:
         """战略建议"""
-        return {
-            "structural_risks": self.risks,
-            "strategic_opportunities": self.opportunities,
-            "priority_actions": [
+        return StrategistAdviceResponse(
+            structural_risks=self.risks,
+            strategic_opportunities=self.opportunities,
+            priority_actions=[
                 "🔴 紧急: HMD客户挽留方案 — CEO级沟通",
                 "🟡 短期: AI手机方案模板 — 联合芯片商Q2完成",
                 "🟢 中期: IoT事业部组建 — Q3试点平板代工",
                 "🔵 长期: 中东/拉美渠道 — 2026下半年启动",
             ],
-            "kpi_targets_2026": {
+            kpi_targets_2026={
                 "营收": "46-50亿(+10~20%)",
                 "毛利率": "维持>9%",
                 "客户集中度": "Top3<60%",
                 "新客户": "≥3家新品牌客户",
                 "功能机占比": "降至<30%",
             },
-        }
+        ).model_dump()
 
     def comprehensive_strategy(self) -> Dict:
         """综合战略分析"""
-        return {
-            "positioning": self.positioning,
-            "competitive_landscape": self.competitive,
-            "risks": self.risks[:3],
-            "opportunities": self.opportunities[:3],
-            "forecast_summary": self.forecast,
-            "executive_summary": (
+        return StrategistComprehensiveResponse(
+            positioning=self.positioning,
+            competitive_landscape=self.competitive,
+            risks=self.risks[:3],
+            opportunities=self.opportunities[:3],
+            forecast_summary=self.forecast,
+            executive_summary=(
                 "禾苗2025年增速+54.1%领跑ODM行业，毛利率9.5%高于行业均值。"
                 "但功能机萎缩、HMD流失、印度过度依赖三大结构性风险突出。"
                 "2026战略重心: AI手机方案能力 + 非洲/中东市场 + IoT新品类。"
             ),
-        }
+        ).model_dump()
 
     def answer(self, question: str) -> str:
         """自然语言入口"""
@@ -207,8 +222,92 @@ class StrategistEngine:
         elif any(kw in q for kw in ["建议", "advice", "战略", "strategy", "行动", "action"]):
             return json.dumps(self.strategic_advice(), ensure_ascii=False, indent=2)
         elif any(kw in q for kw in ["机会", "opportunity", "增长", "growth"]):
-            return json.dumps({"opportunities": self.opportunities}, ensure_ascii=False, indent=2)
+            return json.dumps(
+                StrategistAdviceResponse(
+                    strategic_opportunities=self.opportunities,
+                    structural_risks=None,
+                    priority_actions=[],
+                ).model_dump(), ensure_ascii=False, indent=2)
         elif any(kw in q for kw in ["风险", "risk", "威胁", "threat"]):
-            return json.dumps({"risks": self.risks}, ensure_ascii=False, indent=2)
+            return json.dumps(
+                StrategistAdviceResponse(
+                    strategic_opportunities=None,
+                    structural_risks=self.risks,
+                    priority_actions=[],
+                ).model_dump(), ensure_ascii=False, indent=2)
         else:
             return json.dumps(self.comprehensive_strategy(), ensure_ascii=False, indent=2)
+
+
+# ============================================================
+# A2A Executor
+# ============================================================
+
+class StrategistExecutor(AgentExecutor if HAS_A2A else object):
+    """战略 Agent A2A 执行器"""
+
+    def __init__(self):
+        self.engine = StrategistEngine()
+
+    async def execute(self, task: 'Task', message: 'Message') -> 'Task':
+        question = message.parts[0].text if message.parts else ""
+        task.status = TaskStatus(state=TaskState.WORKING)
+        task.history.append(message)
+
+        try:
+            answer = self.engine.answer(question)
+            agent_msg = Message.agent_text(answer)
+            task.history.append(agent_msg)
+            task.status = TaskStatus(state=TaskState.COMPLETED, message=agent_msg)
+            task.artifacts.append(Artifact(
+                name="strategy_result",
+                description="战略分析结果",
+                parts=[MessagePart(type="text", text=answer)],
+            ))
+        except Exception as e:
+            task.status = TaskStatus(
+                state=TaskState.FAILED,
+                message=Message.agent_text(f"战略分析失败: {str(e)}"),
+            )
+        return task
+
+
+# ============================================================
+# Agent Card
+# ============================================================
+
+def create_strategist_card(base_url: str = "http://localhost:9999") -> 'AgentCard':
+    """创建战略 Agent Card"""
+    if not HAS_A2A:
+        return None
+    return AgentCard(
+        name="MRARFAI 战略顾问",
+        description="战略域智能Agent — 行业对标、营收预测、战略建议、增长机会识别",
+        version="10.0.0",
+        supported_interfaces=[AgentInterface(url=f"{base_url}/a2a/strategist")],
+        capabilities=AgentCapabilities(streaming=False),
+        skills=[
+            AgentSkill(
+                id="market_positioning",
+                name="市场定位",
+                description="行业对标分析 — 禾苗 vs 华勤/闻泰/龙旗竞争格局",
+                tags=["benchmark", "positioning", "competitive"],
+                examples=["禾苗在行业中什么位置？", "和华勤对比怎么样？"],
+            ),
+            AgentSkill(
+                id="revenue_forecast",
+                name="营收预测",
+                description="基于多模型的营收预测 — Q1/H1/FY场景分析",
+                tags=["forecast", "revenue", "prediction"],
+                examples=["2026年营收预测", "Q1预测多少？"],
+            ),
+            AgentSkill(
+                id="strategic_planning",
+                name="战略规划",
+                description="战略建议和行动计划 — 风险识别、机会捕捉、KPI设定",
+                tags=["strategy", "planning", "action"],
+                examples=["给出战略建议", "有哪些增长机会？"],
+            ),
+        ],
+        provider={"organization": "禾苗科技"},
+    )

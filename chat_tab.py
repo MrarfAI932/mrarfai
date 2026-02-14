@@ -864,7 +864,7 @@ def _render_welcome():
             <div style="width:5px;height:5px;border-radius:50%;background:#00FF88;
                  animation:neon-pulse 2s ease-in-out infinite;"></div>
             <span style="font-family:'JetBrains Mono',monospace;font-size:0.55rem;
-                  font-weight:700;color:#00FF88;letter-spacing:0.1em;">AGENT TERMINAL · V9.0</span>
+                  font-weight:700;color:#00FF88;letter-spacing:0.1em;">AGENT TERMINAL · V10.0</span>
         </div>
         <div style="font-family:'Space Grotesk',sans-serif;font-size:1.2rem;font-weight:700;
              color:#FFFFFF;letter-spacing:-0.01em;margin-bottom:6px;">
@@ -906,7 +906,7 @@ def _render_ready_state():
                  animation:neon-pulse 2s ease-in-out infinite;"></div>
             <span style="font-family:'JetBrains Mono',monospace;font-size:0.6rem;
                   font-weight:700;color:#00FF88;letter-spacing:0.1em;text-transform:uppercase;">
-                AGENTS READY · V9.0
+                AGENTS READY · V10.0
             </span>
         </div>
         <div style="font-family:'Space Grotesk',sans-serif;font-size:1.4rem;font-weight:700;

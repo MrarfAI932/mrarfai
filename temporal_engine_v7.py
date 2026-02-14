@@ -236,11 +236,14 @@ if HAS_TEMPORAL:
         """Temporal Activity: 发送通知"""
         activity.heartbeat("sending_notification")
         try:
-            from wechat_notify import send_wechat_notification
-            success = send_wechat_notification(
-                params.get("title", ""),
-                params.get("content", ""),
+            from wechat_notify import send_wecom_bot
+            result = send_wecom_bot(
+                webhook_url=params.get("webhook_url", ""),
+                title=params.get("title", ""),
+                content=params.get("content", ""),
             )
+            # send_wecom_bot 返回 (success: bool, message: str)
+            success = result[0] if isinstance(result, tuple) else bool(result)
             return {"success": success}
         except Exception as e:
             return {"success": False, "error": str(e)}

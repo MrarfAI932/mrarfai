@@ -57,12 +57,116 @@ try:
 except ImportError:
     HAS_TOOLS = False
 
+# V10.0: 域 Agent 引擎
+try:
+    from multi_agent import get_domain_engine
+    HAS_DOMAIN_ENGINES = True
+except ImportError:
+    HAS_DOMAIN_ENGINES = False
+
+# V10.0: Pydantic 结构化合约
+try:
+    from contracts import AgentRequest, AgentResponse
+    HAS_CONTRACTS = True
+except ImportError:
+    HAS_CONTRACTS = False
+
 # ============================================================
 # Server 实例
 # ============================================================
 
 SERVER_NAME = "mrarfai-sales"
-SERVER_VERSION = "7.0.0"
+SERVER_VERSION = "10.0.0"
+
+
+# ============================================================
+# V10.0: MCP Tasks — 异步任务管理
+# ============================================================
+
+import uuid
+from enum import Enum
+
+
+class TaskState(str, Enum):
+    PENDING = "pending"
+    RUNNING = "running"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    CANCELLED = "cancelled"
+
+
+class MCPTask:
+    """MCP 异步任务"""
+
+    def __init__(self, task_type: str, params: dict):
+        self.id = str(uuid.uuid4())[:8]
+        self.type = task_type
+        self.params = params
+        self.state = TaskState.PENDING
+        self.progress: float = 0.0
+        self.result: Any = None
+        self.error: str = ""
+        self._future = None
+
+    def to_dict(self) -> dict:
+        return {
+            "task_id": self.id,
+            "type": self.type,
+            "state": self.state.value,
+            "progress": self.progress,
+            "result": self.result,
+            "error": self.error,
+        }
+
+
+# 全局任务存储
+_task_store: dict[str, MCPTask] = {}
+
+
+async def _run_task_async(task: MCPTask):
+    """后台执行任务"""
+    task.state = TaskState.RUNNING
+    task.progress = 0.1
+
+    try:
+        if task.type == "comprehensive_report":
+            # 综合报告 — 调用全部域 Agent
+            if HAS_DOMAIN_ENGINES:
+                from multi_agent import get_domain_engine
+                results = {}
+                engines = ["quality", "market", "finance", "procurement", "risk", "strategist"]
+                for i, name in enumerate(engines):
+                    engine = get_domain_engine(name)
+                    if engine:
+                        question = task.params.get("question", "综合分析")
+                        results[name] = engine.answer(question)
+                    task.progress = 0.1 + (0.8 * (i + 1) / len(engines))
+                task.result = results
+            else:
+                task.result = {"error": "域引擎不可用"}
+
+        elif task.type == "domain_analysis":
+            # 单域分析
+            domain = task.params.get("domain", "quality")
+            question = task.params.get("question", "")
+            if HAS_DOMAIN_ENGINES:
+                from multi_agent import get_domain_engine
+                engine = get_domain_engine(domain)
+                if engine:
+                    task.progress = 0.5
+                    task.result = engine.answer(question)
+                else:
+                    task.result = {"error": f"域引擎 {domain} 不可用"}
+            else:
+                task.result = {"error": "域引擎模块不可用"}
+
+        task.state = TaskState.COMPLETED
+        task.progress = 1.0
+
+    except Exception as e:
+        task.state = TaskState.FAILED
+        task.error = str(e)
+        logger.error(f"Task {task.id} failed: {e}")
 
 if HAS_MCP_SDK:
     server = Server(SERVER_NAME)
@@ -157,6 +261,117 @@ if HAS_MCP_SDK:
                     },
                 },
             ),
+            # ── V10.0: 6个域 Agent 工具 ──
+            Tool(
+                name="quality_analysis",
+                description="品质分析：良率监控、退货分析、缺陷追溯、投诉分类",
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "question": {"type": "string", "description": "品质相关问题，如 '当前良率是多少' 或 '主要缺陷类型'"},
+                    },
+                    "required": ["question"],
+                },
+            ),
+            Tool(
+                name="market_analysis",
+                description="市场分析：竞对监控(华勤/闻泰/龙旗)、行业趋势、市场情绪",
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "question": {"type": "string", "description": "市场相关问题，如 '华勤最新动态' 或 '行业趋势'"},
+                    },
+                    "required": ["question"],
+                },
+            ),
+            Tool(
+                name="finance_analysis",
+                description="财务分析：应收账款追踪、毛利分析、现金流预测、发票匹配",
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "question": {"type": "string", "description": "财务相关问题，如 '应收账款总额' 或 '毛利最高的产品'"},
+                    },
+                    "required": ["question"],
+                },
+            ),
+            Tool(
+                name="procurement_analysis",
+                description="采购分析：供应商比价、采购单追踪、延期预警、成本分析",
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "question": {"type": "string", "description": "采购相关问题，如 '供应商评级' 或 '延期订单'"},
+                    },
+                    "required": ["question"],
+                },
+            ),
+            Tool(
+                name="risk_analysis",
+                description="风控分析：客户流失预警、异常检测、健康评分、综合风险评估",
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "question": {"type": "string", "description": "风控相关问题，如 '高风险客户' 或 'Samsung异常检测'"},
+                    },
+                    "required": ["question"],
+                },
+            ),
+            Tool(
+                name="strategy_analysis",
+                description="战略分析：行业对标、营收预测、战略建议、增长机会识别",
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "question": {"type": "string", "description": "战略相关问题，如 '行业对标分析' 或 '2026预测'"},
+                    },
+                    "required": ["question"],
+                },
+            ),
+            # ── V10.0: MCP Tasks 异步原语 ──
+            Tool(
+                name="create_task",
+                description="创建异步任务。支持 comprehensive_report（综合报告）和 domain_analysis（单域分析）",
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "task_type": {
+                            "type": "string",
+                            "enum": ["comprehensive_report", "domain_analysis"],
+                            "description": "任务类型",
+                        },
+                        "question": {"type": "string", "description": "分析问题"},
+                        "domain": {
+                            "type": "string",
+                            "enum": ["quality", "market", "finance", "procurement", "risk", "strategist"],
+                            "description": "域（仅 domain_analysis 时需要）",
+                        },
+                    },
+                    "required": ["task_type", "question"],
+                },
+            ),
+            Tool(
+                name="get_task",
+                description="查询异步任务状态和结果",
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "task_id": {"type": "string", "description": "任务ID"},
+                    },
+                    "required": ["task_id"],
+                },
+            ),
+            Tool(
+                name="cancel_task",
+                description="取消异步任务",
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "task_id": {"type": "string", "description": "任务ID"},
+                    },
+                    "required": ["task_id"],
+                },
+            ),
         ]
         return tools
 
@@ -211,6 +426,73 @@ if HAS_MCP_SDK:
 
             elif name == "generate_report":
                 return [TextContent(type="text", text="报告生成功能请通过 Streamlit UI 使用")]
+
+            # ── V10.0: 6个域 Agent 工具 ──
+            elif name in ("quality_analysis", "market_analysis", "finance_analysis",
+                          "procurement_analysis", "risk_analysis", "strategy_analysis"):
+                engine_map = {
+                    "quality_analysis": "quality",
+                    "market_analysis": "market",
+                    "finance_analysis": "finance",
+                    "procurement_analysis": "procurement",
+                    "risk_analysis": "risk",
+                    "strategy_analysis": "strategist",
+                }
+                engine_name = engine_map[name]
+                if HAS_DOMAIN_ENGINES:
+                    engine = get_domain_engine(engine_name)
+                    if engine:
+                        result = engine.answer(arguments["question"])
+                        return [TextContent(type="text", text=result)]
+                    else:
+                        return [TextContent(type="text", text=f"域引擎 {engine_name} 未加载")]
+                else:
+                    return [TextContent(type="text", text="域引擎模块不可用")]
+
+            # ── V10.0: MCP Tasks 异步原语 ──
+            elif name == "create_task":
+                task_type = arguments["task_type"]
+                params = {
+                    "question": arguments.get("question", ""),
+                    "domain": arguments.get("domain", ""),
+                }
+                task = MCPTask(task_type, params)
+                _task_store[task.id] = task
+                # 启动后台执行
+                asyncio.create_task(_run_task_async(task))
+                return [TextContent(
+                    type="text",
+                    text=json.dumps({"task_id": task.id, "state": "pending",
+                                     "message": f"任务已创建: {task_type}"},
+                                    ensure_ascii=False),
+                )]
+
+            elif name == "get_task":
+                task_id = arguments["task_id"]
+                task = _task_store.get(task_id)
+                if not task:
+                    return [TextContent(type="text",
+                                        text=json.dumps({"error": f"任务 {task_id} 不存在"},
+                                                        ensure_ascii=False))]
+                return [TextContent(type="text",
+                                    text=json.dumps(task.to_dict(), ensure_ascii=False, default=str))]
+
+            elif name == "cancel_task":
+                task_id = arguments["task_id"]
+                task = _task_store.get(task_id)
+                if not task:
+                    return [TextContent(type="text",
+                                        text=json.dumps({"error": f"任务 {task_id} 不存在"},
+                                                        ensure_ascii=False))]
+                if task.state in (TaskState.PENDING, TaskState.RUNNING):
+                    task.state = TaskState.CANCELLED
+                    return [TextContent(type="text",
+                                        text=json.dumps({"task_id": task_id, "state": "cancelled"},
+                                                        ensure_ascii=False))]
+                return [TextContent(type="text",
+                                    text=json.dumps({"task_id": task_id, "state": task.state.value,
+                                                     "message": "任务已完成，无法取消"},
+                                                    ensure_ascii=False))]
 
             else:
                 return [TextContent(type="text", text=f"未知工具: {name}")]
@@ -334,6 +616,101 @@ if HAS_MCP_SDK:
 
 
 # ============================================================
+# V10.0: MCP Registry — 工具发现与注册
+# ============================================================
+
+MCP_REGISTRY_MANIFEST = {
+    "name": SERVER_NAME,
+    "version": SERVER_VERSION,
+    "description": "禾苗通讯 AI 决策平台 — 销售分析、品质监控、财务追踪、采购管理、风险预警、战略顾问",
+    "author": "禾苗科技 (Sprocomm Technologies)",
+    "homepage": "https://github.com/sprocomm/mrarfai",
+    "license": "MIT",
+    "categories": ["analytics", "business-intelligence", "manufacturing", "ai-agent"],
+    "tags": [
+        "sales-analysis", "quality-control", "finance", "procurement",
+        "risk-management", "strategy", "multi-agent", "enterprise",
+        "chinese", "manufacturing", "odm",
+    ],
+    "transport": ["stdio", "streamable-http"],
+    "tools_count": 14,
+    "tools_summary": [
+        {"name": "query_sales_data", "category": "analytics"},
+        {"name": "analyze_customer", "category": "analytics"},
+        {"name": "detect_anomalies", "category": "risk"},
+        {"name": "run_forecast", "category": "strategy"},
+        {"name": "generate_report", "category": "reporting"},
+        {"name": "quality_analysis", "category": "quality"},
+        {"name": "market_analysis", "category": "market"},
+        {"name": "finance_analysis", "category": "finance"},
+        {"name": "procurement_analysis", "category": "procurement"},
+        {"name": "risk_analysis", "category": "risk"},
+        {"name": "strategy_analysis", "category": "strategy"},
+        {"name": "create_task", "category": "task-management"},
+        {"name": "get_task", "category": "task-management"},
+        {"name": "cancel_task", "category": "task-management"},
+    ],
+    "resources_count": 3,
+    "prompts_count": 3,
+    "capabilities": {
+        "async_tasks": True,
+        "domain_agents": 6,
+        "pydantic_contracts": True,
+        "langfuse_observability": True,
+    },
+    "installation": {
+        "stdio": {
+            "command": "python",
+            "args": ["mcp_server_v7.py"],
+        },
+        "http": {
+            "command": "python",
+            "args": ["mcp_server_v7.py", "--http", "8080"],
+        },
+    },
+}
+
+
+def get_registry_manifest() -> dict:
+    """返回 MCP Registry 注册清单 — 用于工具发现"""
+    return MCP_REGISTRY_MANIFEST
+
+
+def register_to_registry(registry_url: str = "https://registry.mcp.so") -> dict:
+    """
+    注册到 MCP Registry (2000+ servers 生态)
+
+    调用方式:
+        result = register_to_registry()
+        # 或自定义 registry
+        result = register_to_registry("https://custom-registry.example.com")
+
+    Returns:
+        {"status": "registered", ...} 或 {"status": "error", ...}
+    """
+    import requests as req
+
+    manifest = get_registry_manifest()
+    try:
+        resp = req.post(
+            f"{registry_url}/api/v1/servers",
+            json=manifest,
+            headers={"Content-Type": "application/json"},
+            timeout=15,
+        )
+        if resp.status_code in (200, 201):
+            logger.info(f"✅ MCP Registry 注册成功: {registry_url}")
+            return {"status": "registered", "registry": registry_url, "response": resp.json()}
+        else:
+            logger.warning(f"MCP Registry 注册返回 {resp.status_code}: {resp.text[:200]}")
+            return {"status": "error", "code": resp.status_code, "detail": resp.text[:200]}
+    except Exception as e:
+        logger.warning(f"MCP Registry 注册失败: {e}")
+        return {"status": "error", "detail": str(e),
+                "note": "可手动提交到 https://registry.mcp.so 或 https://glama.ai/mcp/servers"}
+
+
+# ============================================================
 # 入口
 # ============================================================
 
@@ -368,4 +745,19 @@ async def main():
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    if "--manifest" in sys.argv:
+        # 输出 Registry 清单 (供手动提交)
+        print(json.dumps(get_registry_manifest(), indent=2, ensure_ascii=False))
+    elif "--register" in sys.argv:
+        # 自动注册到 MCP Registry
+        url = "https://registry.mcp.so"
+        try:
+            idx = sys.argv.index("--register")
+            if idx + 1 < len(sys.argv) and not sys.argv[idx + 1].startswith("--"):
+                url = sys.argv[idx + 1]
+        except (ValueError, IndexError):
+            pass
+        result = register_to_registry(url)
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+    else:
+        asyncio.run(main())

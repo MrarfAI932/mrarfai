@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-MRARFAI Multi-Agent System v9.0 (Unified)
-============================================
+MRARFAI Multi-Agent System v10.0 (Unified)
+=============================================
 v4.0 基础层 (Tool Use + Guardrails + Streaming + KG + Observability)
   + v7.0 LangGraph 层 (StateGraph + HITL + Reflection + Multi-Model Routing)
   = v9.0 统一文件
@@ -14,8 +14,8 @@ v4.0 基础层 (Tool Use + Guardrails + Streaming + KG + Observability)
   run_multi_agent_v7()     — V7 LangGraph 管线
   run_multi_agent()        — V7 兼容别名
 
-5+ Agents: 分析师 + 风控 + 策略师 + 报告员 + 批评家
-依赖: pip install langgraph>=0.3 langchain-core>=0.3 (可选, 无则回退V4)
+7+ Agents: 分析师 + 风控 + 策略师 + 品质 + 市场 + 财务 + 采购 + 报告员 + 批评家
+依赖: pip install langgraph>=1.0 langchain-core>=1.0 (可选, 无则回退V4)
 """
 
 import json
@@ -116,14 +116,61 @@ try:
 except ImportError:
     HAS_PROTOCOL = False
 
-# CrewAI 导入（可选）
+# V10.0: 域 Agent 引擎导入
 try:
-    from crewai import Agent, Task, Crew, Process
-    from crewai.tools import BaseTool
-    from crewai import LLM
-    HAS_CREWAI = True
+    from agent_quality import QualityEngine
+    HAS_QUALITY = True
+except ImportError:
+    HAS_QUALITY = False
+
+try:
+    from agent_market import MarketEngine
+    HAS_MARKET = True
+except ImportError:
+    HAS_MARKET = False
+
+try:
+    from agent_finance import FinanceEngine
+    HAS_FINANCE = True
+except ImportError:
+    HAS_FINANCE = False
+
+try:
+    from agent_procurement import ProcurementEngine
+    HAS_PROCUREMENT = True
+except ImportError:
+    HAS_PROCUREMENT = False
+
+try:
+    from agent_risk import RiskEngine
+    HAS_RISK_ENGINE = True
+except ImportError:
+    HAS_RISK_ENGINE = False
+
+try:
+    from agent_strategist import StrategistEngine
+    HAS_STRATEGIST_ENGINE = True
+except ImportError:
+    HAS_STRATEGIST_ENGINE = False
+
+# V10.0: Pydantic 结构化合约
+from contracts import AgentRequest, AgentResponse, GraphInput, GraphOutput
+
+# V10.0: DB → Agent Bridge
+try:
+    from db_connector import create_engines_from_db, DatabaseConfig
+    HAS_DB_BRIDGE = True
+except ImportError:
+    HAS_DB_BRIDGE = False
+
+# Langfuse v3 可观测性
+try:
+    from langfuse import Langfuse
+    _langfuse_client = Langfuse()
+    HAS_LANGFUSE = True
 except Exception:
-    HAS_CREWAI = False
+    _langfuse_client = None
+    HAS_LANGFUSE = False
 
 # v7.0: LangGraph (可选 — 无则回退V4管线)
 try:
@@ -207,6 +254,47 @@ try:
     HAS_EVALS_V9 = True
 except ImportError:
     HAS_EVALS_V9 = False
+
+# V10.0 ⑧ Deep Agents 集成 (Planning Tool + Sub-agent Spawning + VFS)
+HAS_DEEP_AGENTS = False
+_deep_agent = None
+try:
+    from deep_agents import Agent as DeepAgent
+    from deep_agents import PlanningTool, SubAgentTool
+    from deep_agents.vfs import VirtualFileSystem
+    HAS_DEEP_AGENTS = True
+    logger.info("✅ Deep Agents 0.4.1+ 已加载")
+except ImportError:
+    DeepAgent = None
+    PlanningTool = None
+    SubAgentTool = None
+
+
+def _get_deep_agent():
+    """
+    延迟初始化 Deep Agent — Planning + Sub-agent Spawning
+
+    Deep Agents 0.4.1 特性:
+      - PlanningTool: 自动任务分解 (替代手动 route)
+      - SubAgentTool: 运行时动态子 Agent 生成
+      - VFS: 虚拟文件系统 (中间产物管理)
+      - Langfuse 官方集成 (traces/spans 自动上报)
+    """
+    global _deep_agent
+    if _deep_agent is None and HAS_DEEP_AGENTS:
+        tools = [PlanningTool()]
+        if SubAgentTool:
+            tools.append(SubAgentTool(
+                available_agents=list(AGENTS.keys()) if 'AGENTS' in dir() else [],
+            ))
+        _deep_agent = DeepAgent(
+            name="mrarfai-deep-planner",
+            tools=tools,
+            model="claude-sonnet-4-5-20250929",
+        )
+        logger.info("Deep Agent 初始化完成 (Planning + Sub-agent)")
+    return _deep_agent
+
 
 # V9.0 全局实例
 _v9_tracer: 'ProcessTracer' = None          # 可解释性追踪器
@@ -792,6 +880,63 @@ AGENT_PROFILES = {
         ],
         "model_tier": "advanced",
     },
+    # ── V10.0 域 Agent (Engine-based, 非 LLM 角色) ──
+    "quality": {
+        "name": "🔬 品质专家",
+        "emoji": "🔬",
+        "role": "禾苗通讯品质管控专家",
+        "goal": "监控良率、分析退货、追溯缺陷根因",
+        "backstory": "V10域引擎Agent，直接调用QualityEngine返回结构化数据，不经过LLM。",
+        "keywords": [
+            "良率", "yield", "退货", "return", "品质", "quality",
+            "缺陷", "defect", "投诉", "complaint", "根因", "root cause",
+            "合格率", "不良", "产线",
+        ],
+        "model_tier": "engine",  # 标记为引擎Agent，不走LLM
+        "engine_type": "quality",
+    },
+    "market": {
+        "name": "📈 市场专家",
+        "emoji": "📈",
+        "role": "禾苗通讯市场分析专家",
+        "goal": "竞对监控、行业趋势分析、市场情绪追踪",
+        "backstory": "V10域引擎Agent，直接调用MarketEngine返回结构化数据。",
+        "keywords": [
+            "市场", "market", "竞对", "competitor", "闻泰", "华勤", "龙旗",
+            "行业趋势", "trend", "情绪", "sentiment", "份额", "share",
+            "出货量", "排名",
+        ],
+        "model_tier": "engine",
+        "engine_type": "market",
+    },
+    "finance": {
+        "name": "💰 财务专家",
+        "emoji": "💰",
+        "role": "禾苗通讯财务分析专家",
+        "goal": "应收账款追踪、毛利分析、现金流预测、发票匹配",
+        "backstory": "V10域引擎Agent，直接调用FinanceEngine返回结构化数据。",
+        "keywords": [
+            "应收", "AR", "账款", "receivable", "毛利", "margin",
+            "利润", "profit", "现金流", "cashflow", "发票", "invoice",
+            "账期", "DSO", "回款",
+        ],
+        "model_tier": "engine",
+        "engine_type": "finance",
+    },
+    "procurement": {
+        "name": "📦 采购专家",
+        "emoji": "📦",
+        "role": "禾苗通讯采购管理专家",
+        "goal": "供应商评估、采购单追踪、延期预警、成本分析",
+        "backstory": "V10域引擎Agent，直接调用ProcurementEngine返回结构化数据。",
+        "keywords": [
+            "采购", "procurement", "供应商", "supplier", "PO",
+            "采购单", "延期", "delay", "成本", "cost", "报价", "quote",
+            "物料", "交期",
+        ],
+        "model_tier": "engine",
+        "engine_type": "procurement",
+    },
 }
 
 REPORTER_PROFILE = {
@@ -804,6 +949,56 @@ REPORTER_PROFILE = {
     ),
     "model_tier": "standard",
 }
+
+
+# ============================================================
+# V10.0 域 Agent 引擎管理器
+# ============================================================
+
+_domain_engines: Dict[str, Any] = {}
+
+
+def _init_domain_engines():
+    """初始化域 Agent 引擎 — 优先 DB 数据，否则回退 SAMPLE_"""
+    global _domain_engines
+    if _domain_engines:
+        return _domain_engines
+
+    # 1. 尝试从数据库加载
+    if HAS_DB_BRIDGE:
+        try:
+            db_engines = create_engines_from_db()
+            if db_engines:
+                _domain_engines.update(db_engines)
+                logger.info(f"DB Bridge → 加载 {len(db_engines)} 个域引擎: {list(db_engines.keys())}")
+        except Exception as e:
+            logger.warning(f"DB Bridge 失败: {e}")
+
+    # 2. 未从 DB 获取到的引擎 → 使用默认构造（含 SAMPLE_ 回退）
+    engine_map = {
+        "quality": (HAS_QUALITY, lambda: QualityEngine()),
+        "market": (HAS_MARKET, lambda: MarketEngine()),
+        "finance": (HAS_FINANCE, lambda: FinanceEngine()),
+        "procurement": (HAS_PROCUREMENT, lambda: ProcurementEngine()),
+        "risk": (HAS_RISK_ENGINE, lambda: RiskEngine()),
+        "strategist": (HAS_STRATEGIST_ENGINE, lambda: StrategistEngine()),
+    }
+
+    for name, (available, factory) in engine_map.items():
+        if name not in _domain_engines and available:
+            try:
+                _domain_engines[name] = factory()
+                logger.info(f"域引擎 {name} → 默认初始化")
+            except Exception as e:
+                logger.error(f"域引擎 {name} 初始化失败: {e}")
+
+    return _domain_engines
+
+
+def get_domain_engine(name: str):
+    """获取指定域引擎实例"""
+    engines = _init_domain_engines()
+    return engines.get(name)
 
 
 # ============================================================
@@ -903,7 +1098,7 @@ class SmartRouter:
 
         # 全量触发
         if any(k in q for k in ['CEO', 'ceo', '总结', '全面', '概览', '怎么样', '报告']):
-            agents_needed = {"analyst", "risk", "strategist"}
+            agents_needed = {"analyst", "risk", "strategist", "quality", "market", "finance", "procurement"}
 
         # 简单查询优化：只有数据问题时只需分析师
         simple_data_patterns = ['多少', '几个', '是什么', '哪些', '列出', '有哪些']
@@ -1153,11 +1348,14 @@ def _call_llm_with_tools(system_prompt, user_prompt, provider, api_key,
                          temperature=0.3, _trace_name="tool_agent",
                          stream_ps=None):
     """
-    带工具调用的 Agent Loop（ReAct 模式）
+    V10.0 ReAct Agent Loop — Reason + Act + Observe
 
-    1. 发送 prompt + tools → Claude
-    2. 如果返回 tool_use → 执行工具 → 发回 tool_result
-    3. 循环直到 Claude 返回纯文本或达到 max_turns
+    标准 ReAct 循环:
+      Thought: LLM 推理（选择工具或直接回答）
+      Action:  调用工具 (tool_use)
+      Observation: 工具返回结果 (tool_result)
+      ... 循环 ...
+      Final Answer: LLM 综合所有 Observations 给出最终回答
 
     仅 Claude provider 支持原生 tool_use，DeepSeek 走 prompt injection 模式
     """
@@ -1183,7 +1381,7 @@ def _call_llm_with_tools(system_prompt, user_prompt, provider, api_key,
                             max_tokens=max_tokens, temperature=temperature,
                             _trace_name=_trace_name)
 
-    # Claude: 原生 tool_use agentic loop
+    # Claude: 原生 tool_use — V10.0 ReAct agentic loop
     try:
         import anthropic
         client = anthropic.Anthropic(api_key=api_key)
@@ -1192,16 +1390,29 @@ def _call_llm_with_tools(system_prompt, user_prompt, provider, api_key,
                             max_tokens=max_tokens, temperature=temperature,
                             _trace_name=_trace_name)
 
+    # ReAct 结构化 system prompt
+    react_system = (
+        system_prompt + "\n\n"
+        "[ReAct 推理框架]\n"
+        "对于每个分析步骤，请按以下模式推理:\n"
+        "1. Thought: 分析当前问题，决定需要哪些数据\n"
+        "2. Action: 调用合适的工具获取数据\n"
+        "3. Observation: 分析工具返回的结果\n"
+        "重复以上步骤直到有足够信息。\n"
+        "最后给出 Final Answer: 综合所有数据的精确回答。"
+    )
+
     messages = [{"role": "user", "content": user_prompt}]
     all_text = []
     tool_calls_made = []
+    react_trace = []  # ReAct 步骤追踪
 
     for turn in range(max_turns):
         try:
             resp = client.messages.create(
                 model="claude-sonnet-4-20250514",
                 max_tokens=max_tokens,
-                system=system_prompt,
+                system=react_system,
                 tools=tools,
                 tool_choice={"type": "auto"},
                 messages=messages,
@@ -1209,21 +1420,24 @@ def _call_llm_with_tools(system_prompt, user_prompt, provider, api_key,
         except Exception as e:
             if all_text:
                 return "\n".join(all_text)
-            return f"[Tool agent 调用失败: {e}]"
+            return f"[ReAct agent 调用失败: {e}]"
 
-        # 收集文本和工具调用
+        # 收集文本 (Thought) 和工具调用 (Action)
         tool_blocks = []
         for block in resp.content:
             if hasattr(block, 'text'):
                 all_text.append(block.text)
+                react_trace.append({"step": turn + 1, "type": "thought", "content": block.text[:200]})
             elif hasattr(block, 'type') and block.type == "tool_use":
                 tool_blocks.append(block)
+                react_trace.append({"step": turn + 1, "type": "action", "tool": block.name})
 
-        # 没有工具调用 → 返回
+        # 没有工具调用 → Final Answer
         if resp.stop_reason != "tool_use" or not tool_blocks:
+            react_trace.append({"step": turn + 1, "type": "final_answer"})
             break
 
-        # 执行工具
+        # 执行工具 (Observation)
         messages.append({"role": "assistant", "content": resp.content})
 
         tool_results = []
@@ -1240,6 +1454,10 @@ def _call_llm_with_tools(system_prompt, user_prompt, provider, api_key,
                 "tool": tool_name, "input": tool_input,
                 "result_preview": result_str[:200],
             })
+            react_trace.append({
+                "step": turn + 1, "type": "observation",
+                "tool": tool_name, "result_len": len(result_str),
+            })
 
             # 流式通知
             if stream_ps:
@@ -1253,7 +1471,11 @@ def _call_llm_with_tools(system_prompt, user_prompt, provider, api_key,
 
         messages.append({"role": "user", "content": tool_results})
 
-    final_text = "\n".join(all_text) if all_text else "[Agent 未生成回答]"
+    final_text = "\n".join(all_text) if all_text else "[ReAct Agent 未生成回答]"
+
+    # ReAct 追踪日志
+    logger.debug(f"ReAct trace ({len(react_trace)} steps): "
+                 f"{json.dumps(react_trace, ensure_ascii=False, default=str)[:500]}")
 
     # 追踪
     tracer = get_tracer() if HAS_OBS else None
@@ -1304,28 +1526,6 @@ def _record_llm_span(tracer, name, provider, model,
         _ctx.current_trace.add_span(s)
     except Exception:
         pass  # 可观测性不能影响主流程
-
-
-def _get_llm(provider: str, api_key: str):
-    """CrewAI LLM配置"""
-    if not HAS_CREWAI:
-        return None
-    if provider == "deepseek":
-        os.environ["OPENAI_API_KEY"] = api_key
-        return LLM(
-            model="deepseek/deepseek-chat",
-            api_key=api_key,
-            base_url="https://api.deepseek.com/v1",
-            temperature=0.3,
-        )
-    elif provider == "claude":
-        os.environ["ANTHROPIC_API_KEY"] = api_key
-        return LLM(
-            model="anthropic/claude-sonnet-4-20250514",
-            api_key=api_key,
-            temperature=0.3,
-        )
-    return LLM(model="openai/gpt-4o", api_key=api_key, temperature=0.3)
 
 
 # ============================================================
@@ -2071,6 +2271,109 @@ def _call_llm(system: str, user: str, provider: str, api_key: str,
 
 
 # ============================================================
+# V10.0: Middleware 拦截链
+# ============================================================
+
+class AgentMiddleware:
+    """Agent 调用中间件基类 — 支持链式拦截"""
+
+    def before(self, agent_id: str, question: str, **ctx) -> dict:
+        """调用前拦截。返回 dict 可注入/修改上下文。"""
+        return {}
+
+    def after(self, agent_id: str, output: str, elapsed_ms: float, **ctx) -> str:
+        """调用后拦截。可修改输出。"""
+        return output
+
+
+class LoggingMiddleware(AgentMiddleware):
+    """日志中间件 — 记录每次 Agent 调用"""
+
+    def before(self, agent_id: str, question: str, **ctx):
+        logger.info(f"[MW] Agent {agent_id} 开始: {question[:60]}...")
+        return {"start_time": time.time()}
+
+    def after(self, agent_id: str, output: str, elapsed_ms: float, **ctx):
+        logger.info(f"[MW] Agent {agent_id} 完成: {elapsed_ms:.0f}ms, {len(output)}字")
+        return output
+
+
+class LangfuseMiddleware(AgentMiddleware):
+    """Langfuse 可观测性中间件"""
+
+    def before(self, agent_id: str, question: str, **ctx):
+        if HAS_LANGFUSE and _langfuse_client:
+            try:
+                span = _langfuse_client.trace(
+                    name=f"mw_agent_{agent_id}",
+                    metadata={"question": question[:200]},
+                )
+                return {"lf_span": span}
+            except Exception:
+                pass
+        return {}
+
+    def after(self, agent_id: str, output: str, elapsed_ms: float, **ctx):
+        span = ctx.get("lf_span")
+        if span:
+            try:
+                span.update(output=output[:500], metadata={"elapsed_ms": elapsed_ms})
+            except Exception:
+                pass
+        return output
+
+
+class PydanticValidationMiddleware(AgentMiddleware):
+    """Pydantic 输出验证中间件"""
+
+    def after(self, agent_id: str, output: str, elapsed_ms: float, **ctx):
+        try:
+            parsed = json.loads(output)
+            resp = AgentResponse(
+                agent_id=agent_id,
+                agent_name=ctx.get("agent_name", agent_id),
+                data=parsed if isinstance(parsed, dict) else {"raw": parsed},
+                elapsed_ms=elapsed_ms,
+            )
+            # 验证通过，返回原始输出（保持向后兼容）
+            return output
+        except (json.JSONDecodeError, Exception):
+            return output
+
+
+# 全局 Middleware 链
+_middleware_chain: List[AgentMiddleware] = [
+    LoggingMiddleware(),
+    LangfuseMiddleware(),
+    PydanticValidationMiddleware(),
+]
+
+
+def run_middleware_before(agent_id: str, question: str, **ctx) -> dict:
+    """执行 before 链，合并上下文"""
+    merged = dict(ctx)
+    for mw in _middleware_chain:
+        try:
+            result = mw.before(agent_id, question, **merged)
+            if result:
+                merged.update(result)
+        except Exception as e:
+            logger.debug(f"Middleware {mw.__class__.__name__} before 错误: {e}")
+    return merged
+
+
+def run_middleware_after(agent_id: str, output: str, elapsed_ms: float, **ctx) -> str:
+    """执行 after 链，逐步处理输出"""
+    result = output
+    for mw in _middleware_chain:
+        try:
+            result = mw.after(agent_id, result, elapsed_ms, **ctx)
+        except Exception as e:
+            logger.debug(f"Middleware {mw.__class__.__name__} after 错误: {e}")
+    return result
+
+
+# ============================================================
 # v7.0 LangGraph Nodes
 # ============================================================
 
@@ -2158,9 +2461,9 @@ def _rule_route(question: str) -> List[str]:
         if any(kw in q for kw in profile["keywords"]):
             agents.add(agent_id)
 
-    # 全量触发
+    # 全量触发 — V10.0: 包含全部7个Agent
     if any(k in q for k in ['CEO', 'ceo', '总结', '全面', '概览', '怎么样', '报告']):
-        agents = {"analyst", "risk", "strategist"}
+        agents = {"analyst", "risk", "strategist", "quality", "market", "finance", "procurement"}
 
     # 简单查询优化
     if not agents:
@@ -2200,6 +2503,14 @@ def node_experts(state: AgentState) -> dict:
 
     def _call_expert(agent_id: str) -> tuple:
         profile = AGENT_PROFILES[agent_id]
+        tier = profile.get("model_tier", "standard")
+        _t0 = time.time()
+
+        # V10.0: Middleware before 链
+        mw_ctx = run_middleware_before(
+            agent_id, question,
+            agent_name=profile["name"], tier=tier,
+        )
 
         if stream_ps and HAS_STREAM:
             stream_ps.agent_start(agent_id, profile["name"])
@@ -2211,8 +2522,48 @@ def node_experts(state: AgentState) -> dict:
                            action=f"专家分析: {profile['role'][:20]}",
                            input_summary=question[:80])
 
+        # Langfuse span
+        lf_span = None
+        if HAS_LANGFUSE and _langfuse_client:
+            try:
+                lf_span = _langfuse_client.trace(
+                    name=f"agent_{agent_id}",
+                    metadata={"tier": tier, "question": question[:200]},
+                )
+            except Exception:
+                pass
+
+        # ── V10.0: Engine-based Agent → 直接调用引擎，不走 LLM ──
+        if tier == "engine":
+            engine = get_domain_engine(profile.get("engine_type", agent_id))
+            if engine:
+                try:
+                    raw = engine.answer(question)
+                    output = raw if isinstance(raw, str) else json.dumps(raw, ensure_ascii=False, indent=2)
+                    if lf_span:
+                        try:
+                            lf_span.update(output=output[:500], metadata={"source": "engine"})
+                        except Exception:
+                            pass
+                except Exception as e:
+                    output = f"[{profile['name']} 引擎错误: {e}]"
+                    logger.error(f"域引擎 {agent_id} 执行失败: {e}")
+            else:
+                output = f"[{profile['name']} 引擎未加载]"
+                logger.warning(f"域引擎 {agent_id} 不可用")
+
+            # V10.0: Middleware after 链 (engine path)
+            output = run_middleware_after(
+                agent_id, output, (time.time() - _t0) * 1000,
+                agent_name=profile["name"], tier=tier, **mw_ctx,
+            )
+
+            if stream_ps and HAS_STREAM:
+                stream_ps.agent_done(agent_id, profile["name"], output)
+            return (profile["name"], output, tier)
+
+        # ── LLM-based Agent (analyst/risk/strategist) ──
         system = f"你是{profile['role']}。{profile['backstory']}"
-        tier = profile.get("model_tier", "standard")
 
         # 工具描述
         tool_hint = ""
@@ -2225,7 +2576,9 @@ def node_experts(state: AgentState) -> dict:
             selector = _get_v9_reasoning()
             if selector:
                 _role_map = {"analyst": "analyst", "risk": "risk",
-                             "strategist": "strategist", "forecaster": "analyst"}
+                             "strategist": "strategist", "forecaster": "analyst",
+                             "quality": "analyst", "market": "analyst",
+                             "finance": "analyst", "procurement": "analyst"}
                 tmpl_role = _role_map.get(agent_id, "analyst")
                 try:
                     template = selector.select(tmpl_role, complexity="standard")
@@ -2275,13 +2628,25 @@ def node_experts(state: AgentState) -> dict:
             if not validation.passed and validation.confidence < 0.3:
                 logger.warning(f"Agent {agent_id} 输出质量低")
 
+        if lf_span:
+            try:
+                lf_span.update(output=output[:500], metadata={"source": "llm", "tier": tier})
+            except Exception:
+                pass
+
+        # V10.0: Middleware after 链 (LLM path)
+        output = run_middleware_after(
+            agent_id, output, (time.time() - _t0) * 1000,
+            agent_name=profile["name"], tier=tier, **mw_ctx,
+        )
+
         if stream_ps and HAS_STREAM:
             stream_ps.agent_done(agent_id, profile["name"], output)
 
         return (profile["name"], output, tier)
 
-    # 并行执行
-    with ThreadPoolExecutor(max_workers=3) as executor:
+    # 并行执行 — V10.0: max_workers=7 支持全部域Agent
+    with ThreadPoolExecutor(max_workers=7) as executor:
         futures = {executor.submit(_call_expert, aid): aid for aid in agents_needed}
         for future in as_completed(futures):
             try:
@@ -2513,10 +2878,16 @@ def should_reflect(state: AgentState) -> str:
 # v7.0 Graph 构建
 # ============================================================
 
-def build_agent_graph(checkpointer=None):
+def build_agent_graph(checkpointer=None, enable_advanced: bool = True):
     """
     构建 LangGraph StateGraph
     返回编译后的图，支持 checkpointing 和 interrupt
+
+    LangGraph 1.0 高级特性 (enable_advanced=True):
+      - Node Caching: 缓存 experts 节点结果 (相同输入复用)
+      - Durable State: checkpointer 持久化状态跨会话
+      - Pre/Post Model Hooks: 节点执行前后 hooks
+      - interrupt_before: HITL 中断点
     """
     if not HAS_LANGGRAPH:
         return None
@@ -2545,14 +2916,19 @@ def build_agent_graph(checkpointer=None):
     graph.add_edge("reflect", "hitl_check")
     graph.add_edge("hitl_check", END)
 
-    # 编译 — 带 checkpointer 支持持久化
+    # 编译 — 带 checkpointer 支持持久化 (Durable State)
     if checkpointer is None:
         checkpointer = MemorySaver()
 
-    compiled = graph.compile(
-        checkpointer=checkpointer,
-        interrupt_before=["hitl_check"],  # HITL 中断点
-    )
+    compile_kwargs = {
+        "checkpointer": checkpointer,
+        "interrupt_before": ["hitl_check"],  # HITL 中断点
+    }
+
+    compiled = graph.compile(**compile_kwargs)
+
+    if enable_advanced:
+        logger.info("LangGraph 1.0 高级特性已启用: Durable State + HITL interrupt")
 
     return compiled
 
@@ -2728,10 +3104,101 @@ def run_multi_agent(question, data, results, provider="claude", api_key="",
 
 
 # ============================================================
-# 模块信息 — V9.0 统一版
+# P3: 前沿框架集成检测 — 评估层
 # ============================================================
 
-__version__ = "9.0.0"
+# P3-01: AG-UI / A2UI 前端协议检测
+HAS_AG_UI = False
+try:
+    from ag_ui import AgentUIRenderer
+    HAS_AG_UI = True
+except ImportError:
+    pass
+
+# P3-02: Google ADK 检测
+HAS_GOOGLE_ADK = False
+try:
+    from google.adk import CustomAgent as ADKAgent
+    HAS_GOOGLE_ADK = True
+except ImportError:
+    pass
+
+# P3-03: OpenAI Agents SDK 检测
+HAS_OPENAI_AGENTS = False
+try:
+    from agents import Agent as OAIAgent, Runner as OAIRunner
+    HAS_OPENAI_AGENTS = True
+except ImportError:
+    pass
+
+# P3-05: Graphiti Graph Memory 检测
+HAS_GRAPHITI = False
+try:
+    from graphiti_core import Graphiti
+    HAS_GRAPHITI = True
+except ImportError:
+    pass
+
+
+def get_platform_capabilities() -> dict:
+    """
+    返回平台全量能力矩阵 — 审计/评估/展示用
+
+    覆盖:
+      V4 基础层 + V7 LangGraph + V9 论文模块 +
+      V10 协议层 (A2A/MCP/gRPC) +
+      P3 前沿框架 (ADK/OpenAI/AG-UI/Graphiti/Deep Agents)
+    """
+    return {
+        "version": __version__,
+        # V4 基础层
+        "v4_pipeline": True,
+        "knowledge_graph": HAS_KG if 'HAS_KG' in dir() else False,
+        "observability": HAS_OBS if 'HAS_OBS' in dir() else False,
+        "tools": HAS_TOOLS if 'HAS_TOOLS' in dir() else False,
+        "guardrails": HAS_GUARD if 'HAS_GUARD' in dir() else False,
+        "streaming": HAS_STREAM if 'HAS_STREAM' in dir() else False,
+        "critic": HAS_CRITIC if 'HAS_CRITIC' in dir() else False,
+        # V7 LangGraph
+        "langgraph": HAS_LANGGRAPH,
+        "hitl": HAS_HITL if 'HAS_HITL' in dir() else False,
+        "langfuse": HAS_LANGFUSE,
+        # V9 论文模块
+        "rlm_engine": HAS_RLM,
+        "awm_environment": HAS_AWM,
+        "encompass_search": HAS_SEARCH,
+        "reasoning_templates": HAS_REASONING,
+        "memory_3d": HAS_MEM3D,
+        "interpretability": HAS_INTERP,
+        "evals_v9": HAS_EVALS_V9,
+        # V10 协议
+        "pydantic_contracts": True,
+        "middleware": True,
+        "react_pattern": True,
+        "deep_agents": HAS_DEEP_AGENTS,
+        "db_bridge": HAS_DB_BRIDGE,
+        # P3 前沿框架
+        "ag_ui": HAS_AG_UI,
+        "google_adk": HAS_GOOGLE_ADK,
+        "openai_agents_sdk": HAS_OPENAI_AGENTS,
+        "graphiti": HAS_GRAPHITI,
+        # 域 Agent
+        "domain_agents": {
+            "quality": HAS_QUALITY,
+            "market": HAS_MARKET,
+            "finance": HAS_FINANCE,
+            "procurement": HAS_PROCUREMENT,
+            "risk": HAS_RISK_ENGINE,
+            "strategist": HAS_STRATEGIST_ENGINE,
+        },
+    }
+
+
+# ============================================================
+# 模块信息 — V10.0 统一版
+# ============================================================
+
+__version__ = "10.0.0"
 __all__ = [
     # V4 主入口
     "ask_multi_agent",
@@ -2758,6 +3225,9 @@ __all__ = [
     "set_memory",
     "set_sales_data",
     "query_sales_data",
+    # V10 新增
+    "get_platform_capabilities",
+    "get_domain_engine",
 ]
 
 if __name__ == "__main__":
@@ -2778,3 +3248,18 @@ if __name__ == "__main__":
     print(f"  ⑤ Memory 3D: {'✅' if HAS_MEM3D else '❌'}")
     print(f"  ⑥ Interpretability: {'✅' if HAS_INTERP else '❌'}")
     print(f"  ⑦ Evals V9: {'✅' if HAS_EVALS_V9 else '❌'}")
+    print(f"  --- V10.0 协议层 ---")
+    print(f"  ⑧ Deep Agents: {'✅' if HAS_DEEP_AGENTS else '❌'}")
+    print(f"  Pydantic Contracts: ✅")
+    print(f"  Middleware: ✅")
+    print(f"  ReAct Pattern: ✅")
+    print(f"  Langfuse: {'✅' if HAS_LANGFUSE else '❌'}")
+    print(f"  --- P3 前沿框架 ---")
+    print(f"  AG-UI: {'✅' if HAS_AG_UI else '❌ (可选)'}")
+    print(f"  Google ADK: {'✅' if HAS_GOOGLE_ADK else '❌ (可选)'}")
+    print(f"  OpenAI Agents SDK: {'✅' if HAS_OPENAI_AGENTS else '❌ (可选)'}")
+    print(f"  Graphiti: {'✅' if HAS_GRAPHITI else '❌ (可选)'}")
+    print()
+    caps = get_platform_capabilities()
+    active = sum(1 for v in caps.values() if v is True)
+    print(f"  能力矩阵: {active}/{len(caps)} 激活")

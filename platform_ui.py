@@ -162,8 +162,8 @@ def get_gateway():
     if project_dir not in sys.path:
         sys.path.insert(0, project_dir)
 
-    from platform_gateway import init_platform
-    return init_platform()
+    from platform_gateway import get_gateway
+    return get_gateway()
 
 
 def run_async(coro):
@@ -191,7 +191,9 @@ if "selected_agent" not in st.session_state:
 
 def render_sidebar():
     gateway = get_gateway()
-    agents = gateway.list_agents()
+    stats = gateway.get_stats()
+    agent_names = stats.get("agents", [])
+    registry_agents = stats.get("registry", {}).get("agents", {})
 
     st.sidebar.markdown("## 🚀 MRARFAI")
     st.sidebar.markdown("**企业Agent平台** V10.0")
@@ -205,9 +207,9 @@ def render_sidebar():
         "sales": "📊", "risk": "⚠️", "strategist": "🎯",
         "procurement": "🛒", "quality": "🔍", "finance": "💰", "market": "🌍",
     }
-    for a in agents:
-        icon = agent_icons.get(a["name"], "🤖")
-        agent_options[f"{icon} {a['display_name']}"] = a["name"]
+    for name in agent_names:
+        icon = agent_icons.get(name, "🤖")
+        agent_options[f"{icon} {name.upper()}"] = name
 
     selected = st.sidebar.radio(
         "选择目标Agent",
@@ -221,26 +223,27 @@ def render_sidebar():
 
     # Agent状态
     st.sidebar.markdown("### 📋 Agent状态")
-    for a in agents:
-        icon = agent_icons.get(a["name"], "🤖")
+    for name in agent_names:
+        icon = agent_icons.get(name, "🤖")
+        info = registry_agents.get(name, {})
+        skills = info.get("skills", 0)
+        tasks = info.get("tasks_processed", 0)
         st.sidebar.markdown(
-            f"{icon} **{a['name']}** — "
-            f"`{a['skills']}技能` · "
-            f"`{a['tasks_processed']}次调用`"
+            f"{icon} **{name}** — "
+            f"`{skills}技能` · "
+            f"`{tasks}次调用`"
         )
 
     st.sidebar.divider()
 
     # 平台统计
-    stats = gateway.get_platform_stats()
     st.sidebar.markdown("### 📈 平台统计")
-    st.sidebar.metric("总Agent数", stats["total_agents"])
-    st.sidebar.metric("总技能数", stats["total_skills"])
+    st.sidebar.metric("总Agent数", stats.get("total_agents", 0))
+    st.sidebar.metric("总技能数", stats.get("total_skills", 0))
 
     audit = stats.get("audit", {})
-    if audit.get("total", 0) > 0:
-        st.sidebar.metric("总调用次数", audit["total"])
-        st.sidebar.metric("协作率", f"{audit.get('collaboration_rate', 0)*100:.0f}%")
+    if audit.get("total_requests", 0) > 0:
+        st.sidebar.metric("总调用次数", audit["total_requests"])
         st.sidebar.metric("平均响应", f"{audit.get('avg_duration_ms', 0):.0f}ms")
 
 
@@ -298,7 +301,7 @@ def render_chat(gateway):
     for i, (label, q) in enumerate(quick_questions):
         if cols[i].button(label, use_container_width=True):
             st.session_state.messages.append({"role": "user", "content": q})
-            result = run_async(gateway.ask(q, target_agent=st.session_state.selected_agent))
+            result = run_async(gateway.ask(q))
             st.session_state.messages.append({
                 "role": "assistant", "content": result.get("answer", ""),
                 "agent": result.get("agent", ""), "confidence": result.get("confidence", 0),
@@ -317,7 +320,7 @@ def render_chat(gateway):
     for i, (label, q) in enumerate(quick_questions2):
         if cols2[i].button(label, use_container_width=True):
             st.session_state.messages.append({"role": "user", "content": q})
-            result = run_async(gateway.ask(q, target_agent=st.session_state.selected_agent))
+            result = run_async(gateway.ask(q))
             st.session_state.messages.append({
                 "role": "assistant", "content": result.get("answer", ""),
                 "agent": result.get("agent", ""),
@@ -371,7 +374,7 @@ def render_chat(gateway):
 
     if user_input:
         st.session_state.messages.append({"role": "user", "content": user_input})
-        result = run_async(gateway.ask(user_input, target_agent=st.session_state.selected_agent))
+        result = run_async(gateway.ask(user_input))
         st.session_state.messages.append({
             "role": "assistant", "content": result.get("answer", ""),
             "agent": result.get("agent", ""),
@@ -394,7 +397,21 @@ def render_chat(gateway):
 # ============================================================
 
 def render_agents(gateway):
-    agents = gateway.list_agents()
+    stats = gateway.get_stats()
+    agent_names = stats.get("agents", [])
+    registry_agents = stats.get("registry", {}).get("agents", {})
+    # 构建 UI 需要的 agent 信息列表
+    agents = []
+    for name in agent_names:
+        info = registry_agents.get(name, {})
+        card = gateway.registry.get_card(name) if gateway.registry else None
+        agents.append({
+            "name": name,
+            "display_name": name.upper(),
+            "description": card.description if card and hasattr(card, 'description') else f"{name} agent",
+            "skills": info.get("skills", 0),
+            "tasks_processed": info.get("tasks_processed", 0),
+        })
 
     # 指标行
     cols = st.columns(4)
@@ -455,7 +472,7 @@ def render_agents(gateway):
             """, unsafe_allow_html=True)
 
     # Agent Card JSON
-    with st.expander("🔧 平台Agent Card (/.well-known/agent.json)"):
+    with st.expander("🔧 平台Agent Card (/.well-known/agent-card.json)"):
         st.json(gateway.get_platform_card())
 
 
@@ -467,7 +484,7 @@ def render_collaboration(gateway):
     st.markdown("### 🔗 预定义协作场景")
     st.markdown("当问题涉及多个领域时，平台自动触发跨Agent协作")
 
-    scenarios = gateway.collaboration.SCENARIOS
+    scenarios = gateway.collaboration.scenarios
     for sid, config in scenarios.items():
         with st.expander(f"📋 {config['name']}"):
             st.markdown(f"**触发关键词:** {', '.join(config['trigger_keywords'])}")
@@ -512,7 +529,7 @@ def render_audit(gateway):
 
     # 日志列表
     st.divider()
-    entries = gateway.audit.get_recent(20)
+    entries = gateway.audit.recent(20)
     for e in reversed(entries):
         collab_tag = "🔗" if e.get("collab") else ""
         st.markdown(

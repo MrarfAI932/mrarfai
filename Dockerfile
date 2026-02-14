@@ -1,9 +1,9 @@
 # ============================================================
-# MRARFAI V9.0 Dockerfile — 生产级多阶段构建
+# MRARFAI V10.0 Dockerfile — 生产级多阶段构建
 # ============================================================
 # 用法:
-#   docker build -t mrarfai:v9.0 .
-#   docker run -p 8501:8501 --env-file .env mrarfai:v9.0
+#   docker build -t mrarfai:v10.0 .
+#   docker run -p 8501:8501 --env-file .env mrarfai:v10.0
 #
 # 特性:
 #   - 多阶段构建（Builder → Runtime），镜像更小更安全
@@ -24,7 +24,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt .
+COPY requirements_v7.txt requirements.txt
 RUN pip wheel --no-cache-dir --no-deps --wheel-dir /wheels -r requirements.txt
 
 
@@ -32,8 +32,8 @@ RUN pip wheel --no-cache-dir --no-deps --wheel-dir /wheels -r requirements.txt
 FROM python:3.12-slim AS runtime
 
 LABEL maintainer="mrarf"
-LABEL version="9.0"
-LABEL description="MRARFAI V9.0 — Multi-Agent Sales Intelligence Platform"
+LABEL version="10.0"
+LABEL description="MRARFAI V10.0 — Multi-Agent Sales Intelligence Platform"
 
 WORKDIR /app
 ENV LANG=C.UTF-8 LC_ALL=C.UTF-8 PYTHONIOENCODING=utf-8

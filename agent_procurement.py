@@ -23,6 +23,16 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, field
 
+from contracts import (
+    ProcurementQuoteResponse, SupplierQuote,
+    ProcurementPOResponse,
+    PurchaseOrder as PurchaseOrderContract,
+    POItem as POItemContract,
+    ProcurementDelayResponse,
+    DelayAlert as DelayAlertContract,
+    ProcurementCostResponse,
+)
+
 logger = logging.getLogger("mrarfai.agent.procurement")
 
 # A2A 基础设施
@@ -190,25 +200,25 @@ class ProcurementEngine:
         candidates = [s for s in self.suppliers.values()
                       if not category or category in s.category]
         candidates.sort(key=lambda s: s.overall_score(), reverse=True)
-        return {
-            "category": category or "全部",
-            "suppliers": [
-                {
-                    "name": s.name,
-                    "category": s.category,
-                    "overall_score": s.overall_score(),
-                    "price_index": s.price_index,
-                    "quality_score": f"{s.quality_score:.0%}",
-                    "on_time_rate": f"{s.on_time_rate:.0%}",
-                    "defect_rate": f"{s.defect_rate:.1%}",
-                    "lead_time": f"{s.lead_time_days}天",
-                    "credit": s.credit_rating,
-                }
+        return ProcurementQuoteResponse(
+            category=category or "全部",
+            suppliers=[
+                SupplierQuote(
+                    name=s.name,
+                    category=s.category,
+                    overall_score=s.overall_score(),
+                    price_index=s.price_index,
+                    quality_score=f"{s.quality_score:.0%}",
+                    on_time_rate=f"{s.on_time_rate:.0%}",
+                    defect_rate=f"{s.defect_rate:.1%}",
+                    lead_time=f"{s.lead_time_days}天",
+                    credit=s.credit_rating,
+                )
                 for s in candidates[:top_n]
             ],
-            "recommendation": candidates[0].name if candidates else "无",
-            "analysis_time": datetime.now().isoformat(),
-        }
+            recommendation=candidates[0].name if candidates else "无",
+            analysis_time=datetime.now().isoformat(),
+        ).model_dump()
 
     def track_po(self, po_id: str = "", supplier: str = "") -> Dict:
         """PO跟踪"""
@@ -218,41 +228,45 @@ class ProcurementEngine:
                 continue
             if supplier and supplier not in po.supplier:
                 continue
-            results.append({
-                "po_id": po.po_id,
-                "supplier": po.supplier,
-                "items": po.items,
-                "total_amount": f"¥{po.total_amount:.1f}万",
-                "status": po.status,
-                "expected": po.expected_date,
-                "is_delayed": po.is_delayed(),
-            })
-        return {
-            "total_orders": len(results),
-            "delayed": sum(1 for r in results if r["is_delayed"]),
-            "orders": results,
-        }
+            results.append(PurchaseOrderContract(
+                po_id=po.po_id,
+                supplier=po.supplier,
+                items=[POItemContract(item=str(i), qty=1) if isinstance(i, str)
+                       else POItemContract(item=i.get("item", ""), qty=i.get("qty", 1))
+                       for i in (po.items if isinstance(po.items, list) else [])],
+                total_amount=f"¥{po.total_amount:.1f}万",
+                status=po.status,
+                expected=po.expected_date,
+                is_delayed=po.is_delayed(),
+            ))
+        return ProcurementPOResponse(
+            total_orders=len(results),
+            delayed=sum(1 for r in results if r.is_delayed),
+            orders=results,
+        ).model_dump()
 
     def alert_delay(self) -> Dict:
         """延迟预警"""
         delayed = [po for po in self.orders if po.is_delayed()]
         alerts = []
         for po in delayed:
-            alerts.append({
-                "po_id": po.po_id,
-                "supplier": po.supplier,
-                "items": po.items,
-                "expected": po.expected_date,
-                "days_overdue": (datetime.now() - datetime.fromisoformat(po.expected_date)).days
+            alerts.append(DelayAlertContract(
+                po_id=po.po_id,
+                supplier=po.supplier,
+                items=[POItemContract(item=str(i), qty=1) if isinstance(i, str)
+                       else POItemContract(item=i.get("item", ""), qty=i.get("qty", 1))
+                       for i in (po.items if isinstance(po.items, list) else [])],
+                expected=po.expected_date,
+                days_overdue=(datetime.now() - datetime.fromisoformat(po.expected_date)).days
                     if po.expected_date else 0,
-                "amount_at_risk": f"¥{po.total_amount:.1f}万",
-                "severity": "高" if po.total_amount > 200 else "中",
-            })
-        return {
-            "total_delayed": len(alerts),
-            "total_at_risk": f"¥{sum(po.total_amount for po in delayed):.1f}万",
-            "alerts": alerts,
-        }
+                amount_at_risk=f"¥{po.total_amount:.1f}万",
+                severity="高" if po.total_amount > 200 else "中",
+            ))
+        return ProcurementDelayResponse(
+            total_delayed=len(alerts),
+            total_at_risk=f"¥{sum(po.total_amount for po in delayed):.1f}万",
+            alerts=alerts,
+        ).model_dump()
 
     def analyze_cost(self, category: str = "") -> Dict:
         """成本分析"""
@@ -263,18 +277,18 @@ class ProcurementEngine:
         for po in relevant:
             by_supplier.setdefault(po.supplier, 0)
             by_supplier[po.supplier] += po.total_amount
-        return {
-            "period": "2025年度",
-            "total_spend": f"¥{total_spend:.1f}万",
-            "by_supplier": {k: f"¥{v:.1f}万" for k, v in
-                           sorted(by_supplier.items(), key=lambda x: -x[1])},
-            "top_supplier": max(by_supplier, key=by_supplier.get) if by_supplier else "无",
-            "optimization_suggestions": [
+        return ProcurementCostResponse(
+            period="2025年度",
+            total_spend=f"¥{total_spend:.1f}万",
+            by_supplier={k: f"¥{v:.1f}万" for k, v in
+                         sorted(by_supplier.items(), key=lambda x: -x[1])},
+            top_supplier=max(by_supplier, key=by_supplier.get) if by_supplier else "无",
+            optimization_suggestions=[
                 "显示屏供应商可引入第三方竞价，预估降本3-5%",
                 "摄像模组延迟率较高，建议增加备选供应商",
                 "连接器立讯精密表现优异，可扩大份额获量价优惠",
             ],
-        }
+        ).model_dump()
 
     def answer(self, question: str) -> str:
         """自然语言入口"""

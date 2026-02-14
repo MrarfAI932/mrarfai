@@ -22,6 +22,12 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, field
 
+from contracts import (
+    FinanceARResponse, ARHighRisk,
+    FinanceMarginResponse, FinanceCashflowResponse, CashflowMonth,
+    FinanceInvoiceResponse, InvoiceRecord,
+)
+
 logger = logging.getLogger("mrarfai.agent.finance")
 
 try:
@@ -185,21 +191,21 @@ class FinanceEngine:
             if r.status == "overdue":
                 by_customer[r.customer]["overdue"] += r.amount
 
-        return {
-            "total_outstanding": f"¥{total_outstanding:.0f}万",
-            "total_overdue": f"¥{total_overdue:.0f}万",
-            "overdue_ratio": f"{total_overdue/total_outstanding:.0%}" if total_outstanding > 0 else "0%",
-            "aging_analysis": {k: f"¥{v:.0f}万" for k, v in aging.items()},
-            "by_customer": {
+        return FinanceARResponse(
+            total_outstanding=f"¥{total_outstanding:.0f}万",
+            total_overdue=f"¥{total_overdue:.0f}万",
+            overdue_ratio=f"{total_overdue/total_outstanding:.0%}" if total_outstanding > 0 else "0%",
+            aging_analysis={k: f"¥{v:.0f}万" for k, v in aging.items()},
+            by_customer={
                 k: {kk: f"¥{vv:.0f}万" for kk, vv in v.items()}
                 for k, v in sorted(by_customer.items(), key=lambda x: -x[1]["total"])
             },
-            "high_risk": [
-                {"customer": r.customer, "invoice": r.invoice_no,
-                 "amount": f"¥{r.amount:.0f}万", "aging": f"{r.aging_days}天"}
+            high_risk=[
+                ARHighRisk(customer=r.customer, invoice=r.invoice_no,
+                           amount=f"¥{r.amount:.0f}万", aging=f"{r.aging_days}天")
                 for r in records if r.aging_days > 60
             ],
-        }
+        ).model_dump()
 
     def analyze_margin(self, product: str = "", customer: str = "") -> Dict:
         """毛利分析"""
@@ -225,21 +231,21 @@ class FinanceEngine:
             by_customer[m.customer]["revenue"] += m.revenue
             by_customer[m.customer]["cogs"] += m.cogs
 
-        return {
-            "total_revenue": f"¥{total_rev:.0f}万",
-            "total_cogs": f"¥{total_cogs:.0f}万",
-            "gross_margin": f"{avg_margin:.1%}",
-            "by_product": {
+        return FinanceMarginResponse(
+            total_revenue=f"¥{total_rev:.0f}万",
+            total_cogs=f"¥{total_cogs:.0f}万",
+            gross_margin=f"{avg_margin:.1%}",
+            by_product={
                 k: {"revenue": f"¥{v['revenue']:.0f}万",
                     "margin": f"{(v['revenue']-v['cogs'])/v['revenue']:.1%}" if v['revenue'] > 0 else "N/A"}
                 for k, v in sorted(by_product.items(), key=lambda x: -x[1]["revenue"])
             },
-            "by_customer": {
+            by_customer={
                 k: {"revenue": f"¥{v['revenue']:.0f}万",
                     "margin": f"{(v['revenue']-v['cogs'])/v['revenue']:.1%}" if v['revenue'] > 0 else "N/A"}
                 for k, v in sorted(by_customer.items(), key=lambda x: -x[1]["revenue"])
             },
-        }
+        ).model_dump()
 
     def forecast_cashflow(self, months: int = 3) -> Dict:
         """现金流预测"""
@@ -261,19 +267,19 @@ class FinanceEngine:
                 "net_cashflow": f"¥{expected_in - expected_out:.0f}万",
             })
 
-        return {
-            "forecast_period": f"未来{months}个月",
-            "monthly_forecast": outstanding_by_month,
-            "risks": [
+        return FinanceCashflowResponse(
+            forecast_period=f"未来{months}个月",
+            monthly_forecast=[CashflowMonth(**m) for m in outstanding_by_month],
+            risks=[
                 "Samsung应收逾期60天+，影响约¥1,200万回款",
                 "BLU逾期90天+，建议启动催收流程",
             ],
-            "suggestions": [
+            suggestions=[
                 "1. 优先催收Samsung逾期款项",
                 "2. BLU逾期90天+，考虑计提坏账准备",
                 "3. 新客户建议缩短账期至30天",
             ],
-        }
+        ).model_dump()
 
     def match_invoice(self, invoice_no: str = "") -> Dict:
         """发票匹配"""
@@ -282,20 +288,20 @@ class FinanceEngine:
         else:
             matched = self.ar_records
 
-        return {
-            "matched": len(matched),
-            "invoices": [
-                {
-                    "invoice_no": r.invoice_no,
-                    "customer": r.customer,
-                    "amount": f"¥{r.amount:.0f}万",
-                    "status": r.status,
-                    "due_date": r.due_date,
-                    "aging": f"{r.aging_days}天",
-                }
+        return FinanceInvoiceResponse(
+            matched=len(matched),
+            invoices=[
+                InvoiceRecord(
+                    invoice_no=r.invoice_no,
+                    customer=r.customer,
+                    amount=f"¥{r.amount:.0f}万",
+                    status=r.status,
+                    due_date=r.due_date,
+                    aging=f"{r.aging_days}天",
+                )
                 for r in matched
             ],
-        }
+        ).model_dump()
 
     def answer(self, question: str) -> str:
         """自然语言入口"""

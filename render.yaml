@@ -1,20 +1,49 @@
 # ============================================================
-# MRARFAI V9.0 — Render 部署配置 (Infrastructure as Code)
+# MRARFAI V10.0 — Render 部署配置 (Infrastructure as Code)
 # ============================================================
 # Render 会读取此文件自动配置服务
 # 环境变量在 Render Dashboard → Environment 中配置
+
+databases:
+  - name: mrarfai-db
+    plan: free  # 可升级为 starter ($7/月)
+    databaseName: mrarfai_sales
+    user: mrarfai
+    ipAllowList: []
 
 services:
   - type: web
     name: mrarfai
     runtime: docker
     dockerfilePath: ./Dockerfile
-    plan: starter  # 免费套餐，可升级为 standard ($7/月)
+    plan: starter  # 可升级为 standard ($7/月)
     healthCheckPath: /_stcore/health
     envVars:
       - key: MRARFAI_ENV
         value: production
-      - key: DEEPSEEK_API_KEY
-        sync: false  # 手动在 Dashboard 配置
+      - key: MRARFAI_DB_ENGINE
+        value: postgresql
+      - key: MRARFAI_DB_HOST
+        fromDatabase:
+          name: mrarfai-db
+          property: host
+      - key: MRARFAI_DB_PORT
+        fromDatabase:
+          name: mrarfai-db
+          property: port
+      - key: MRARFAI_DB_NAME
+        fromDatabase:
+          name: mrarfai-db
+          property: database
+      - key: MRARFAI_DB_USER
+        fromDatabase:
+          name: mrarfai-db
+          property: user
+      - key: MRARFAI_DB_PASSWORD
+        fromDatabase:
+          name: mrarfai-db
+          property: password
       - key: ANTHROPIC_API_KEY
+        sync: false  # 手动在 Dashboard 配置
+      - key: OPENAI_API_KEY
         sync: false
