@@ -25,6 +25,7 @@ import time
 import uuid
 import logging
 import asyncio
+import os
 from datetime import datetime
 from typing import Dict, List, Any, Optional, Callable
 from dataclasses import dataclass, field
@@ -44,6 +45,110 @@ except ImportError:
 from collections import defaultdict
 
 logger = logging.getLogger("mrarfai.gateway")
+
+
+# ============================================================
+# 用户偏好学习器 — Agent 自学习
+# ============================================================
+class UserPreferenceTracker:
+    """
+    追踪用户查询模式，构建偏好画像:
+    - 各 Agent 使用频率
+    - 高频关键词/话题
+    - 最近兴趣方向
+    持久化到 JSON 文件，跨 session 保留。
+    """
+
+    def __init__(self, storage_dir: str = None):
+        self._storage_dir = storage_dir or os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), ".user_prefs")
+        self._cache: Dict[str, Dict] = {}
+
+    def _prefs_path(self, user: str) -> str:
+        return os.path.join(self._storage_dir, f"{user}.json")
+
+    def _load(self, user: str) -> Dict:
+        if user in self._cache:
+            return self._cache[user]
+        path = self._prefs_path(user)
+        if os.path.exists(path):
+            try:
+                with open(path, "r", encoding="utf-8") as f:
+                    self._cache[user] = json.load(f)
+            except Exception:
+                self._cache[user] = self._default()
+        else:
+            self._cache[user] = self._default()
+        return self._cache[user]
+
+    def _save(self, user: str):
+        os.makedirs(self._storage_dir, exist_ok=True)
+        path = self._prefs_path(user)
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(self._cache.get(user, self._default()), f,
+                      ensure_ascii=False, indent=2)
+
+    @staticmethod
+    def _default() -> Dict:
+        return {
+            "agent_usage": {},       # agent_name -> count
+            "topic_freq": {},        # keyword -> count
+            "recent_queries": [],    # last 20 queries
+        }
+
+    def record(self, user: str, agent: str, query: str):
+        """记录一次查询"""
+        prefs = self._load(user)
+        # Agent 使用频率
+        prefs["agent_usage"][agent] = prefs["agent_usage"].get(agent, 0) + 1
+        # 话题频率 — 提取2-4字关键词
+        for kw in self._extract_keywords(query):
+            prefs["topic_freq"][kw] = prefs["topic_freq"].get(kw, 0) + 1
+        # 最近查询
+        prefs["recent_queries"].append(query)
+        if len(prefs["recent_queries"]) > 20:
+            prefs["recent_queries"] = prefs["recent_queries"][-20:]
+        self._cache[user] = prefs
+        self._save(user)
+
+    @staticmethod
+    def _extract_keywords(query: str) -> List[str]:
+        """从查询中提取关键词（简单切分）"""
+        keywords = []
+        # 中文常见业务关键词
+        cn_terms = ["供应商", "采购", "良率", "退货", "应收", "毛利", "现金流",
+                     "竞品", "市场", "客户", "营收", "预测", "预警", "风险",
+                     "延迟", "交期", "成本", "利润", "订单", "发票", "库存"]
+        for term in cn_terms:
+            if term in query:
+                keywords.append(term)
+        return keywords
+
+    def get_preference_context(self, user: str, agent: str) -> str:
+        """生成用户偏好上下文摘要（注入LLM系统提示词）"""
+        prefs = self._load(user)
+        if not prefs["agent_usage"]:
+            return ""
+
+        parts = []
+        # 最常用 Agent
+        top_agents = sorted(prefs["agent_usage"].items(), key=lambda x: -x[1])[:3]
+        if top_agents:
+            parts.append(f"用户最常使用: {', '.join(a for a, _ in top_agents)}")
+
+        # 高频话题
+        top_topics = sorted(prefs["topic_freq"].items(), key=lambda x: -x[1])[:5]
+        if top_topics:
+            parts.append(f"关注话题: {', '.join(t for t, _ in top_topics)}")
+
+        # 最近查询方向
+        recent = prefs.get("recent_queries", [])[-5:]
+        if recent:
+            parts.append(f"近期关注: {'; '.join(recent[-3:])}")
+
+        if not parts:
+            return ""
+        return "\n\n[用户画像]\n" + "\n".join(parts)
 
 
 # ============================================================
@@ -474,6 +579,7 @@ class PlatformGateway:
         self.router = AgentRouter()
         self.collaboration = CollaborationEngine()
         self.audit = AuditLog()
+        self.preferences = UserPreferenceTracker()
         self.pipeline_fn = pipeline_fn
 
         # Agent Registry (A2A)
@@ -554,9 +660,9 @@ class PlatformGateway:
 
     def _llm_synthesize(self, query: str, agent_name: str, raw_data: str,
                          provider: str = "claude", api_key: str = "",
-                         chat_history: List = None) -> str:
+                         chat_history: List = None, user: str = "anonymous") -> str:
         """
-        用 LLM 将结构化数据转为自然语言回答（支持多轮记忆）
+        用 LLM 将结构化数据转为自然语言回答（支持多轮记忆 + 用户偏好）
 
         - 有 API Key → 调用 Claude/DeepSeek 生成智能回答（含上下文）
         - 无 API Key → 原样返回 raw_data (JSON)
@@ -565,6 +671,7 @@ class PlatformGateway:
             return raw_data
 
         role = self._AGENT_ROLES.get(agent_name, "AI助手")
+        pref_ctx = self.preferences.get_preference_context(user, agent_name)
         system_prompt = (
             f"你是MRARFAI企业智能平台的{role}\n\n"
             "规则:\n"
@@ -574,7 +681,9 @@ class PlatformGateway:
             "4. 数据要精确引用(金额、百分比、排名)\n"
             "5. 最后给出1-2条可执行的建议\n"
             "6. 不要编造数据中没有的信息\n"
-            "7. 如果用户追问之前的话题，请结合之前的对话上下文回答"
+            "7. 如果用户追问之前的话题，请结合之前的对话上下文回答\n"
+            "8. 根据用户画像中的关注话题，适当扩展相关分析"
+            f"{pref_ctx}"
         )
         user_prompt = f"用户问题: {query}\n\n以下是系统查询到的数据:\n```json\n{raw_data[:3000]}\n```"
 
@@ -690,6 +799,10 @@ class PlatformGateway:
         self.collaboration.engines[agent_name] = engine
         logger.info(f"Agent '{agent_name}' 引擎已更新")
 
+    def get_user_profile(self, user: str) -> Dict:
+        """获取用户偏好画像"""
+        return self.preferences._load(user)
+
     def ask(self, query: str, user: str = "anonymous",
             provider: str = "claude", api_key: str = "",
             chat_history: List = None) -> Dict:
@@ -708,6 +821,9 @@ class PlatformGateway:
         route_result = self.router.route(query)
         agent_name = route_result["agent"]
         confidence = route_result["confidence"]
+
+        # Step 1.5: 记录用户偏好
+        self.preferences.record(user, agent_name, query)
 
         # Step 2: 检测协作场景
         scenario = self.collaboration.detect_scenario(query)
@@ -749,10 +865,10 @@ class PlatformGateway:
                         "note": "连接实际数据源后返回真实分析",
                     }, ensure_ascii=False)
 
-                # LLM 智能合成 (有 Key 时转自然语言，含多轮记忆)
+                # LLM 智能合成 (有 Key 时转自然语言，含多轮记忆+偏好)
                 answer = self._llm_synthesize(
                     query, agent_name, raw_answer, provider, api_key,
-                    chat_history=chat_history)
+                    chat_history=chat_history, user=user)
 
                 response = {
                     "type": "single_agent",

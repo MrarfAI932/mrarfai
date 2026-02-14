@@ -1400,7 +1400,7 @@ if HAS_V10_GATEWAY:
                     if st.button(f"⚡ {_scfg['name']}", key=f"collab_{_sid}", use_container_width=True):
                         _trig = _scfg["trigger_keywords"][0]
                         _history.append({"role": "user", "content": f"[协作] {_scfg['name']}: {_trig}"})
-                        _resp = _gw.ask(_trig, user="admin", provider=_v10_provider.lower(), api_key=_v10_api_key, chat_history=_history)
+                        _resp = _gw.ask(_trig, user=_current_user.get("username", "anonymous"), provider=_v10_provider.lower(), api_key=_v10_api_key, chat_history=_history)
                         if _resp["type"] == "collaboration":
                             _res = _resp["result"]
                             _disp = _res.get("synthesis", "")
@@ -1494,7 +1494,7 @@ if HAS_V10_GATEWAY:
                     with _qcols[_i]:
                         if st.button(f"{_label}", key=f"aq_{_active}_{_i}", use_container_width=True):
                             _history.append({"role": "user", "content": _query})
-                            _resp = _gw.ask(_query, user="admin", provider=_v10_provider.lower(), api_key=_v10_api_key, chat_history=_history)
+                            _resp = _gw.ask(_query, user=_current_user.get("username", "anonymous"), provider=_v10_provider.lower(), api_key=_v10_api_key, chat_history=_history)
                             _ans = _resp.get("answer", "")
                             try:
                                 _disp = json.dumps(json.loads(_ans) if isinstance(_ans, str) else _ans,
@@ -1527,7 +1527,7 @@ if HAS_V10_GATEWAY:
         _v10q = st.chat_input(f"{_t('ask_agent')} {_cn}", key=f"chat_input_{_active}")
         if _v10q:
             _history.append({"role": "user", "content": _v10q})
-            _resp = _gw.ask(_v10q, user="admin", provider=_v10_provider.lower(), api_key=_v10_api_key, chat_history=_history)
+            _resp = _gw.ask(_v10q, user=_current_user.get("username", "anonymous"), provider=_v10_provider.lower(), api_key=_v10_api_key, chat_history=_history)
             if _resp["type"] == "collaboration":
                 _res = _resp["result"]
                 _disp = _res.get("synthesis", "")
@@ -2187,7 +2187,7 @@ if HAS_V10_GATEWAY:
                         # 触发协作场景
                         _trigger_q = sconfig["trigger_keywords"][0]
                         st.session_state.v10_chat_history.append({"role": "user", "content": f"[协作] {_trigger_q}"})
-                        resp = gw.ask(_trigger_q, user="admin",
+                        resp = gw.ask(_trigger_q, user=_current_user.get("username", "anonymous"),
                                       provider=st.session_state.get("ai_provider", "claude").lower(),
                                       api_key=st.session_state.get("api_key", ""))
                         if resp["type"] == "collaboration":
@@ -2221,7 +2221,7 @@ if HAS_V10_GATEWAY:
                 with _eq_cols[i]:
                     if st.button(label, key=f"quick_{i}", use_container_width=True):
                         st.session_state.v10_chat_history.append({"role": "user", "content": query})
-                        resp = gw.ask(query, user="admin",
+                        resp = gw.ask(query, user=_current_user.get("username", "anonymous"),
                                       provider=st.session_state.get("ai_provider", "claude").lower(),
                                       api_key=st.session_state.get("api_key", ""))
                         if resp["type"] == "single_agent":
