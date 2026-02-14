@@ -287,18 +287,22 @@ def _get_deep_agent():
             except Exception:
                 pass
 
-        _deep_agent = create_deep_agent(
-            model=init_chat_model(
-                "anthropic:claude-sonnet-4-5-20250929"
-            ),
-            tools=custom_tools,
-            system_prompt=(
-                "你是 MRARFAI V10.1 深度分析Agent。"
-                "你可以规划任务、委派子Agent、"
-                "管理文件。使用中文回答。"
-            ),
-        )
-        logger.info("✅ Deep Agent 初始化完成")
+        try:
+            _deep_agent = create_deep_agent(
+                model=init_chat_model(
+                    "anthropic:claude-sonnet-4-5-20250929"
+                ),
+                tools=custom_tools,
+                system_prompt=(
+                    "你是 MRARFAI V10.1 深度分析Agent。"
+                    "你可以规划任务、委派子Agent、"
+                    "管理文件。使用中文回答。"
+                ),
+            )
+            logger.info("✅ Deep Agent 初始化完成")
+        except Exception as e:
+            logger.warning(f"Deep Agent 初始化失败: {e}")
+            _deep_agent = None
     return _deep_agent
 
 
@@ -2462,10 +2466,16 @@ def node_route(state: AgentState) -> dict:
         valid = [a for a in kg_hint if a in AGENT_PROFILES]
         if valid:
             thinking.append(f"🧭 KG路由 → {valid}")
+            # V10.1: 规划分解 (复杂查询)
+            plan = None
+            if QueryPlanner.needs_planning(question, valid):
+                plan = QueryPlanner.create_plan(question, valid)
+                thinking.append(f"📋 规划: {len(plan['phases'])}阶段")
             return {
                 "agents_needed": valid,
                 "route_source": "knowledge_graph",
                 "thinking": thinking,
+                "execution_plan": plan,
             }
 
     # 2. LLM 路由 (用 fast tier 省钱)
@@ -2503,10 +2513,16 @@ def node_route(state: AgentState) -> dict:
 
             if agents:
                 thinking.append(f"🧭 LLM路由(fast) → {agents}")
+                # V10.1: 规划分解 (复杂查询)
+                plan = None
+                if QueryPlanner.needs_planning(question, agents):
+                    plan = QueryPlanner.create_plan(question, agents)
+                    thinking.append(f"📋 规划: {len(plan['phases'])}阶段")
                 return {
                     "agents_needed": agents,
                     "route_source": "llm_fast",
                     "thinking": thinking,
+                    "execution_plan": plan,
                 }
         except Exception:
             pass
@@ -3094,6 +3110,9 @@ def run_multi_agent_v7(
         "stream_ps": stream_ps,
         "kg_entity_context": kg_entity,
         "kg_agent_hint": kg_hint,
+        # V10.1 新增
+        "execution_plan": None,
+        "v9_attribution": None,
     }
 
     # ---- LangGraph 执行 ----
@@ -3252,6 +3271,7 @@ def get_platform_capabilities() -> dict:
         "pydantic_contracts": True,
         "middleware": True,
         "react_pattern": True,
+        "query_planner": True,
         "deep_agents": HAS_DEEP_AGENTS,
         "db_bridge": HAS_DB_BRIDGE,
         # P3 前沿框架
@@ -3275,7 +3295,7 @@ def get_platform_capabilities() -> dict:
 # 模块信息 — V10.0 统一版
 # ============================================================
 
-__version__ = "10.0.0"
+__version__ = "10.1.0"
 __all__ = [
     # V4 主入口
     "ask_multi_agent",

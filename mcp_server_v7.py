@@ -703,7 +703,10 @@ def register_to_registry(registry_url: str = "https://registry.modelcontextproto
     Returns:
         {"status": "registered", ...} 或 {"status": "error", ...}
     """
-    import requests as req
+    try:
+        import requests as req
+    except ImportError:
+        return {"status": "error", "detail": "requests library not installed: pip install requests"}
 
     manifest = get_registry_manifest()
     try:
@@ -718,7 +721,11 @@ def register_to_registry(registry_url: str = "https://registry.modelcontextproto
         )
         if resp.status_code in (200, 201):
             logger.info(f"✅ MCP Registry 注册成功: {registry_url}")
-            return {"status": "registered", "registry": registry_url, "response": resp.json()}
+            try:
+                body = resp.json()
+            except (ValueError, Exception):
+                body = resp.text[:200]
+            return {"status": "registered", "registry": registry_url, "response": body}
         else:
             logger.warning(f"MCP Registry 注册返回 {resp.status_code}: {resp.text[:200]}")
             return {"status": "error", "code": resp.status_code, "detail": resp.text[:200]}

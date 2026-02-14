@@ -127,25 +127,29 @@ def create_mrarfai_deep_agent(
         logger.warning("langchain chat_models not available")
         return None
 
-    # 初始化模型
-    model = init_chat_model(model_name)
-    
-    # 域子Agents
-    subagents = _create_domain_subagents()
-    
-    # 自定义工具 (MCP tools等)
-    tools = custom_tools or []
-    
-    # 创建 Deep Agent (StateBackend 为默认后端，无需显式传入)
-    agent = create_deep_agent(
-        model=model,
-        tools=tools,
-        subagents=subagents,
-        system_prompt=MRARFAI_DEEP_SYSTEM_PROMPT,
-    )
-    
-    logger.info(f"✅ MRARFAI Deep Agent created — model={model_name}, subagents={len(subagents)}")
-    return agent
+    try:
+        # 初始化模型
+        model = init_chat_model(model_name)
+
+        # 域子Agents
+        subagents = _create_domain_subagents()
+
+        # 自定义工具 (MCP tools等)
+        tools = custom_tools or []
+
+        # 创建 Deep Agent
+        agent = create_deep_agent(
+            model=model,
+            tools=tools,
+            subagents=subagents,
+            system_prompt=MRARFAI_DEEP_SYSTEM_PROMPT,
+        )
+
+        logger.info(f"✅ MRARFAI Deep Agent created — model={model_name}, subagents={len(subagents)}")
+        return agent
+    except Exception as e:
+        logger.warning(f"Deep Agent 创建失败: {e}")
+        return None
 
 
 def run_deep_analysis(query: str, agent=None) -> Dict[str, Any]:
@@ -176,23 +180,40 @@ def run_deep_analysis(query: str, agent=None) -> Dict[str, Any]:
         }
     
     # 执行
-    result = agent.invoke({
-        "messages": [{"role": "user", "content": query}]
-    })
-    
-    # 提取结果
+    try:
+        result = agent.invoke({
+            "messages": [{"role": "user", "content": query}]
+        })
+    except Exception as e:
+        logger.warning(f"Deep Agent invoke 失败: {e}")
+        return {
+            "answer": f"Deep Agents 执行异常: {e}",
+            "plan": [],
+            "delegations": [],
+            "files": [],
+        }
+
+    # 提取结果 (防御非 dict 返回)
+    if not isinstance(result, dict):
+        return {
+            "answer": str(result) if result else "",
+            "plan": [],
+            "delegations": [],
+            "files": [],
+        }
+
     messages = result.get("messages", [])
     answer = ""
     delegations = []
-    
+
     for msg in messages:
-        if hasattr(msg, "content") and msg.type == "ai":
+        if hasattr(msg, "content") and getattr(msg, "type", "") == "ai":
             answer = msg.content
         if hasattr(msg, "tool_calls"):
-            for tc in msg.tool_calls:
-                if tc.get("name") == "call_subagent":
+            for tc in getattr(msg, "tool_calls", []):
+                if isinstance(tc, dict) and tc.get("name") == "call_subagent":
                     delegations.append(tc.get("args", {}))
-    
+
     return {
         "answer": answer,
         "plan": [],  # extracted from todo_write calls
@@ -228,6 +249,18 @@ def integrate_with_stategraph(state_graph_builder):
     
     state_graph_builder.add_node("deep_analysis", deep_analysis_node)
     logger.info("✅ Deep Agent node integrated into StateGraph")
+
+
+# ============================================================
+# Export
+# ============================================================
+
+__all__ = [
+    "create_mrarfai_deep_agent",
+    "run_deep_analysis",
+    "integrate_with_stategraph",
+    "HAS_DEEP_AGENTS",
+]
 
 
 # ============================================================

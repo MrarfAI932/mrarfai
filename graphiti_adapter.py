@@ -72,12 +72,13 @@ class MRARFAIGraphiti:
 
         # 从环境变量获取密码 (避免硬编码)
         import os
-        neo4j_password = neo4j_password or os.environ.get("NEO4J_PASSWORD", "neo4j")
+        neo4j_password = neo4j_password or os.environ.get("NEO4J_PASSWORD")
+        if not neo4j_password:
+            logger.warning("NEO4J_PASSWORD 未设置，Graphiti 无法连接")
 
         # Level 1: 尝试Graphiti
-        if HAS_GRAPHITI:
+        if HAS_GRAPHITI and neo4j_password:
             try:
-                import asyncio
                 self.client = Graphiti(neo4j_uri, neo4j_user, neo4j_password)
                 logger.info("✅ Graphiti connected to Neo4j")
             except Exception as e:

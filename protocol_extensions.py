@@ -332,12 +332,15 @@ class LangGraphAdvanced:
             def breakpoint_wrapper(state):
                 if condition_fn and condition_fn(state):
                     # 触发interrupt
-                    from langgraph.types import interrupt
-                    human_input = interrupt({
-                        "question": f"节点 {node_name} 需要人工确认",
-                        "state_preview": {k: str(v)[:100] for k, v in state.items()},
-                    })
-                    state["human_feedback"] = human_input
+                    try:
+                        from langgraph.types import interrupt
+                        human_input = interrupt({
+                            "question": f"节点 {node_name} 需要人工确认",
+                            "state_preview": {k: str(v)[:100] for k, v in state.items()},
+                        })
+                        state["human_feedback"] = human_input
+                    except ImportError:
+                        logger.warning("langgraph.types.interrupt not available")
                 return state
             
             logger.info(f"✅ Dynamic breakpoint added to node: {node_name}")
