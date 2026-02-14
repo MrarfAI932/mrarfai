@@ -1390,15 +1390,18 @@ if HAS_V10_GATEWAY:
         elif _active == "_collab":
             # ── 协作场景界面 ──
             _scenarios = _gw.collaboration.scenarios
-            st.markdown("""<div style="font-size:0.7rem;color:#888;font-family:'JetBrains Mono',monospace;
+            st.markdown(f"""<div style="font-size:0.7rem;color:#888;font-family:'JetBrains Mono',monospace;
                 margin-bottom:12px;">{_t('collab_hint')}</div>""", unsafe_allow_html=True)
 
-            _sc_cols = st.columns(len(_scenarios))
-            for _i, (_sid, _scfg) in enumerate(_scenarios.items()):
-                with _sc_cols[_i]:
+            # 预定义场景按钮
+            _scenario_list = list(_scenarios.items())
+            _sc_cols = st.columns(min(4, len(_scenario_list)))
+            for _i, (_sid, _scfg) in enumerate(_scenario_list):
+                with _sc_cols[_i % len(_sc_cols)]:
                     _chain_icons = " → ".join([_agent_icons.get(a,"🤖") for a in _scfg["chain"]])
+                    _trig_kws = _scfg.get("trigger_keywords", [])
                     if st.button(f"⚡ {_scfg['name']}", key=f"collab_{_sid}", use_container_width=True):
-                        _trig = _scfg["trigger_keywords"][0]
+                        _trig = _trig_kws[0] if _trig_kws else _scfg["name"]
                         _history.append({"role": "user", "content": f"[协作] {_scfg['name']}: {_trig}"})
                         _resp = _gw.ask(_trig, user=_current_user.get("username", "anonymous"), provider=_v10_provider.lower(), api_key=_v10_api_key, chat_history=_history)
                         if _resp["type"] == "collaboration":
@@ -1415,6 +1418,70 @@ if HAS_V10_GATEWAY:
                                 "agent": "platform", "duration": _resp.get("duration_ms",0)})
                         st.rerun()
                     st.caption(f"{_chain_icons}\n{_scfg['description']}")
+
+            # ── 自定义协作链构建器 ──
+            _custom_label = "自定义协作链" if st.session_state.lang == "zh" else "Custom Collaboration Chain"
+            with st.expander(f"🔗 {_custom_label}", expanded=False):
+                _avail_agents = list(_agent_names_cn.keys())
+                _agent_display = {k: f"{_agent_icons.get(k,'')} {v}" for k, v in _agent_names_cn.items()}
+
+                _chain_hint = "选择2-5个Agent组成自定义协作链" if st.session_state.lang == "zh" else "Select 2-5 Agents to build a custom chain"
+                st.markdown(f"""<div style="font-size:0.55rem;color:#888;font-family:'JetBrains Mono',monospace;">
+                    {_chain_hint}</div>""", unsafe_allow_html=True)
+
+                _selected = st.multiselect(
+                    "Agent Chain",
+                    options=_avail_agents,
+                    format_func=lambda x: _agent_display.get(x, x),
+                    key="custom_chain_agents",
+                    label_visibility="collapsed",
+                    max_selections=5,
+                )
+
+                if _selected and len(_selected) >= 2:
+                    _chain_preview = " → ".join([f"{_agent_icons.get(a,'')} {_agent_names_cn.get(a,a)}" for a in _selected])
+                    st.markdown(f"""<div style="font-size:0.65rem;color:#4ade80;font-family:'JetBrains Mono',monospace;
+                        padding:8px 0;">链路: {_chain_preview}</div>""", unsafe_allow_html=True)
+
+                    _cc1, _cc2 = st.columns([2, 1])
+                    with _cc1:
+                        _chain_name = st.text_input(
+                            "场景名称",
+                            value=f"自定义: {'+'.join(_agent_names_cn.get(a, a) for a in _selected)}",
+                            key="custom_chain_name",
+                            label_visibility="collapsed",
+                            placeholder="输入协作场景名称...")
+                    with _cc2:
+                        _run_label = "执行" if st.session_state.lang == "zh" else "Run"
+                        if st.button(f"⚡ {_run_label}", key="run_custom_chain", use_container_width=True):
+                            # 创建临时场景并执行
+                            _custom_scenario = {
+                                "name": _chain_name,
+                                "chain": _selected,
+                                "description": f"自定义: {' → '.join(_selected)}",
+                                "trigger_keywords": [],
+                            }
+                            _history.append({"role": "user", "content": f"[自定义协作] {_chain_name}"})
+                            _result = _gw.collaboration.execute_chain(_custom_scenario, _chain_name)
+                            if _v10_api_key:
+                                _result["synthesis"] = _gw._llm_synthesize_collab(
+                                    _custom_scenario,
+                                    {k: v for k, v in _result.get("agent_results", {}).items()},
+                                    _chain_name, _v10_provider.lower(), _v10_api_key)
+                            _disp = _result.get("synthesis", "")
+                            for _aname, _ares in _result.get("agent_results", {}).items():
+                                _disp += f"\n\n**{_agent_icons.get(_aname,'🤖')} {_agent_names_cn.get(_aname,_aname)}**:\n"
+                                try:
+                                    _disp += json.dumps(json.loads(_ares) if isinstance(_ares, str) else _ares,
+                                                        ensure_ascii=False, indent=2)[:600]
+                                except Exception:
+                                    _disp += str(_ares)[:600]
+                            _history.append({"role": "assistant", "content": _disp,
+                                "agent": "platform", "duration": 0})
+                            st.rerun()
+                elif _selected and len(_selected) < 2:
+                    _min_hint = "至少选择2个Agent" if st.session_state.lang == "zh" else "Select at least 2 Agents"
+                    st.caption(_min_hint)
 
         else:
             # ── V10 独立 Agent 界面 ──
