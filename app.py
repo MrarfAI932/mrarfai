@@ -73,6 +73,13 @@ try:
 except ImportError:
     HAS_V10_GATEWAY = False
 
+# ── 数据库连接器 (可选) ──
+try:
+    from db_connector import get_db_status, DatabaseConfig, get_connector
+    HAS_DB_CONNECTOR = True
+except ImportError:
+    HAS_DB_CONNECTOR = False
+
 MONTHS = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月']
 
 # ============================================================
@@ -921,6 +928,35 @@ if HAS_V10_GATEWAY:
                         if st.button(f"{_t('enter')} {_t('cross_agent_collab')}", key="enter_collab", use_container_width=True):
                             st.session_state.active_agent = "_collab"
                             st.rerun()
+
+            # ── 数据库连接状态 (管理员可见) ──
+            if is_admin() and HAS_DB_CONNECTOR:
+                _db_label = "数据源设置" if st.session_state.lang == "zh" else "Data Source Settings"
+                with st.expander(f"🔌 {_db_label}", expanded=False):
+                    _db_status = get_db_status()
+                    _db_type = _db_status.get("type", "none")
+                    _db_msg = _db_status.get("message", "")
+                    if _db_type == "none":
+                        st.markdown(f"""<div style="font-size:0.6rem;color:#f59e0b;font-family:'JetBrains Mono',monospace;">
+                            ⚠ 当前使用内置样本数据。配置 .env 中的 DB_* 变量可连接真实 ERP/MES 数据库。</div>""",
+                            unsafe_allow_html=True)
+                    elif _db_status.get("status") == "ok":
+                        st.markdown(f"""<div style="font-size:0.6rem;color:#4ade80;font-family:'JetBrains Mono',monospace;">
+                            ✅ 已连接: {_db_type.upper()} — {_db_msg}</div>""",
+                            unsafe_allow_html=True)
+                    else:
+                        st.markdown(f"""<div style="font-size:0.6rem;color:#D94040;font-family:'JetBrains Mono',monospace;">
+                            ❌ 连接失败: {_db_msg}</div>""",
+                            unsafe_allow_html=True)
+
+                    st.markdown(f"""<div style="font-size:0.5rem;color:#555;font-family:'JetBrains Mono',monospace;margin-top:8px;">
+                        <b>支持的数据源:</b><br>
+                        · SQLite — 本地 Demo 数据库<br>
+                        · MySQL — ERP (用友/金蝶/SAP)<br>
+                        · PostgreSQL — MES/自研系统<br>
+                        · REST API — 第三方平台接口<br><br>
+                        <b>配置方法:</b> 编辑 .env 文件中的 DB_TYPE, DB_HOST, DB_PORT 等变量
+                    </div>""", unsafe_allow_html=True)
 
             st.stop()
 
