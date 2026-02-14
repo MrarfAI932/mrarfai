@@ -288,6 +288,103 @@ class AuditLog:
 
 
 # ============================================================
+# API 限流器
+# ============================================================
+
+class RateLimiter:
+    """
+    LLM API 调用限流器 — 防止滥用。
+    支持按用户 + 全局两层限流。
+
+    默认:
+    - 每用户: 60 次/分钟, 500 次/小时
+    - 全局:  300 次/分钟, 5000 次/小时
+    """
+
+    def __init__(self,
+                 user_per_minute: int = 60,
+                 user_per_hour: int = 500,
+                 global_per_minute: int = 300,
+                 global_per_hour: int = 5000):
+        self.user_per_minute = user_per_minute
+        self.user_per_hour = user_per_hour
+        self.global_per_minute = global_per_minute
+        self.global_per_hour = global_per_hour
+
+        self._user_calls: Dict[str, List[float]] = {}  # user → [timestamps]
+        self._global_calls: List[float] = []
+
+    def _cleanup(self, timestamps: List[float], window_seconds: float) -> List[float]:
+        """清理超出时间窗口的记录"""
+        cutoff = time.time() - window_seconds
+        return [t for t in timestamps if t > cutoff]
+
+    def check(self, user: str = "anonymous") -> Dict:
+        """
+        检查是否允许调用。
+
+        返回:
+        - {"allowed": True} 允许调用
+        - {"allowed": False, "reason": "...", "retry_after_seconds": N} 被限流
+        """
+        now = time.time()
+
+        # 全局限流
+        self._global_calls = self._cleanup(self._global_calls, 3600)
+        calls_last_minute = sum(1 for t in self._global_calls if t > now - 60)
+        calls_last_hour = len(self._global_calls)
+
+        if calls_last_minute >= self.global_per_minute:
+            return {"allowed": False, "reason": "全局每分钟限流", "retry_after_seconds": 60}
+        if calls_last_hour >= self.global_per_hour:
+            return {"allowed": False, "reason": "全局每小时限流", "retry_after_seconds": 300}
+
+        # 用户限流
+        if user not in self._user_calls:
+            self._user_calls[user] = []
+        self._user_calls[user] = self._cleanup(self._user_calls[user], 3600)
+        user_last_minute = sum(1 for t in self._user_calls[user] if t > now - 60)
+        user_last_hour = len(self._user_calls[user])
+
+        if user_last_minute >= self.user_per_minute:
+            return {"allowed": False, "reason": f"用户 {user} 每分钟限流", "retry_after_seconds": 60}
+        if user_last_hour >= self.user_per_hour:
+            return {"allowed": False, "reason": f"用户 {user} 每小时限流", "retry_after_seconds": 300}
+
+        return {"allowed": True}
+
+    def record(self, user: str = "anonymous"):
+        """记录一次 API 调用"""
+        now = time.time()
+        self._global_calls.append(now)
+        if user not in self._user_calls:
+            self._user_calls[user] = []
+        self._user_calls[user].append(now)
+
+    def get_usage(self, user: str = "") -> Dict:
+        """获取使用情况统计"""
+        now = time.time()
+        self._global_calls = self._cleanup(self._global_calls, 3600)
+
+        stats = {
+            "global_last_minute": sum(1 for t in self._global_calls if t > now - 60),
+            "global_last_hour": len(self._global_calls),
+            "global_limit_minute": self.global_per_minute,
+            "global_limit_hour": self.global_per_hour,
+        }
+
+        if user and user in self._user_calls:
+            self._user_calls[user] = self._cleanup(self._user_calls[user], 3600)
+            stats["user"] = user
+            stats["user_last_minute"] = sum(1 for t in self._user_calls[user] if t > now - 60)
+            stats["user_last_hour"] = len(self._user_calls[user])
+            stats["user_limit_minute"] = self.user_per_minute
+            stats["user_limit_hour"] = self.user_per_hour
+
+        return stats
+
+
+# ============================================================
 # 智能路由器
 # ============================================================
 
@@ -440,12 +537,115 @@ COLLABORATION_SCENARIOS = {
 }
 
 
+class CollaborationMemory:
+    """协作链执行记忆 — 持久化存储协作结果，支持历史回溯"""
+
+    STORAGE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".collab_memory")
+
+    def __init__(self, max_entries: int = 200):
+        self._max = max_entries
+        os.makedirs(self.STORAGE_DIR, exist_ok=True)
+
+    def save(self, user: str, result: Dict) -> str:
+        """保存一次协作执行结果，返回 memory_id"""
+        memory_id = f"cm_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:6]}"
+        entry = {
+            "memory_id": memory_id,
+            "user": user,
+            "timestamp": datetime.now().isoformat(),
+            "scenario": result.get("scenario", ""),
+            "description": result.get("description", ""),
+            "total_agents": result.get("total_agents", 0),
+            "completed": result.get("completed", 0),
+            "steps": result.get("steps", []),
+            "agent_results": result.get("agent_results", {}),
+            "synthesis": result.get("synthesis", ""),
+        }
+        filepath = os.path.join(self.STORAGE_DIR, f"{memory_id}.json")
+        with open(filepath, "w", encoding="utf-8") as f:
+            json.dump(entry, f, ensure_ascii=False, indent=2)
+
+        # 淘汰旧记录
+        self._prune()
+        return memory_id
+
+    def _prune(self):
+        """保留最近 max_entries 条记录"""
+        files = sorted(
+            [f for f in os.listdir(self.STORAGE_DIR) if f.endswith(".json")],
+            reverse=True,
+        )
+        for old_file in files[self._max:]:
+            try:
+                os.remove(os.path.join(self.STORAGE_DIR, old_file))
+            except Exception:
+                pass
+
+    def list_recent(self, n: int = 20, user: str = "") -> List[Dict]:
+        """列出最近 N 条协作记录（摘要）"""
+        files = sorted(
+            [f for f in os.listdir(self.STORAGE_DIR) if f.endswith(".json")],
+            reverse=True,
+        )
+        results = []
+        for fname in files:
+            if len(results) >= n:
+                break
+            try:
+                with open(os.path.join(self.STORAGE_DIR, fname), "r", encoding="utf-8") as f:
+                    entry = json.load(f)
+                if user and entry.get("user") != user:
+                    continue
+                results.append({
+                    "memory_id": entry.get("memory_id", ""),
+                    "timestamp": entry.get("timestamp", ""),
+                    "user": entry.get("user", ""),
+                    "scenario": entry.get("scenario", ""),
+                    "total_agents": entry.get("total_agents", 0),
+                    "completed": entry.get("completed", 0),
+                })
+            except Exception:
+                continue
+        return results
+
+    def load(self, memory_id: str) -> Optional[Dict]:
+        """加载一条完整的协作记录"""
+        filepath = os.path.join(self.STORAGE_DIR, f"{memory_id}.json")
+        if not os.path.exists(filepath):
+            return None
+        try:
+            with open(filepath, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return None
+
+    def get_stats(self) -> Dict:
+        """协作记忆统计"""
+        files = [f for f in os.listdir(self.STORAGE_DIR) if f.endswith(".json")]
+        by_scenario = defaultdict(int)
+        by_user = defaultdict(int)
+        for fname in files:
+            try:
+                with open(os.path.join(self.STORAGE_DIR, fname), "r", encoding="utf-8") as f:
+                    entry = json.load(f)
+                by_scenario[entry.get("scenario", "unknown")] += 1
+                by_user[entry.get("user", "unknown")] += 1
+            except Exception:
+                continue
+        return {
+            "total_records": len(files),
+            "by_scenario": dict(by_scenario),
+            "by_user": dict(by_user),
+        }
+
+
 class CollaborationEngine:
     """跨Agent协作引擎"""
 
     def __init__(self):
         self.scenarios = COLLABORATION_SCENARIOS
         self.engines = {}
+        self.memory = CollaborationMemory()
         self._init_engines()
 
     def _init_engines(self):
@@ -514,11 +714,12 @@ class CollaborationEngine:
         })
         return steps
 
-    def execute_chain(self, scenario: Dict, query: str) -> Dict:
+    def execute_chain(self, scenario: Dict, query: str, user: str = "system") -> Dict:
         """
         执行协作链 (同步模式)
 
         返回: {"steps": [...], "synthesis": "综合结论"}
+        自动存入协作记忆。
         """
         plan = self.create_plan(scenario, query)
         results = {}
@@ -556,7 +757,7 @@ class CollaborationEngine:
         # 综合分析
         synthesis = self._synthesize(scenario, results, query)
 
-        return {
+        chain_result = {
             "scenario": scenario["name"],
             "description": scenario["description"],
             "steps": executed_steps,
@@ -566,6 +767,15 @@ class CollaborationEngine:
             "total_agents": len(scenario["chain"]),
             "completed": sum(1 for s in executed_steps if s["status"] == "completed"),
         }
+
+        # 自动存入协作记忆
+        try:
+            memory_id = self.memory.save(user, chain_result)
+            chain_result["memory_id"] = memory_id
+        except Exception as e:
+            logger.warning(f"协作记忆保存失败: {e}")
+
+        return chain_result
 
     def _synthesize(self, scenario: Dict, results: Dict, query: str) -> str:
         """综合多Agent结果"""
@@ -610,6 +820,7 @@ class PlatformGateway:
         self.collaboration = CollaborationEngine()
         self.audit = AuditLog()
         self.preferences = UserPreferenceTracker()
+        self.rate_limiter = RateLimiter()
         self.pipeline_fn = pipeline_fn
 
         # Agent Registry (A2A)
@@ -699,6 +910,13 @@ class PlatformGateway:
         """
         if not api_key:
             return raw_data
+
+        # API 限流检查
+        rate_check = self.rate_limiter.check(user)
+        if not rate_check["allowed"]:
+            logger.warning(f"API 限流: {rate_check['reason']} (user={user})")
+            return f"⚠ API 调用频率受限: {rate_check['reason']}。请 {rate_check.get('retry_after_seconds', 60)} 秒后重试。\n\n原始数据:\n{raw_data[:1000]}"
+        self.rate_limiter.record(user)
 
         role = self._AGENT_ROLES.get(agent_name, "AI助手")
         pref_ctx = self.preferences.get_preference_context(user, agent_name)
@@ -869,7 +1087,7 @@ class PlatformGateway:
         try:
             if scenario:
                 # 跨Agent协作
-                result = self.collaboration.execute_chain(scenario, query)
+                result = self.collaboration.execute_chain(scenario, query, user=user)
 
                 # LLM 综合 (有 Key 时)
                 if api_key:
@@ -964,6 +1182,19 @@ class PlatformGateway:
             "collaboration_scenarios": len(self.collaboration.scenarios),
             "audit": self.audit.get_stats(),
             "registry": registry_stats,
+        }
+
+    def get_platform_stats(self) -> Dict:
+        """快捷平台统计（供仪表盘调用）"""
+        audit_stats = self.audit.get_stats()
+        return {
+            "total_requests": audit_stats.get("total_requests", 0),
+            "by_agent": audit_stats.get("by_agent", {}),
+            "by_status": audit_stats.get("by_status", {}),
+            "avg_duration_ms": audit_stats.get("avg_duration_ms", 0),
+            "agent_count": len(self.registry.list_agents()) if self.registry else 0,
+            "collab_scenarios": len(self.collaboration.scenarios),
+            "rate_limit": self.rate_limiter.get_usage(),
         }
 
 

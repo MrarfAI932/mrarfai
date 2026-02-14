@@ -26,18 +26,6 @@ SPROCOMM_RED   = "#D94040"   # 红叶 — 警报
 NEON_GREEN     = "#00FF88"   # 主色 — 指挥中心风格
 WARN_ORANGE    = "#FF8800"   # 警告色
 
-# ── Grade Colors (客户健康等级) ────────────────────────────────
-GRADE_COLORS = {
-    'A': NEON_GREEN,       # #00FF88 — 优秀
-    'B': SPROCOMM_BLUE,    # #00A0C8 — 良好
-    'C': WARN_ORANGE,      # #FF8800 — 一般
-    'D': SPROCOMM_RED,     # #D94040 — 差
-    'F': "#ef4444",        # 极差
-}
-
-# ── Chart Colors ─────────────────────────────────────────────
-CC_CHART_COLORS = [NEON_GREEN, SPROCOMM_BLUE, "#3b82f6", WARN_ORANGE, SPROCOMM_RED, "#ec4899", "#8b5cf6", "#06b6d4"]
-
 COLORS = {
     # Backgrounds — pure dark command center
     "bg_deep":       "#0C0C0C",
@@ -71,22 +59,6 @@ COLORS = {
     "success":       NEON_GREEN,
     "warning":       WARN_ORANGE,
 }
-
-
-def cc_plotly_layout(title="", height=400, showlegend=True):
-    """Command Center 统一 Plotly 图表布局"""
-    return dict(
-        title=dict(text=title, font=dict(size=11, color="#8a8a8a", family="JetBrains Mono"), x=0),
-        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-        font=dict(color="#8a8a8a", size=11, family="JetBrains Mono"),
-        height=height, showlegend=showlegend,
-        legend=dict(bgcolor="rgba(0,0,0,0)", font=dict(size=10, family="JetBrains Mono")),
-        margin=dict(l=50, r=20, t=36, b=40),
-        xaxis=dict(gridcolor="rgba(255,255,255,0.04)", showgrid=True,
-                   tickfont=dict(size=10, family="JetBrains Mono", color="#6a6a6a"), zeroline=False),
-        yaxis=dict(gridcolor="rgba(255,255,255,0.04)", showgrid=True,
-                   tickfont=dict(size=10, family="JetBrains Mono", color="#6a6a6a"), zeroline=False),
-    )
 
 
 def inject_theme():

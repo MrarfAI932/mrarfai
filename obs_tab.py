@@ -139,11 +139,11 @@ def _render_overview(metrics, days):
             st.markdown(f"""
             <div style="display:flex; align-items:center; margin:4px 0;">
                 <span style="width:140px; font-size:0.85rem;">{label}</span>
-                <div style="flex:1; background:#111111; border-radius:0; height:20px; margin:0 8px;">
+                <div style="flex:1; background:#1e293b; border-radius:4px; height:20px; margin:0 8px;">
                     <div style="width:{min(avg/30*100, 100):.0f}%; background:linear-gradient(90deg,#3b82f6,#60a5fa);
-                         height:100%; border-radius:0; min-width:2px;"></div>
+                         height:100%; border-radius:4px; min-width:2px;"></div>
                 </div>
-                <span style="font-size:0.8rem; color:#8a8a8a; width:80px; text-align:right;">
+                <span style="font-size:0.8rem; color:#94a3b8; width:80px; text-align:right;">
                     {avg:.1f}s ({count}次)
                 </span>
             </div>
@@ -160,8 +160,8 @@ def _render_overview(metrics, days):
             calls = item['calls'] or 0
             st.markdown(f"""
             <div style="display:flex; justify-content:space-between;
-                 padding:6px 12px; margin:2px 0; background:#080808;
-                 border-radius:0; font-size:0.85rem;">
+                 padding:6px 12px; margin:2px 0; background:#0f172a;
+                 border-radius:6px; font-size:0.85rem;">
                 <span>{stage}</span>
                 <span style="color:#a78bfa">${cost:.4f} · {tokens:,} tokens · {calls}次调用</span>
             </div>
@@ -203,12 +203,12 @@ def _render_trends(metrics, days):
 
         st.markdown(f"""
         <div style="display:flex; align-items:center; margin:3px 0;">
-            <span style="width:90px; font-size:0.82rem; color:#8a8a8a;">{date}</span>
-            <div style="flex:1; background:#111111; border-radius:0; height:18px; margin:0 8px;">
+            <span style="width:90px; font-size:0.82rem; color:#94a3b8;">{date}</span>
+            <div style="flex:1; background:#1e293b; border-radius:3px; height:18px; margin:0 8px;">
                 <div style="width:{bar_width}%; background:linear-gradient(90deg,#3b82f6,#60a5fa);
-                     height:100%; border-radius:0;"></div>
+                     height:100%; border-radius:3px;"></div>
             </div>
-            <span style="font-size:0.78rem; color:#8a8a8a; width:220px; text-align:right;">
+            <span style="font-size:0.78rem; color:#94a3b8; width:220px; text-align:right;">
                 {queries}次 · {avg_latency:.1f}s · ${cost:.4f}{error_tag}
             </span>
         </div>
@@ -243,7 +243,7 @@ def _render_trace_detail(metrics, days):
         with st.expander(f"{status_icon} {question}... — {duration_s:.1f}s / ${cost:.4f} / {tokens} tok {feedback_str}",
                         expanded=(i == 0)):
             st.markdown(f"""
-            <div style="font-size:0.8rem; color:#6a6a6a; margin-bottom:8px;">
+            <div style="font-size:0.8rem; color:#64748b; margin-bottom:8px;">
                 Trace: <code>{trace_id}</code> · {timestamp} ·
                 模式: {t.get('pattern_matched', '-')} ·
                 路由: {t.get('route_source', '-')}
@@ -270,11 +270,11 @@ def _render_trace_detail(metrics, days):
 
                     st.markdown(f"""
                     <div style="display:flex; align-items:center; margin:2px 0;
-                         padding:4px 8px; background:#080808; border-radius:0;
+                         padding:4px 8px; background:#0f172a; border-radius:4px;
                          border-left:3px solid {s_color};">
                         <span style="font-size:0.82rem;">{icon} {name}</span>
                         <span style="flex:1"></span>
-                        <span style="font-size:0.78rem; color:#8a8a8a;">
+                        <span style="font-size:0.78rem; color:#94a3b8;">
                             {dur:.2f}s{tok_str}
                         </span>
                     </div>
@@ -347,9 +347,9 @@ def _render_system(days):
 def _metric_card(title: str, value: str, subtitle: str, color: str):
     """渲染KPI卡片"""
     st.markdown(f"""
-    <div style="padding:12px 16px; background:#080808; border-radius:0;
+    <div style="padding:12px 16px; background:#0f172a; border-radius:10px;
          border-left:4px solid {color};">
-        <div style="font-size:0.75rem; color:#6a6a6a;">{title}</div>
+        <div style="font-size:0.75rem; color:#64748b;">{title}</div>
         <div style="font-size:1.5rem; font-weight:700; color:{color}; margin:2px 0;">
             {value}
         </div>

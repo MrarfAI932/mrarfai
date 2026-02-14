@@ -792,8 +792,8 @@ def render_report_section(data, results, benchmark, forecast):
     <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px;">
         <div style="font-size:1.5rem;">📄</div>
         <div>
-            <div style="font-size:1.1rem; font-weight:700; color:#FFFFFF; font-family:'Space Grotesk',sans-serif;">自动PDF报告</div>
-            <div style="font-size:0.8rem; color:#6a6a6a; font-family:'JetBrains Mono',monospace;">一键生成专业分析报告 · 支持邮件推送</div>
+            <div style="font-size:1.1rem; font-weight:700; color:#e2e8f0;">自动PDF报告</div>
+            <div style="font-size:0.8rem; color:#64748b;">一键生成专业分析报告 · 支持邮件推送</div>
         </div>
     </div>
     """, unsafe_allow_html=True)

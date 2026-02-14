@@ -37,11 +37,11 @@ BRAND_CONFIG = {
         "success": "#10b981",
         "warning": "#f97316",
         "danger": "#ef4444",
-        "bg_dark": "#0C0C0C",       # 深色背景
-        "bg_card": "#111111",       # 卡片背景
-        "text_primary": "#FFFFFF",
-        "text_secondary": "#8a8a8a",
-        "text_muted": "#6a6a6a",
+        "bg_dark": "#0f172a",       # 深色背景
+        "bg_card": "#1e293b",       # 卡片背景
+        "text_primary": "#f8fafc",
+        "text_secondary": "#94a3b8",
+        "text_muted": "#64748b",
     },
     
     # 功能开关（SaaS化：不同客户开放不同功能）
@@ -189,8 +189,8 @@ def render_brand_settings():
     <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px;">
         <div style="font-size:1.5rem;">🎨</div>
         <div>
-            <div style="font-size:1.1rem; font-weight:700; color:#FFFFFF; font-family:'Space Grotesk',sans-serif;">品牌与白标配置</div>
-            <div style="font-size:0.8rem; color:#6a6a6a; font-family:'JetBrains Mono',monospace;">
+            <div style="font-size:1.1rem; font-weight:700; color:#e2e8f0;">品牌与白标配置</div>
+            <div style="font-size:0.8rem; color:#64748b;">
                 修改品牌信息，一键变成你的产品
             </div>
         </div>
@@ -241,9 +241,9 @@ def render_brand_settings():
         with template_cols[i]:
             st.markdown(f"""
             <div style="padding:12px; background:{color}15; border:1px solid {color}30;
-                 text-align:center; cursor:pointer;">
+                 border-radius:10px; text-align:center; cursor:pointer;">
                 <div style="font-size:1.2rem; margin-bottom:4px;">{name}</div>
-                <div style="width:100%; height:8px; background:{color};"></div>
+                <div style="width:100%; height:8px; background:{color}; border-radius:4px;"></div>
             </div>
             """, unsafe_allow_html=True)
             if st.button(f"应用 {name}", key=f"apply_{key}", use_container_width=True):
@@ -257,24 +257,22 @@ def render_brand_settings():
     st.markdown("#### 👁️ 预览")
     st.markdown(f"""
     <div style="padding:20px; background:{BRAND_CONFIG['colors']['bg_card']};
-         border:1px solid {BRAND_CONFIG['colors']['primary']}30;">
-        <div style="font-size:1.3rem; font-weight:800; color:{BRAND_CONFIG['colors']['text_primary']};
-             font-family:'Space Grotesk',sans-serif;">
+         border:1px solid {BRAND_CONFIG['colors']['primary']}30;
+         border-radius:14px;">
+        <div style="font-size:1.3rem; font-weight:800; color:{BRAND_CONFIG['colors']['text_primary']};">
             {BRAND_CONFIG['logo_emoji']} {BRAND_CONFIG['company_name']}
         </div>
-        <div style="font-size:0.8rem; color:{BRAND_CONFIG['colors']['text_secondary']};
-             font-family:'JetBrains Mono',monospace;">
+        <div style="font-size:0.8rem; color:{BRAND_CONFIG['colors']['text_secondary']};">
             {BRAND_CONFIG['product_name']}
         </div>
         <div style="margin-top:12px; display:flex; gap:8px;">
             <div style="padding:4px 12px; background:{BRAND_CONFIG['colors']['primary']};
-                 font-size:0.75rem; color:white; font-family:'JetBrains Mono',monospace; font-weight:700;">
-                {BRAND_CONFIG['version']}
+                 border-radius:6px; font-size:0.75rem; color:white;">
+                ✨ {BRAND_CONFIG['version']}
             </div>
             <div style="padding:4px 12px; background:{BRAND_CONFIG['colors']['secondary']}20;
                  border:1px solid {BRAND_CONFIG['colors']['secondary']}40;
-                 font-size:0.75rem; color:{BRAND_CONFIG['colors']['secondary']};
-                 font-family:'JetBrains Mono',monospace;">
+                 border-radius:6px; font-size:0.75rem; color:{BRAND_CONFIG['colors']['secondary']};">
                 {BRAND_CONFIG['industry']['name']}
             </div>
         </div>

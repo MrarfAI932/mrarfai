@@ -188,9 +188,44 @@ def authenticate(username: str, password: str) -> Optional[Dict]:
     return None
 
 
+# Session 超时配置 (默认 4 小时)
+SESSION_TIMEOUT_HOURS = int(os.environ.get("SESSION_TIMEOUT_HOURS", "4") or "4")
+
+
 def is_logged_in() -> bool:
     """是否已登录"""
     return st.session_state.get("auth_user") is not None
+
+
+def check_session_timeout() -> bool:
+    """
+    检查 session 是否已超时。
+    返回 True 表示已超时（需要重新登录），False 表示仍有效。
+    """
+    if not is_logged_in():
+        return False
+
+    login_time = st.session_state.get("auth_login_time")
+    last_activity = st.session_state.get("auth_last_activity")
+
+    now = datetime.now()
+
+    # 基于最后活跃时间检测（如果有的话），否则用登录时间
+    ref_time = last_activity or login_time
+
+    if ref_time:
+        try:
+            if isinstance(ref_time, str):
+                ref_time = datetime.fromisoformat(ref_time)
+            elapsed = (now - ref_time).total_seconds()
+            if elapsed > SESSION_TIMEOUT_HOURS * 3600:
+                return True
+        except Exception:
+            pass
+
+    # 更新最后活跃时间
+    st.session_state["auth_last_activity"] = now.isoformat()
+    return False
 
 
 def get_current_user() -> Optional[Dict]:
@@ -202,6 +237,7 @@ def logout():
     """登出"""
     st.session_state.pop("auth_user", None)
     st.session_state.pop("auth_login_time", None)
+    st.session_state.pop("auth_last_activity", None)
 
 
 def is_admin() -> bool:
@@ -434,6 +470,8 @@ def _render_login_page():
                 user = authenticate(username, password)
                 if user:
                     st.session_state["auth_user"] = user
+                    st.session_state["auth_login_time"] = datetime.now().isoformat()
+                    st.session_state["auth_last_activity"] = datetime.now().isoformat()
                     st.rerun()
                 else:
                     st.markdown('<div class="login-error">⚠ 用户名或密码错误</div>',
@@ -450,7 +488,13 @@ def _render_login_page():
 def require_login():
     """
     在 app.py 最前面调用。未登录则显示登录页并 st.stop()。
+    Session 超时自动登出。
     """
+    # 检查 session 超时
+    if check_session_timeout():
+        logout()
+        st.warning(f"⏰ 会话已超时（{SESSION_TIMEOUT_HOURS}小时），请重新登录。")
+
     if not is_logged_in():
         _render_login_page()
         st.stop()

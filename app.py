@@ -80,6 +80,13 @@ try:
 except ImportError:
     HAS_DB_CONNECTOR = False
 
+# ── 定时报告引擎 (可选) ──
+try:
+    from scheduled_report import ReportScheduler, ReportConfig
+    HAS_REPORT = True
+except ImportError:
+    HAS_REPORT = False
+
 MONTHS = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月']
 
 # ============================================================
@@ -859,6 +866,85 @@ if HAS_V10_GATEWAY:
             </div>
             """, unsafe_allow_html=True)
 
+            # ── KPI 仪表盘 ──
+            _dash_label = "运营快览" if st.session_state.lang == "zh" else "Operations Snapshot"
+            with st.container():
+                st.markdown(f"""<div style="font-size:0.55rem;color:#555;font-family:'JetBrains Mono',monospace;
+                    letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px;">📊 {_dash_label}</div>""",
+                    unsafe_allow_html=True)
+
+                _kpi_cols = st.columns(5)
+
+                # 从 Gateway 获取平台统计
+                try:
+                    _pstats = _gw.get_platform_stats()
+                except Exception:
+                    _pstats = {}
+
+                # 从 Agent 引擎获取关键指标
+                _kpi_data = []
+                try:
+                    _engines = _gw.collaboration.engines
+                    # 采购: 订单数 + 延迟数
+                    if "procurement" in _engines:
+                        _pe = _engines["procurement"]
+                        _orders = getattr(_pe, 'orders', [])
+                        _delayed = sum(1 for o in _orders if getattr(o, 'status', '') == 'delayed')
+                        _kpi_data.append(("📦", "采购订单" if st.session_state.lang == "zh" else "PO Orders",
+                                          f"{len(_orders)}", f"{_delayed} 延迟" if _delayed else "正常",
+                                          "#D94040" if _delayed else "#4ade80"))
+                    # 品质: 良率
+                    if "quality" in _engines:
+                        _qe = _engines["quality"]
+                        _lines = getattr(_qe, 'production_lines', [])
+                        if _lines:
+                            _avg_yield = sum(l.yield_rate for l in _lines) / len(_lines) * 100
+                            _kpi_data.append(("🔬", "平均良率" if st.session_state.lang == "zh" else "Avg Yield",
+                                              f"{_avg_yield:.1f}%", "良好" if _avg_yield > 95 else "关注",
+                                              "#4ade80" if _avg_yield > 95 else "#f59e0b"))
+                    # 财务: 逾期应收
+                    if "finance" in _engines:
+                        _fe = _engines["finance"]
+                        _ar = getattr(_fe, 'accounts_receivable', [])
+                        _overdue = sum(1 for a in _ar if getattr(a, 'status', '') == 'overdue')
+                        _total_ar = len(_ar)
+                        _kpi_data.append(("💰", "应收逾期" if st.session_state.lang == "zh" else "AR Overdue",
+                                          f"{_overdue}/{_total_ar}", f"{_overdue} 笔逾期",
+                                          "#D94040" if _overdue > 0 else "#4ade80"))
+                    # 市场: 竞品数
+                    if "market" in _engines:
+                        _me = _engines["market"]
+                        _comps = getattr(_me, 'competitors', {})
+                        _kpi_data.append(("🏭", "竞品监控" if st.session_state.lang == "zh" else "Competitors",
+                                          f"{len(_comps)}", "持续追踪", "#00A0C8"))
+                except Exception:
+                    pass
+
+                # 平台请求数
+                _total_req = _pstats.get("total_requests", 0)
+                _avg_ms = _pstats.get("avg_duration_ms", 0)
+                _kpi_data.append(("⚡", "平台请求" if st.session_state.lang == "zh" else "Requests",
+                                  f"{_total_req}", f"均 {_avg_ms:.0f}ms" if _avg_ms > 0 else "就绪",
+                                  "#00FF88"))
+
+                # 渲染 KPI 卡片
+                for _ki, _kpi in enumerate(_kpi_data):
+                    if _ki < len(_kpi_cols):
+                        with _kpi_cols[_ki]:
+                            _k_icon, _k_label, _k_value, _k_sub, _k_color = _kpi
+                            st.markdown(f"""<div style="background:#0c0c0c;border:1px solid #222;
+                                padding:12px;text-align:center;">
+                                <div style="font-size:1.2rem;">{_k_icon}</div>
+                                <div style="font-size:1rem;font-weight:700;color:{_k_color};
+                                    font-family:'Space Grotesk',sans-serif;margin:4px 0;">{_k_value}</div>
+                                <div style="font-size:0.5rem;color:#888;font-family:'JetBrains Mono',monospace;">
+                                    {_k_label}</div>
+                                <div style="font-size:0.4rem;color:{_k_color};font-family:'JetBrains Mono',monospace;
+                                    margin-top:2px;">{_k_sub}</div>
+                            </div>""", unsafe_allow_html=True)
+
+                st.markdown("")  # spacer
+
             # Agent 卡片 — 按角色过滤可见 Agent
             _visible_agents = [a for a in _card["agents"] if a in _allowed_agents]
             # 如果有协作权限，预留一个 slot 给协作卡片
@@ -956,6 +1042,172 @@ if HAS_V10_GATEWAY:
                         · PostgreSQL — MES/自研系统<br>
                         · REST API — 第三方平台接口<br><br>
                         <b>配置方法:</b> 编辑 .env 文件中的 DB_TYPE, DB_HOST, DB_PORT 等变量
+                    </div>""", unsafe_allow_html=True)
+
+            # ── 定时报告管理 (管理员可见) ──
+            if is_admin() and HAS_REPORT:
+                _rpt_label = "定时报告管理" if st.session_state.lang == "zh" else "Scheduled Reports"
+                with st.expander(f"📧 {_rpt_label}", expanded=False):
+                    _rpt_config = ReportConfig()
+                    _rpt_enabled = _rpt_config.enabled
+
+                    if _rpt_enabled:
+                        st.markdown(f"""<div style="font-size:0.6rem;color:#4ade80;font-family:'JetBrains Mono',monospace;">
+                            ✅ 邮件报告已启用 — {_rpt_config.schedule}
+                            · SMTP: {_rpt_config.smtp_host}
+                            · 收件人: {', '.join(_rpt_config.recipients)}</div>""",
+                            unsafe_allow_html=True)
+                    else:
+                        st.markdown(f"""<div style="font-size:0.6rem;color:#f59e0b;font-family:'JetBrains Mono',monospace;">
+                            ⚠ 邮件报告未配置。配置 .env 中的 REPORT_SMTP_* 变量启用自动报告推送。</div>""",
+                            unsafe_allow_html=True)
+
+                    # 手动生成报告
+                    _rpt_col1, _rpt_col2 = st.columns(2)
+                    with _rpt_col1:
+                        if st.button("📊 生成日报", key="gen_daily", use_container_width=True):
+                            with st.spinner("生成日报中…"):
+                                try:
+                                    _scheduler = ReportScheduler(gateway=_gw if HAS_V10_GATEWAY else None)
+                                    _result = _scheduler.generate_now("daily")
+                                    st.success(f"✅ 日报已生成")
+                                    st.download_button(
+                                        "📥 下载日报",
+                                        _result["report"],
+                                        f"mrarfai_daily_{datetime.now().strftime('%Y%m%d')}.md",
+                                        "text/markdown",
+                                        use_container_width=True,
+                                    )
+                                except Exception as e:
+                                    st.error(f"生成失败: {e}")
+                    with _rpt_col2:
+                        if st.button("📈 生成周报", key="gen_weekly", use_container_width=True):
+                            with st.spinner("生成周报中…"):
+                                try:
+                                    _scheduler = ReportScheduler(gateway=_gw if HAS_V10_GATEWAY else None)
+                                    _result = _scheduler.generate_now("weekly")
+                                    st.success(f"✅ 周报已生成")
+                                    st.download_button(
+                                        "📥 下载周报",
+                                        _result["report"],
+                                        f"mrarfai_weekly_{datetime.now().strftime('%Y%m%d')}.md",
+                                        "text/markdown",
+                                        use_container_width=True,
+                                    )
+                                except Exception as e:
+                                    st.error(f"生成失败: {e}")
+
+                    # 发送测试邮件
+                    if _rpt_enabled:
+                        if st.button("📨 发送测试邮件", key="test_email", use_container_width=True):
+                            with st.spinner("发送中…"):
+                                try:
+                                    _scheduler = ReportScheduler(gateway=_gw if HAS_V10_GATEWAY else None)
+                                    _result = _scheduler.generate_now("daily")
+                                    from scheduled_report import EmailSender
+                                    _email_result = EmailSender(_rpt_config).send(
+                                        _result["subject"], _result["report"]
+                                    )
+                                    if _email_result.get("status") == "ok":
+                                        st.success(f"✅ 测试邮件已发送至 {', '.join(_email_result.get('recipients', []))}")
+                                    else:
+                                        st.error(f"❌ 发送失败: {_email_result.get('message', '')}")
+                                except Exception as e:
+                                    st.error(f"发送失败: {e}")
+
+                    st.markdown(f"""<div style="font-size:0.5rem;color:#555;font-family:'JetBrains Mono',monospace;margin-top:8px;">
+                        <b>报告频率:</b> daily (日报) / weekly (周报) / monthly (月报)<br>
+                        <b>推送方式:</b> SMTP 邮件 + 本地文件保存<br>
+                        <b>配置方法:</b> 编辑 .env 中 REPORT_SMTP_HOST, REPORT_SMTP_USER, REPORT_RECIPIENTS 等变量
+                    </div>""", unsafe_allow_html=True)
+
+            # ── 操作日志 (管理员可见) ──
+            if is_admin() and HAS_V10_GATEWAY:
+                _log_label = "操作日志" if st.session_state.lang == "zh" else "Audit Log"
+                with st.expander(f"📋 {_log_label}", expanded=False):
+                    _audit_stats = _gw.audit.get_stats()
+                    _recent_logs = _gw.audit.recent(30)
+
+                    # 统计概览
+                    _log_c1, _log_c2, _log_c3 = st.columns(3)
+                    with _log_c1:
+                        st.markdown(f"""<div style="text-align:center;padding:8px;background:#0a0a0a;border:1px solid #222;">
+                            <div style="font-size:1rem;font-weight:700;color:#00FF88;font-family:'Space Grotesk',sans-serif;">
+                                {_audit_stats.get('total_requests', 0)}</div>
+                            <div style="font-size:0.4rem;color:#555;font-family:'JetBrains Mono',monospace;">
+                                {'总请求' if st.session_state.lang == 'zh' else 'Total Requests'}</div>
+                        </div>""", unsafe_allow_html=True)
+                    with _log_c2:
+                        _avg_ms = _audit_stats.get('avg_duration_ms', 0)
+                        st.markdown(f"""<div style="text-align:center;padding:8px;background:#0a0a0a;border:1px solid #222;">
+                            <div style="font-size:1rem;font-weight:700;color:#00A0C8;font-family:'Space Grotesk',sans-serif;">
+                                {_avg_ms:.0f}ms</div>
+                            <div style="font-size:0.4rem;color:#555;font-family:'JetBrains Mono',monospace;">
+                                {'平均响应' if st.session_state.lang == 'zh' else 'Avg Response'}</div>
+                        </div>""", unsafe_allow_html=True)
+                    with _log_c3:
+                        _by_status = _audit_stats.get('by_status', {})
+                        _fail_count = _by_status.get('failed', 0) + _by_status.get('error', 0)
+                        _fail_color = "#D94040" if _fail_count > 0 else "#4ade80"
+                        st.markdown(f"""<div style="text-align:center;padding:8px;background:#0a0a0a;border:1px solid #222;">
+                            <div style="font-size:1rem;font-weight:700;color:{_fail_color};font-family:'Space Grotesk',sans-serif;">
+                                {_fail_count}</div>
+                            <div style="font-size:0.4rem;color:#555;font-family:'JetBrains Mono',monospace;">
+                                {'失败请求' if st.session_state.lang == 'zh' else 'Failed'}</div>
+                        </div>""", unsafe_allow_html=True)
+
+                    # Agent 分布
+                    _by_agent = _audit_stats.get('by_agent', {})
+                    if _by_agent:
+                        _agent_dist_label = "Agent 请求分布" if st.session_state.lang == "zh" else "Agent Distribution"
+                        st.markdown(f"""<div style="font-size:0.5rem;color:#888;font-family:'JetBrains Mono',monospace;
+                            margin:12px 0 4px;">{_agent_dist_label}:</div>""", unsafe_allow_html=True)
+                        for _ag, _cnt in sorted(_by_agent.items(), key=lambda x: -x[1]):
+                            _pct = (_cnt / max(1, _audit_stats.get('total_requests', 1))) * 100
+                            _ag_icon = _agent_icons.get(_ag, "🤖")
+                            st.markdown(f"""<div style="font-size:0.5rem;font-family:'JetBrains Mono',monospace;
+                                color:#e0e0e0;display:flex;align-items:center;gap:6px;padding:2px 0;">
+                                <span>{_ag_icon} {_ag}</span>
+                                <div style="flex:1;background:#111;height:6px;border-radius:3px;">
+                                    <div style="width:{min(_pct, 100):.0f}%;background:#00FF88;height:6px;border-radius:3px;"></div>
+                                </div>
+                                <span style="color:#888;min-width:50px;text-align:right;">{_cnt} ({_pct:.0f}%)</span>
+                            </div>""", unsafe_allow_html=True)
+
+                    # 最近日志列表
+                    if _recent_logs:
+                        _recent_label = "最近请求" if st.session_state.lang == "zh" else "Recent Requests"
+                        st.markdown(f"""<div style="font-size:0.5rem;color:#888;font-family:'JetBrains Mono',monospace;
+                            margin:12px 0 4px;">{_recent_label}:</div>""", unsafe_allow_html=True)
+                        for _log in reversed(_recent_logs[-15:]):
+                            _ts = _log.get("timestamp", "")[:19].replace("T", " ")
+                            _lag = _log.get("agent", "?")
+                            _lq = _log.get("query", "")[:40]
+                            _lst = _log.get("status", "?")
+                            _ldur = _log.get("duration_ms", 0)
+                            _luser = _log.get("user", "")
+                            _st_color = "#4ade80" if _lst == "completed" else "#D94040" if _lst in ("failed","error") else "#f59e0b"
+                            st.markdown(f"""<div style="font-size:0.45rem;font-family:'JetBrains Mono',monospace;
+                                color:#aaa;padding:3px 0;border-bottom:1px solid #181818;">
+                                <span style="color:#555;">{_ts}</span>
+                                <span style="color:{_st_color};">●</span>
+                                {_agent_icons.get(_lag,'🤖')} {_lag}
+                                · {_luser}
+                                · <span style="color:#e0e0e0;">{_lq}</span>
+                                · {_ldur:.0f}ms
+                            </div>""", unsafe_allow_html=True)
+
+                    # API 限流状态
+                    _rl_label = "API 限流状态" if st.session_state.lang == "zh" else "API Rate Limit"
+                    st.markdown(f"""<div style="font-size:0.5rem;color:#888;font-family:'JetBrains Mono',monospace;
+                        margin:12px 0 4px;">{_rl_label}:</div>""", unsafe_allow_html=True)
+                    _rl = _gw.rate_limiter.get_usage()
+                    _rl_min = _rl.get("global_last_minute", 0)
+                    _rl_hr = _rl.get("global_last_hour", 0)
+                    _rl_lim_min = _rl.get("global_limit_minute", 300)
+                    _rl_lim_hr = _rl.get("global_limit_hour", 5000)
+                    st.markdown(f"""<div style="font-size:0.5rem;font-family:'JetBrains Mono',monospace;color:#e0e0e0;">
+                        ⚡ 分钟: {_rl_min}/{_rl_lim_min} · 小时: {_rl_hr}/{_rl_lim_hr}
                     </div>""", unsafe_allow_html=True)
 
             st.stop()
@@ -1498,7 +1750,7 @@ if HAS_V10_GATEWAY:
                                 "trigger_keywords": [],
                             }
                             _history.append({"role": "user", "content": f"[自定义协作] {_chain_name}"})
-                            _result = _gw.collaboration.execute_chain(_custom_scenario, _chain_name)
+                            _result = _gw.collaboration.execute_chain(_custom_scenario, _chain_name, user=_current_user.get("username", "anonymous"))
                             if _v10_api_key:
                                 _result["synthesis"] = _gw._llm_synthesize_collab(
                                     _custom_scenario,
@@ -1518,6 +1770,81 @@ if HAS_V10_GATEWAY:
                 elif _selected and len(_selected) < 2:
                     _min_hint = "至少选择2个Agent" if st.session_state.lang == "zh" else "Select at least 2 Agents"
                     st.caption(_min_hint)
+
+            # ── 协作历史回溯 ──
+            _mem_label = "协作历史" if st.session_state.lang == "zh" else "Collaboration History"
+            with st.expander(f"📚 {_mem_label}", expanded=False):
+                _mem = _gw.collaboration.memory
+                _mem_records = _mem.list_recent(20)
+
+                if not _mem_records:
+                    _no_mem = "暂无协作记录。执行协作场景后，结果将自动存档。" if st.session_state.lang == "zh" else "No records yet. Run a collaboration scenario to create one."
+                    st.markdown(f"""<div style="font-size:0.55rem;color:#555;font-family:'JetBrains Mono',monospace;">
+                        {_no_mem}</div>""", unsafe_allow_html=True)
+                else:
+                    _mem_stats = _mem.get_stats()
+                    _total_label = "总记录" if st.session_state.lang == "zh" else "Total records"
+                    st.markdown(f"""<div style="font-size:0.5rem;color:#555;font-family:'JetBrains Mono',monospace;margin-bottom:8px;">
+                        📊 {_total_label}: {_mem_stats.get('total_records', 0)}</div>""", unsafe_allow_html=True)
+
+                    for _rec in _mem_records:
+                        _ts = _rec.get("timestamp", "")[:16].replace("T", " ")
+                        _sc_name = _rec.get("scenario", "?")
+                        _agents = _rec.get("total_agents", 0)
+                        _done = _rec.get("completed", 0)
+                        _status_dot = "🟢" if _done == _agents else "🟡"
+                        _mid = _rec.get("memory_id", "")
+
+                        _rec_col1, _rec_col2 = st.columns([4, 1])
+                        with _rec_col1:
+                            st.markdown(f"""<div style="font-size:0.55rem;font-family:'JetBrains Mono',monospace;
+                                color:#e0e0e0;padding:4px 0;border-bottom:1px solid #222;">
+                                {_status_dot} <span style="color:#00A0C8;">{_sc_name}</span>
+                                · {_agents} agents · {_ts}
+                                · <span style="color:#555;">{_rec.get('user','')}</span></div>""",
+                                unsafe_allow_html=True)
+                        with _rec_col2:
+                            if st.button("🔍", key=f"mem_{_mid}", help="查看详情"):
+                                _full = _mem.load(_mid)
+                                if _full:
+                                    st.session_state[f"_show_mem_{_mid}"] = True
+
+                        # 展开详情
+                        if st.session_state.get(f"_show_mem_{_mid}", False):
+                            _full = _mem.load(_mid)
+                            if _full:
+                                st.markdown(f"""<div style="font-size:0.5rem;font-family:'JetBrains Mono',monospace;
+                                    color:#888;background:#0a0a0a;padding:12px;margin:4px 0 12px;border:1px solid #222;">
+                                    <b>场景:</b> {_full.get('scenario','')}<br>
+                                    <b>描述:</b> {_full.get('description','')}<br>
+                                    <b>时间:</b> {_full.get('timestamp','')}<br>
+                                    <b>用户:</b> {_full.get('user','')}<br>
+                                    <b>执行步骤:</b> {_full.get('completed',0)}/{_full.get('total_agents',0)} 完成
+                                </div>""", unsafe_allow_html=True)
+
+                                # Agent 结果
+                                for _aname, _ares in _full.get("agent_results", {}).items():
+                                    _a_icon = _agent_icons.get(_aname, "🤖")
+                                    _a_cn = _agent_names_cn.get(_aname, _aname)
+                                    st.markdown(f"""<div style="font-size:0.5rem;font-family:'JetBrains Mono',monospace;
+                                        color:#00FF88;margin-top:6px;">▸ {_a_icon} {_a_cn}</div>""",
+                                        unsafe_allow_html=True)
+                                    try:
+                                        _parsed = json.loads(_ares) if isinstance(_ares, str) else _ares
+                                        st.json(_parsed)
+                                    except Exception:
+                                        st.code(str(_ares)[:500], language="text")
+
+                                # 综合分析
+                                _syn = _full.get("synthesis", "")
+                                if _syn:
+                                    _syn_label = "综合分析" if st.session_state.lang == "zh" else "Synthesis"
+                                    st.markdown(f"**📝 {_syn_label}:**")
+                                    st.markdown(_syn[:1000])
+
+                                if st.button("收起", key=f"close_mem_{_mid}"):
+                                    st.session_state[f"_show_mem_{_mid}"] = False
+                                    st.rerun()
 
         else:
             # ── V10 独立 Agent 界面 ──

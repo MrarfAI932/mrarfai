@@ -220,9 +220,9 @@ def compute_health_scores(data: dict, results: dict) -> list:
 
 def _grade_color(grade):
     return {
-        'A': '#00FF88', 'B': '#00A0C8',
-        'C': '#FF8800', 'D': '#D94040', 'F': '#ef4444',
-    }.get(grade, '#8a8a8a')
+        'A': '#10b981', 'B': '#6366f1',
+        'C': '#f59e0b', 'D': '#f97316', 'F': '#ef4444',
+    }.get(grade, '#94a3b8')
 
 
 def make_health_overview_chart(scores: list):
@@ -244,7 +244,7 @@ def make_health_overview_chart(scores: list):
     fig.update_layout(
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(0,0,0,0)',
-        font=dict(color='#8a8a8a', family='JetBrains Mono'),
+        font=dict(color='#e2e8f0'),
         margin=dict(l=20, r=20, t=30, b=20),
         height=300,
         showlegend=False,
@@ -266,21 +266,21 @@ def make_radar_chart(score: dict):
         r=normalized,
         theta=categories,
         fill='toself',
-        fillcolor="rgba(0,255,136,0.10)",
-        line=dict(color='#00FF88', width=2),
-        marker=dict(size=6, color='#00FF88'),
+        fillcolor=f"rgba(99,102,241,0.15)",
+        line=dict(color='#6366f1', width=2),
+        marker=dict(size=6, color='#6366f1'),
     ))
     fig.update_layout(
         polar=dict(
             bgcolor='rgba(0,0,0,0)',
             radialaxis=dict(
                 visible=True, range=[0, 100],
-                gridcolor='rgba(255,255,255,0.04)',
-                tickfont=dict(size=9, color='#6a6a6a', family='JetBrains Mono'),
+                gridcolor='rgba(148,163,184,0.15)',
+                tickfont=dict(size=9, color='#64748b'),
             ),
             angularaxis=dict(
-                gridcolor='rgba(255,255,255,0.04)',
-                tickfont=dict(size=11, color='#8a8a8a', family='JetBrains Mono'),
+                gridcolor='rgba(148,163,184,0.15)',
+                tickfont=dict(size=11, color='#cbd5e1'),
             ),
         ),
         paper_bgcolor='rgba(0,0,0,0)',
@@ -305,7 +305,7 @@ def make_scatter_chart(scores: list):
             name=f'{grade}级',
             text=[s['客户'][:6] for s in subset],
             textposition='top center',
-            textfont=dict(size=9, color='#6a6a6a', family='JetBrains Mono'),
+            textfont=dict(size=9, color='#94a3b8'),
             marker=dict(
                 size=[max(8, min(40, s['年度金额'] / max(1, scores[0]['年度金额']) * 40)) for s in subset],
                 color=_grade_color(grade),
@@ -313,19 +313,19 @@ def make_scatter_chart(scores: list):
                 line=dict(width=1, color='rgba(255,255,255,0.3)'),
             ),
         ))
-
+    
     fig.update_layout(
-        xaxis=dict(title=dict(text='年度金额 (万)', font=dict(color='#8a8a8a', family='JetBrains Mono')),
-                   gridcolor='rgba(255,255,255,0.04)', tickfont=dict(color='#6a6a6a', family='JetBrains Mono')),
-        yaxis=dict(title=dict(text='健康评分', font=dict(color='#8a8a8a', family='JetBrains Mono')),
-                   gridcolor='rgba(255,255,255,0.04)', range=[0, 105],
-                   tickfont=dict(color='#6a6a6a', family='JetBrains Mono')),
+        xaxis=dict(title=dict(text='年度金额 (万)', font=dict(color='#94a3b8')),
+                   gridcolor='rgba(148,163,184,0.1)', tickfont=dict(color='#94a3b8')),
+        yaxis=dict(title=dict(text='健康评分', font=dict(color='#94a3b8')),
+                   gridcolor='rgba(148,163,184,0.1)', range=[0, 105],
+                   tickfont=dict(color='#94a3b8')),
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(0,0,0,0)',
-        font=dict(color='#8a8a8a', family='JetBrains Mono'),
+        font=dict(color='#e2e8f0'),
         margin=dict(l=50, r=20, t=20, b=50),
         height=350,
-        legend=dict(font=dict(color='#8a8a8a', family='JetBrains Mono')),
+        legend=dict(font=dict(color='#94a3b8')),
     )
     return fig
 
@@ -365,7 +365,7 @@ def render_health_dashboard(data: dict, results: dict):
         st.plotly_chart(make_scatter_chart(scores), use_container_width=True, key="health_scatter")
     
     # 客户列表
-    st.markdown('<div class="section-header">CLIENT HEALTH RANKING</div>', unsafe_allow_html=True)
+    st.markdown("#### 客户健康评分排行")
     
     # 筛选器
     filter_col1, filter_col2 = st.columns([1, 3])
@@ -381,9 +381,8 @@ def render_health_dashboard(data: dict, results: dict):
     for i, s in enumerate(filtered[:20]):
         color = _grade_color(s['等级'])
         risk_html = " ".join(
-            f'<span style="font-size:0.65rem; background:rgba(217,64,64,0.08); '
-            f'padding:3px 8px; color:#D94040; border:1px solid rgba(217,64,64,0.25); '
-            f'font-family:\'JetBrains Mono\',monospace; font-weight:700;">{t}</span>'
+            f'<span style="font-size:0.7rem; background:rgba(239,68,68,0.1); '
+            f'padding:2px 6px; border-radius:4px; color:#fca5a5;">{t}</span>'
             for t in s['风险标签']
         ) if s['风险标签'] else ''
         
