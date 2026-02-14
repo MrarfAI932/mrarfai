@@ -452,6 +452,18 @@ class CollaborationEngine:
         if HAS_MARKET:
             self.engines["market"] = MarketEngine()
 
+    def add_custom_scenario(self, name: str, chain: List[str], description: str = "") -> str:
+        """添加自定义协作场景，返回 scenario_id"""
+        scenario_id = f"custom_{len(self.scenarios) + 1}"
+        self.scenarios[scenario_id] = {
+            "name": name,
+            "trigger_keywords": [],   # 自定义场景不需要关键词触发
+            "chain": chain,
+            "description": description or f"自定义: {' → '.join(chain)}",
+            "custom": True,
+        }
+        return scenario_id
+
     def detect_scenario(self, query: str) -> Optional[Dict]:
         """检测是否匹配协作场景"""
         q = query.lower()
