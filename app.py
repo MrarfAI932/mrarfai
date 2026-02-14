@@ -134,6 +134,46 @@ _user_role = _current_user.get("role", "viewer") if _current_user else "viewer"
 _allowed_agents = get_allowed_agents(_user_role)
 _role_perms = get_role_permissions(_user_role)
 
+# ============================================================
+# 多语言 i18n (中/英)
+# ============================================================
+if "lang" not in st.session_state:
+    st.session_state.lang = "zh"
+
+_I18N = {
+    "command_center": {"zh": "COMMAND CENTER", "en": "COMMAND CENTER"},
+    "agents_available": {"zh": "AGENTS AVAILABLE", "en": "AGENTS AVAILABLE"},
+    "select_agent": {"zh": "选择一个 Agent 进入专属工作台", "en": "Select an Agent to enter its workspace"},
+    "current_role": {"zh": "当前角色", "en": "Current role"},
+    "enter": {"zh": "进入", "en": "Enter"},
+    "back": {"zh": "← 返回", "en": "← Back"},
+    "agent_workspace": {"zh": "AGENT WORKSPACE", "en": "AGENT WORKSPACE"},
+    "cross_agent_collab": {"zh": "跨Agent协作", "en": "Cross-Agent Collaboration"},
+    "collab_desc": {"zh": "出货异常追踪 · 智能报价 · 月度复盘 · 供应商延迟", "en": "Shipment Tracking · Smart Pricing · Monthly Review · Supplier Delay"},
+    "collab_hint": {"zh": "选择协作场景，触发多Agent链式分析", "en": "Select a scenario to trigger multi-Agent chain analysis"},
+    "upload_data": {"zh": "上传自定义数据（Excel） — 替换内置样本数据", "en": "Upload Custom Data (Excel) — Replace Sample Data"},
+    "upload_excel": {"zh": "上传报表", "en": "Upload Reports"},
+    "upload_hint_v9": {"zh": "上传 Sprocomm 金额报表 + 数量报表 (Excel) 解锁全部分析功能", "en": "Upload revenue + quantity reports (Excel) to unlock full analysis"},
+    "upload_please": {"zh": "请上传 2 个 Excel 文件（金额报表 + 数量报表）", "en": "Please upload 2 Excel files (revenue + quantity reports)"},
+    "ai_enabled": {"zh": "AI 智能回答已启用", "en": "AI Smart Reply Enabled"},
+    "key_builtin": {"zh": "Key 已内置", "en": "Key Built-in"},
+    "ask_agent": {"zh": "提问...", "en": "Ask..."},
+    "no_access": {"zh": "无权访问", "en": "Access Denied"},
+    "no_upload": {"zh": "无上传权限，请联系管理员", "en": "No upload permission, please contact admin"},
+    "no_collab": {"zh": "无权使用跨Agent协作", "en": "No access to cross-Agent collaboration"},
+    "logout": {"zh": "登出", "en": "Logout"},
+    "data_loaded": {"zh": "数据已加载", "en": "Data Loaded"},
+    "scenarios": {"zh": "scenarios", "en": "scenarios"},
+    "skills": {"zh": "skills", "en": "skills"},
+    "online": {"zh": "ONLINE", "en": "ONLINE"},
+    "need_upload": {"zh": "需上传Excel", "en": "Upload Required"},
+}
+
+def _t(key: str) -> str:
+    """获取当前语言的翻译文本"""
+    entry = _I18N.get(key, {})
+    return entry.get(st.session_state.lang, entry.get("zh", key))
+
 
 # ============================================================
 # 内联主题 — Command Center (完整版)
@@ -627,8 +667,8 @@ button[kind="headerNoPadding"] { display: none !important; }
 # ============================================================
 _user = get_current_user()
 
-# Top bar — logo + user + logout
-_bar1, _bar2 = st.columns([5, 1])
+# Top bar — logo + user + logout + lang toggle
+_bar1, _bar_lang, _bar2 = st.columns([5, 0.5, 0.8])
 with _bar1:
     # 读取 topbar logo
     _topbar_logo_b64 = ""
@@ -659,8 +699,13 @@ with _bar1:
         </div>
     </div>
     """, unsafe_allow_html=True)
+with _bar_lang:
+    _lang_label = "EN" if st.session_state.lang == "zh" else "中"
+    if st.button(_lang_label, key="lang_toggle", use_container_width=True):
+        st.session_state.lang = "en" if st.session_state.lang == "zh" else "zh"
+        st.rerun()
 with _bar2:
-    if st.button("登出", key="logout_btn", type="secondary", use_container_width=True):
+    if st.button(_t("logout"), key="logout_btn", type="secondary", use_container_width=True):
         logout()
         st.rerun()
 
@@ -750,11 +795,16 @@ if HAS_V10_GATEWAY:
             "sales": "📈", "procurement": "🛒", "quality": "🔍",
             "finance": "💰", "market": "📊", "risk": "🚨", "strategist": "🔮",
         }
-        _agent_names_cn = {
+        _agent_names_zh = {
             "sales": "销售分析", "procurement": "采购管理", "quality": "品质检测",
             "finance": "财务分析", "market": "市场情报", "risk": "风控预警", "strategist": "战略顾问",
         }
-        _agent_desc = {
+        _agent_names_en = {
+            "sales": "Sales", "procurement": "Procurement", "quality": "Quality",
+            "finance": "Finance", "market": "Market Intel", "risk": "Risk Alert", "strategist": "Strategist",
+        }
+        _agent_names_cn = _agent_names_zh if st.session_state.lang == "zh" else _agent_names_en
+        _agent_desc_zh = {
             "sales": "客户分析 · 价量分解 · 增长机会 · 流失预警",
             "procurement": "供应商评估 · PO跟踪 · 比价分析 · 延迟预警",
             "quality": "良率监控 · 退货分析 · 投诉分类 · 根因追溯",
@@ -763,6 +813,16 @@ if HAS_V10_GATEWAY:
             "risk": "流失预警 · 异常检测 · 风险评分 · 健康诊断",
             "strategist": "行业对标 · 场景预测 · 增长策略 · CEO备忘录",
         }
+        _agent_desc_en = {
+            "sales": "Client Analysis · Revenue Decomposition · Growth · Churn",
+            "procurement": "Supplier Eval · PO Track · Price Compare · Delay Alert",
+            "quality": "Yield Monitor · Returns · Complaints · Root Cause",
+            "finance": "AR Tracking · Margin Analysis · Cash Flow · Invoice Match",
+            "market": "Competitor Watch · Trends · Sentiment · Market Overview",
+            "risk": "Churn Alert · Anomaly Detection · Risk Score · Health",
+            "strategist": "Benchmark · Forecast · Growth Strategy · CEO Memo",
+        }
+        _agent_desc = _agent_desc_zh if st.session_state.lang == "zh" else _agent_desc_en
         # 哪些 Agent 有独立 engine（可直接使用）
         _has_engine = {"procurement", "quality", "finance", "market"}
         # sales 需要上传文件
@@ -777,17 +837,17 @@ if HAS_V10_GATEWAY:
         # ── 如果没有选择 Agent，显示主面板 ──
         if st.session_state.active_agent is None:
             # Command Center 标题
-            st.markdown("""
+            st.markdown(f"""
             <div style="background:linear-gradient(135deg,#0d1117,#161b22);padding:20px 24px;
                         border:1px solid rgba(255,255,255,0.08);margin-bottom:20px;">
                 <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
                     <span style="font-family:'Space Grotesk',sans-serif;font-size:1rem;
-                          font-weight:700;color:#FFF;letter-spacing:0.06em;">COMMAND CENTER</span>
+                          font-weight:700;color:#FFF;letter-spacing:0.06em;">{_t('command_center')}</span>
                     <span style="font-size:0.5rem;color:#555;font-family:'JetBrains Mono',monospace;
-                          border:1px solid #333;padding:2px 6px;">V10.0 · {len(_allowed_agents)} AGENTS AVAILABLE</span>
+                          border:1px solid #333;padding:2px 6px;">V10.0 · {len(_allowed_agents)} {_t('agents_available')}</span>
                 </div>
                 <div style="font-size:0.6rem;color:#555;font-family:'JetBrains Mono',monospace;">
-                    选择一个 Agent 进入专属工作台　｜　当前角色: {_role_perms.get('label', _user_role)}
+                    {_t('select_agent')}　｜　{_t('current_role')}: {_role_perms.get('label', _user_role)}
                 </div>
             </div>
             """, unsafe_allow_html=True)
@@ -811,7 +871,7 @@ if HAS_V10_GATEWAY:
                 _sk = len(_ac.skills) if _ac else 0
                 _available = _name in _has_engine
                 _status_color = "#4ade80" if _available else "#f59e0b"
-                _status_text = "ONLINE" if _available else "需上传Excel"
+                _status_text = _t("online") if _available else _t("need_upload")
 
                 with _col:
                     st.markdown(f"""
@@ -823,7 +883,7 @@ if HAS_V10_GATEWAY:
                         <div style="font-family:'JetBrains Mono',monospace;font-size:0.45rem;
                              color:#666;margin-bottom:8px;line-height:1.4;">{_desc}</div>
                         <div style="font-family:'JetBrains Mono',monospace;font-size:0.45rem;color:#555;">
-                            {_sk} skills</div>
+                            {_sk} {_t('skills')}</div>
                         <div style="display:flex;align-items:center;justify-content:center;gap:4px;margin-top:4px;">
                             <div style="width:5px;height:5px;border-radius:50%;background:{_status_color};"></div>
                             <span style="font-size:0.4rem;color:{_status_color};font-family:'JetBrains Mono',monospace;">
@@ -831,7 +891,7 @@ if HAS_V10_GATEWAY:
                         </div>
                     </div>""", unsafe_allow_html=True)
 
-                    if st.button(f"进入 {_cn}", key=f"enter_{_name}", use_container_width=True):
+                    if st.button(f"{_t('enter')} {_cn}", key=f"enter_{_name}", use_container_width=True):
                         st.session_state.active_agent = _name
                         st.rerun()
 
@@ -846,19 +906,19 @@ if HAS_V10_GATEWAY:
                              padding:16px;text-align:center;min-height:160px;">
                             <div style="font-size:2rem;margin-bottom:4px;">⚡</div>
                             <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;
-                                 font-size:0.8rem;color:#FFF;margin-bottom:4px;">跨Agent协作</div>
+                                 font-size:0.8rem;color:#FFF;margin-bottom:4px;">{_t('cross_agent_collab')}</div>
                             <div style="font-family:'JetBrains Mono',monospace;font-size:0.45rem;
                                  color:#666;margin-bottom:8px;line-height:1.4;">
-                                 出货异常追踪 · 智能报价 · 月度复盘 · 供应商延迟</div>
+                                 {_t('collab_desc')}</div>
                             <div style="font-family:'JetBrains Mono',monospace;font-size:0.45rem;color:#555;">
-                                4 scenarios</div>
+                                4 {_t('scenarios')}</div>
                             <div style="display:flex;align-items:center;justify-content:center;gap:4px;margin-top:4px;">
                                 <div style="width:5px;height:5px;border-radius:50%;background:#4ade80;"></div>
                                 <span style="font-size:0.4rem;color:#4ade80;font-family:'JetBrains Mono',monospace;">
-                                    ONLINE</span>
+                                    {_t('online')}</span>
                             </div>
                         </div>""", unsafe_allow_html=True)
-                        if st.button("进入 跨Agent协作", key="enter_collab", use_container_width=True):
+                        if st.button(f"{_t('enter')} {_t('cross_agent_collab')}", key="enter_collab", use_container_width=True):
                             st.session_state.active_agent = "_collab"
                             st.rerun()
 
@@ -867,22 +927,22 @@ if HAS_V10_GATEWAY:
         # ── 选择了某个 Agent → 显示专属界面 ──
         _active = st.session_state.active_agent
         _icon = _agent_icons.get(_active, "⚡")
-        _cn = _agent_names_cn.get(_active, "跨Agent协作")
+        _cn = _agent_names_cn.get(_active, _t("cross_agent_collab"))
 
         # 权限守卫 — 阻止未授权访问
         if _active == "_collab" and not can_use_collab(_user_role):
-            st.error(f"⚠ 当前角色「{_role_perms.get('label', _user_role)}」无权使用跨Agent协作")
+            st.error(f"⚠ {_t('no_collab')}")
             st.session_state.active_agent = None
             st.rerun()
         elif _active != "_collab" and not can_access_agent(_user_role, _active):
-            st.error(f"⚠ 当前角色「{_role_perms.get('label', _user_role)}」无权访问 {_cn}")
+            st.error(f"⚠ {_t('no_access')} — {_cn}")
             st.session_state.active_agent = None
             st.rerun()
 
         # 返回按钮 + Agent 标题
         _back_col, _title_col = st.columns([1, 5])
         with _back_col:
-            if st.button("← 返回", key="back_to_main", use_container_width=True):
+            if st.button(_t("back"), key="back_to_main", use_container_width=True):
                 st.session_state.active_agent = None
                 st.rerun()
         with _title_col:
@@ -892,7 +952,7 @@ if HAS_V10_GATEWAY:
                 <span style="font-family:'Space Grotesk',sans-serif;font-size:1.1rem;
                       font-weight:700;color:#FFF;letter-spacing:0.04em;">{_cn}</span>
                 <span style="font-size:0.5rem;color:#555;font-family:'JetBrains Mono',monospace;
-                      border:1px solid #333;padding:2px 6px;">AGENT WORKSPACE</span>
+                      border:1px solid #333;padding:2px 6px;">{_t('agent_workspace')}</span>
             </div>""", unsafe_allow_html=True)
 
         st.markdown("---")
@@ -904,7 +964,7 @@ if HAS_V10_GATEWAY:
             if _v10_api_key:
                 # 已内置 Key，显示状态
                 st.markdown(f"""<div style="font-size:0.55rem;color:#4ade80;font-family:'JetBrains Mono',monospace;
-                    padding:4px 0 8px 0;">✅ AI 智能回答已启用 · {_v10_provider} · Key 已内置</div>""", unsafe_allow_html=True)
+                    padding:4px 0 8px 0;">✅ {_t('ai_enabled')} · {_v10_provider} · {_t('key_builtin')}</div>""", unsafe_allow_html=True)
             else:
                 # 无内置 Key，显示输入框
                 _ai_cfg_col1, _ai_cfg_col2 = st.columns([1, 3])
@@ -928,14 +988,14 @@ if HAS_V10_GATEWAY:
         # ── 销售/风控/战略: 需要上传 Excel 的 Agent ──
         if _active in _needs_upload:
             if not can_upload(_user_role):
-                st.warning(f"⚠ 当前角色「{_role_perms.get('label', _user_role)}」无上传权限，请联系管理员")
+                st.warning(f"⚠ {_t('no_upload')}")
                 st.stop()
             st.markdown(f"""<div style="font-size:0.65rem;color:#888;font-family:'JetBrains Mono',monospace;
-                margin-bottom:12px;">上传 Sprocomm 金额报表 + 数量报表 (Excel) 解锁全部分析功能</div>""",
+                margin-bottom:12px;">{_t('upload_hint_v9')}</div>""",
                 unsafe_allow_html=True)
 
             uploaded_files = st.file_uploader(
-                "上传报表", type=['xlsx'],
+                _t("upload_excel"), type=['xlsx'],
                 accept_multiple_files=True, key=f'files_{_active}',
                 label_visibility="collapsed",
             )
@@ -963,7 +1023,7 @@ if HAS_V10_GATEWAY:
             st.session_state["api_key"] = api_key or ""
 
             if not uploaded_files or len(uploaded_files) < 2:
-                st.info("📎 请上传 2 个 Excel 文件（金额报表 + 数量报表）")
+                st.info(f"📎 {_t('upload_please')}")
                 st.stop()
 
             # ── 加载数据后跳到下面的 tabs 逻辑 ──
@@ -1331,7 +1391,7 @@ if HAS_V10_GATEWAY:
             # ── 协作场景界面 ──
             _scenarios = _gw.collaboration.scenarios
             st.markdown("""<div style="font-size:0.7rem;color:#888;font-family:'JetBrains Mono',monospace;
-                margin-bottom:12px;">选择协作场景，触发多Agent链式分析</div>""", unsafe_allow_html=True)
+                margin-bottom:12px;">{_t('collab_hint')}</div>""", unsafe_allow_html=True)
 
             _sc_cols = st.columns(len(_scenarios))
             for _i, (_sid, _scfg) in enumerate(_scenarios.items()):
@@ -1372,7 +1432,7 @@ if HAS_V10_GATEWAY:
                     _dfs = st.session_state[_data_key]
                     st.info(f"📊 使用已上传的自定义数据 ({sum(len(df) for df in _dfs.values())} 条记录)")
             else:
-                with st.expander(f"📎 上传自定义数据（Excel） — 替换内置样本数据", expanded=False):
+                with st.expander(f"📎 {_t('upload_data')}", expanded=False):
                     st.markdown(f"""<div style="font-size:0.55rem;color:#888;font-family:'JetBrains Mono',monospace;
                         white-space:pre-line;line-height:1.5;">{_upload_hints.get(_active, '')}</div>""", unsafe_allow_html=True)
                     _uploaded_data = st.file_uploader(
@@ -1464,7 +1524,7 @@ if HAS_V10_GATEWAY:
                 </div>""", unsafe_allow_html=True)
 
         # ── 自由输入框 ──
-        _v10q = st.chat_input(f"向 {_cn} 提问...", key=f"chat_input_{_active}")
+        _v10q = st.chat_input(f"{_t('ask_agent')} {_cn}", key=f"chat_input_{_active}")
         if _v10q:
             _history.append({"role": "user", "content": _v10q})
             _resp = _gw.ask(_v10q, user="admin", provider=_v10_provider.lower(), api_key=_v10_api_key, chat_history=_history)
