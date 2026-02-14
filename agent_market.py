@@ -157,10 +157,11 @@ class MarketEngine:
 
     def monitor_competitor(self, name: str = "") -> Dict:
         """竞品监控"""
+        all_comps = list(self.competitors.values())
         if name:
-            targets = [c for c in COMPETITORS if name in c.name]
+            targets = [c for c in all_comps if name in c.name]
         else:
-            targets = COMPETITORS
+            targets = all_comps
 
         return {
             "competitors": [

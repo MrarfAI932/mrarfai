@@ -191,6 +191,13 @@ try:
 except ImportError:
     HAS_MARKET = False
 
+# 数据库连接器（可选 — 用于从 ERP/MES 加载数据）
+try:
+    from db_connector import create_engines_from_db, DatabaseConfig
+    HAS_DB_CONNECTOR = True
+except ImportError:
+    HAS_DB_CONNECTOR = False
+
 
 # ============================================================
 # 审计日志
@@ -442,15 +449,26 @@ class CollaborationEngine:
         self._init_engines()
 
     def _init_engines(self):
-        """初始化各 Agent 引擎"""
+        """初始化各 Agent 引擎（优先从 DB 加载，回退到内置样本数据）"""
+        # 尝试从数据库加载
+        db_engines = {}
+        if HAS_DB_CONNECTOR:
+            try:
+                db_engines = create_engines_from_db()
+                if db_engines:
+                    logger.info(f"从数据库加载了 {len(db_engines)} 个Agent引擎: {list(db_engines.keys())}")
+            except Exception as e:
+                logger.warning(f"DB引擎加载失败，回退样本数据: {e}")
+
+        # 使用 DB 引擎或内置样本
         if HAS_PROCUREMENT:
-            self.engines["procurement"] = ProcurementEngine()
+            self.engines["procurement"] = db_engines.get("procurement", ProcurementEngine())
         if HAS_QUALITY:
-            self.engines["quality"] = QualityEngine()
+            self.engines["quality"] = db_engines.get("quality", QualityEngine())
         if HAS_FINANCE:
-            self.engines["finance"] = FinanceEngine()
+            self.engines["finance"] = db_engines.get("finance", FinanceEngine())
         if HAS_MARKET:
-            self.engines["market"] = MarketEngine()
+            self.engines["market"] = db_engines.get("market", MarketEngine())
 
     def add_custom_scenario(self, name: str, chain: List[str], description: str = "") -> str:
         """添加自定义协作场景，返回 scenario_id"""

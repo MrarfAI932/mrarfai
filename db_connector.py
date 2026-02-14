@@ -201,7 +201,7 @@ class SQLiteConnector(BaseConnector):
         return self.execute_raw("SELECT * FROM returns ORDER BY date DESC LIMIT 100")
 
     def query_competitors(self) -> List[Dict]:
-        return self.execute_raw("SELECT * FROM competitors ORDER BY revenue DESC")
+        return self.execute_raw("SELECT * FROM competitors ORDER BY revenue_billion DESC")
 
     def query_sales(self, start_date: str = "", end_date: str = "") -> List[Dict]:
         sql = "SELECT * FROM sales"
@@ -375,3 +375,90 @@ def get_db_status(config: DatabaseConfig = None) -> Dict:
     result = connector.test_connection()
     connector.disconnect()
     return result
+
+
+# ============================================================
+# DB → Agent Engine 桥接
+# ============================================================
+def create_engines_from_db(config: DatabaseConfig = None) -> Dict:
+    """
+    从数据库加载数据并创建 Agent Engine 实例。
+
+    返回 dict: {agent_name: engine_instance}
+    如果 DB_TYPE=none 或连接失败，返回空 dict（Agent 将使用内置样本数据）。
+    """
+    if config is None:
+        config = DatabaseConfig.from_env()
+    if config.type == "none":
+        return {}
+
+    try:
+        connector = get_connector(config)
+        if not connector.is_connected():
+            logger.warning("数据库未连接，使用内置样本数据")
+            return {}
+    except Exception as e:
+        logger.error(f"数据库连接失败: {e}")
+        return {}
+
+    engines = {}
+
+    try:
+        import pandas as pd
+    except ImportError:
+        logger.error("pandas 未安装，无法从 DB 创建 Engine")
+        connector.disconnect()
+        return {}
+
+    # ── 采购 Agent ──
+    try:
+        suppliers_data = connector.query_suppliers()
+        orders_data = connector.query_orders()
+        if suppliers_data or orders_data:
+            from agent_procurement import ProcurementEngine
+            sup_df = pd.DataFrame(suppliers_data) if suppliers_data else None
+            ord_df = pd.DataFrame(orders_data) if orders_data else None
+            engines["procurement"] = ProcurementEngine.from_dataframes(sup_df, ord_df)
+            logger.info(f"DB → 采购Agent: {len(suppliers_data)} suppliers, {len(orders_data)} orders")
+    except Exception as e:
+        logger.error(f"DB→采购Engine失败: {e}")
+
+    # ── 财务 Agent ──
+    try:
+        ar_data = connector.query_accounts_receivable()
+        margin_data = connector.query_margins()
+        if ar_data or margin_data:
+            from agent_finance import FinanceEngine
+            ar_df = pd.DataFrame(ar_data) if ar_data else None
+            mg_df = pd.DataFrame(margin_data) if margin_data else None
+            engines["finance"] = FinanceEngine.from_dataframes(ar_df, mg_df)
+            logger.info(f"DB → 财务Agent: {len(ar_data)} AR, {len(margin_data)} margins")
+    except Exception as e:
+        logger.error(f"DB→财务Engine失败: {e}")
+
+    # ── 品质 Agent ──
+    try:
+        yields_data = connector.query_yields()
+        returns_data = connector.query_returns()
+        if yields_data or returns_data:
+            from agent_quality import QualityEngine
+            yd_df = pd.DataFrame(yields_data) if yields_data else None
+            rt_df = pd.DataFrame(returns_data) if returns_data else None
+            engines["quality"] = QualityEngine.from_dataframes(yd_df, rt_df)
+            logger.info(f"DB → 品质Agent: {len(yields_data)} yields, {len(returns_data)} returns")
+    except Exception as e:
+        logger.error(f"DB→品质Engine失败: {e}")
+
+    # ── 市场 Agent ──
+    try:
+        competitors_data = connector.query_competitors()
+        if competitors_data:
+            from agent_market import MarketEngine
+            comp_df = pd.DataFrame(competitors_data)
+            engines["market"] = MarketEngine.from_dataframes(comp_df)
+            logger.info(f"DB → 市场Agent: {len(competitors_data)} competitors")
+    except Exception as e:
+        logger.error(f"DB→市场Engine失败: {e}")
+
+    connector.disconnect()
+    return engines
