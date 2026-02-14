@@ -496,10 +496,10 @@ class SmartDataQuery:
 """
 
     def __init__(self, data: dict, results: dict, benchmark: dict = None, forecast: dict = None):
-        self.data = data
-        self.results = results
-        self.benchmark = benchmark
-        self.forecast = forecast
+        self.data = data or {}
+        self.results = results or {}
+        self.benchmark = benchmark or {}
+        self.forecast = forecast or {}
         # 构建索引
         self._index = self._build_index()
         # 构建知识图谱
@@ -525,7 +525,7 @@ class SmartDataQuery:
         customers = self.results.get('客户分级', [])
         index['customers'] = {
             'all': customers,
-            'by_name': {c['客户']: c for c in customers},
+            'by_name': {c.get('客户', '未知'): c for c in customers},
             'by_tier': {
                 'A': [c for c in customers if c.get('等级') == 'A'],
                 'B': [c for c in customers if c.get('等级') == 'B'],
@@ -2395,7 +2395,7 @@ class QueryPlanner:
 
     COMPLEXITY_KEYWORDS = {
         "multi": ["综合", "全面", "对比", "关联",
-                  "交叉", "多维", "CEO", "报告"],
+                  "交叉", "多维", "ceo", "报告"],
         "single": ["多少", "变化", "趋势", "排名"],
     }
 
@@ -2773,6 +2773,14 @@ def node_synthesize(state: AgentState) -> dict:
     provider = state["provider"]
     api_key = state["api_key"]
     thinking = list(state.get("thinking", []))
+
+    # V10.1: 空专家输出防御
+    if not expert_outputs:
+        thinking.append("⚠️ 无专家分析结果可综合")
+        return {
+            "final_answer": "[无专家分析可综合 — 请检查路由和域Agent可用性]",
+            "thinking": thinking,
+        }
 
     thinking.append("🖊️ 报告员综合中...")
 

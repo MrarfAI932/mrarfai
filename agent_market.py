@@ -22,6 +22,7 @@ from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, field
 
 from contracts import (
+    AgentResponse,
     MarketCompetitorResponse, CompetitorProfile,
     MarketSentimentResponse, SentimentSignal,
     MarketReportResponse,
@@ -228,14 +229,18 @@ class MarketEngine:
         elif any(kw in q for kw in ["舆情", "sentiment", "新闻", "评价"]):
             return json.dumps(self.track_sentiment(), ensure_ascii=False, indent=2)
         else:
-            overview = {
-                "agent": "Market Intelligence",
-                "competitors_tracked": len(self.competitors),
-                "active_trends": len(self.trends),
-                "sentiment_signals": len(self.sentiments),
-                "capabilities": ["monitor_competitor", "summarize_report", "track_sentiment"],
-            }
-            return json.dumps(overview, ensure_ascii=False, indent=2)
+            overview = AgentResponse(
+                agent_id="market",
+                agent_name="Market Intelligence",
+                data={
+                    "competitors_tracked": len(self.competitors),
+                    "active_trends": len(self.trends),
+                    "sentiment_signals": len(self.sentiments),
+                    "capabilities": ["monitor_competitor", "summarize_report", "track_sentiment"],
+                },
+                summary=f"市场Agent就绪: 追踪{len(self.competitors)}竞品, {len(self.trends)}趋势, {len(self.sentiments)}舆情",
+            )
+            return json.dumps(overview.model_dump(), ensure_ascii=False, indent=2)
 
 
 # ============================================================

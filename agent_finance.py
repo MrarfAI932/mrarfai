@@ -23,6 +23,7 @@ from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, field
 
 from contracts import (
+    AgentResponse,
     FinanceARResponse, ARHighRisk,
     FinanceMarginResponse, FinanceCashflowResponse, CashflowMonth,
     FinanceInvoiceResponse, InvoiceRecord,
@@ -319,13 +320,17 @@ class FinanceEngine:
         elif any(kw in q for kw in ["发票", "invoice"]):
             return json.dumps(self.match_invoice(), ensure_ascii=False, indent=2)
         else:
-            overview = {
-                "agent": "Finance",
-                "ar_records": len(self.ar_records),
-                "margin_records": len(self.margins),
-                "capabilities": ["track_ar", "analyze_margin", "forecast_cashflow", "match_invoice"],
-            }
-            return json.dumps(overview, ensure_ascii=False, indent=2)
+            overview = AgentResponse(
+                agent_id="finance",
+                agent_name="Finance",
+                data={
+                    "ar_records": len(self.ar_records),
+                    "margin_records": len(self.margins),
+                    "capabilities": ["track_ar", "analyze_margin", "forecast_cashflow", "match_invoice"],
+                },
+                summary=f"财务Agent就绪: {len(self.ar_records)}条应收记录, {len(self.margins)}条利润记录",
+            )
+            return json.dumps(overview.model_dump(), ensure_ascii=False, indent=2)
 
 
 # ============================================================

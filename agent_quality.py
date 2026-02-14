@@ -27,6 +27,7 @@ from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, field
 
 from contracts import (
+    AgentResponse,
     QualityYieldResponse, QualityReturnsResponse, QualityRootCauseResponse,
     QualityComplaintsResponse,
     YieldTrend, DefectCount, YieldAlert,
@@ -327,13 +328,17 @@ class QualityEngine:
                     defect = d
             return json.dumps(self.trace_root_cause(defect), ensure_ascii=False, indent=2)
         else:
-            overview = {
-                "agent": "Quality Control",
-                "yield_records": len(self.yields),
-                "return_cases": len(self.returns),
-                "capabilities": ["monitor_yield", "analyze_returns", "classify_complaints", "trace_root_cause"],
-            }
-            return json.dumps(overview, ensure_ascii=False, indent=2)
+            overview = AgentResponse(
+                agent_id="quality",
+                agent_name="Quality Control",
+                data={
+                    "yield_records": len(self.yields),
+                    "return_cases": len(self.returns),
+                    "capabilities": ["monitor_yield", "analyze_returns", "classify_complaints", "trace_root_cause"],
+                },
+                summary=f"品质Agent就绪: {len(self.yields)}条良率记录, {len(self.returns)}条退货记录",
+            )
+            return json.dumps(overview.model_dump(), ensure_ascii=False, indent=2)
 
 
 # ============================================================

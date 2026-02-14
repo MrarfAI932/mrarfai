@@ -2,11 +2,13 @@
 # MRARFAI V9.0 .gitignore
 # ============================================================
 
-# Secrets
-.env
-.env.local
-.env.production
+# Secrets — 禁止任何 .env 变体进入版本控制
+.env*
+!env.example
 .streamlit/secrets.toml
+*.key
+*.pem
+credentials*.json
 
 # Python
 __pycache__/

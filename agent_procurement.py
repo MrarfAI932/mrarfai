@@ -24,6 +24,7 @@ from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, field
 
 from contracts import (
+    AgentResponse,
     ProcurementQuoteResponse, SupplierQuote,
     ProcurementPOResponse,
     PurchaseOrder as PurchaseOrderContract,
@@ -307,14 +308,19 @@ class ProcurementEngine:
         elif any(kw in q for kw in ["成本", "cost", "spend", "花费"]):
             return json.dumps(self.analyze_cost(), ensure_ascii=False, indent=2)
         else:
-            overview = {
-                "agent": "Procurement",
-                "suppliers": len(self.suppliers),
-                "active_pos": len(self.orders),
-                "delayed": sum(1 for po in self.orders if po.is_delayed()),
-                "capabilities": ["compare_quotes", "track_po", "alert_delay", "analyze_cost"],
-            }
-            return json.dumps(overview, ensure_ascii=False, indent=2)
+            delayed = sum(1 for po in self.orders if po.is_delayed())
+            overview = AgentResponse(
+                agent_id="procurement",
+                agent_name="Procurement",
+                data={
+                    "suppliers": len(self.suppliers),
+                    "active_pos": len(self.orders),
+                    "delayed": delayed,
+                    "capabilities": ["compare_quotes", "track_po", "alert_delay", "analyze_cost"],
+                },
+                summary=f"采购Agent就绪: {len(self.suppliers)}供应商, {len(self.orders)}订单, {delayed}延迟",
+            )
+            return json.dumps(overview.model_dump(), ensure_ascii=False, indent=2)
 
 
 # ============================================================
