@@ -26,6 +26,7 @@ from datetime import datetime
 from typing import Optional, Dict, List, Any, Literal, Annotated
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import threading
 from dataclasses import dataclass, field
 
 logger = logging.getLogger("mrarfai.agent_v9")
@@ -3021,15 +3022,17 @@ def build_agent_graph(checkpointer=None, enable_advanced: bool = True):
     if checkpointer is None:
         checkpointer = MemorySaver()
 
+    # V10.1: 移除 interrupt_before — 由 node_hitl_check 内部的
+    # interrupt() 按条件触发 (仅高风险时暂停)
+    # 之前的 interrupt_before=["hitl_check"] 导致该节点永远不执行
     compile_kwargs = {
         "checkpointer": checkpointer,
-        "interrupt_before": ["hitl_check"],  # HITL 中断点
     }
 
     compiled = graph.compile(**compile_kwargs)
 
     if enable_advanced:
-        logger.info("LangGraph 1.0 高级特性已启用: Durable State + HITL interrupt")
+        logger.info("LangGraph 1.0 高级特性已启用: Durable State + conditional HITL")
 
     return compiled
 
@@ -3040,14 +3043,17 @@ def build_agent_graph(checkpointer=None, enable_advanced: bool = True):
 
 _graph = None
 _checkpointer = None
+_graph_lock = threading.Lock()
 
 
 def get_graph():
-    """获取/创建全局图实例"""
+    """获取/创建全局图实例 (线程安全 double-check locking)"""
     global _graph, _checkpointer
     if _graph is None and HAS_LANGGRAPH:
-        _checkpointer = MemorySaver()
-        _graph = build_agent_graph(_checkpointer)
+        with _graph_lock:
+            if _graph is None:  # double-check
+                _checkpointer = MemorySaver()
+                _graph = build_agent_graph(_checkpointer)
     return _graph
 
 
