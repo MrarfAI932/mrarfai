@@ -7,6 +7,7 @@ MRARFAI PDF Report Generator + Email Sender
 
 import os
 import io
+import logging
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
@@ -24,6 +25,8 @@ from reportlab.platypus import (
 )
 from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
 from reportlab.pdfgen import canvas
+
+logger = logging.getLogger("mrarfai.pdf_report")
 
 # ============================================================
 # 颜色系统
@@ -74,7 +77,8 @@ def _register_chinese_font():
             try:
                 pdfmetrics.registerFont(TTFont("ChineseFont", fp))
                 return "ChineseFont"
-            except:
+            except Exception as e:
+                logger.debug(f"Font path {fp} registration failed: {type(e).__name__}")
                 continue
     
     # 如果没找到，返回默认字体（中文会显示为方块，但不会crash）

@@ -1210,6 +1210,45 @@ if HAS_V10_GATEWAY:
                         ⚡ 分钟: {_rl_min}/{_rl_lim_min} · 小时: {_rl_hr}/{_rl_lim_hr}
                     </div>""", unsafe_allow_html=True)
 
+            # ── 微信预警通知 (管理员可见) ──
+            if is_admin() and HAS_WECHAT:
+                _wx_label = "微信预警通知" if st.session_state.lang == "zh" else "WeChat Alert"
+                with st.expander(f"📱 {_wx_label}", expanded=False):
+                    _wx_webhook = st.text_input(
+                        "企业微信 Webhook URL",
+                        value=st.session_state.get("wecom_webhook", ""),
+                        placeholder="https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=xxxxx",
+                        key="cmd_wecom_webhook",
+                    )
+                    if _wx_webhook:
+                        st.session_state["wecom_webhook"] = _wx_webhook
+
+                    _wx_c1, _wx_c2 = st.columns(2)
+                    with _wx_c1:
+                        _wx_auto = st.toggle(
+                            "🔴 高风险自动推送" if st.session_state.lang == "zh" else "🔴 Auto Push on High Risk",
+                            value=st.session_state.get("wecom_auto_alert", False),
+                            key="wx_auto_alert",
+                        )
+                        st.session_state["wecom_auto_alert"] = _wx_auto
+                    with _wx_c2:
+                        if _wx_webhook and st.button("📨 发送测试", key="wx_test", use_container_width=True):
+                            from wechat_notify import send_wecom_bot
+                            _ok, _msg = send_wecom_bot(
+                                _wx_webhook,
+                                "MRARFAI 测试通知",
+                                f"✅ 企业微信集成测试成功！\n\n时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n平台: MRARFAI V10.0",
+                            )
+                            if _ok:
+                                st.success(f"✅ {_msg}")
+                            else:
+                                st.error(f"❌ {_msg}")
+
+                    if not _wx_webhook:
+                        st.markdown(f"""<div style="font-size:0.5rem;color:#555;font-family:'JetBrains Mono',monospace;">
+                            配置方法: 企业微信群 → 群设置 → 群机器人 → 添加 → 复制 Webhook 地址
+                        </div>""", unsafe_allow_html=True)
+
             st.stop()
 
         # ── 选择了某个 Agent → 显示专属界面 ──

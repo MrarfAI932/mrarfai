@@ -158,7 +158,8 @@ class ProcurementEngine:
                         defect_rate=float(row.iloc[6]) if len(row) > 6 else 0.02,
                         credit_rating=str(row.iloc[7]) if len(row) > 7 else "B",
                     ))
-                except Exception:
+                except Exception as e:
+                    logger.warning(f"Failed to parse supplier row {row.iloc[0] if len(row) > 0 else 'unknown'}: {e}")
                     continue
 
         orders = []
@@ -175,7 +176,8 @@ class ProcurementEngine:
                         created_at=str(row.iloc[6]) if len(row) > 6 else "",
                         expected_date=str(row.iloc[7]) if len(row) > 7 else "",
                     ))
-                except Exception:
+                except Exception as e:
+                    logger.warning(f"Failed to parse PO row {row.iloc[0] if len(row) > 0 else 'unknown'}: {e}")
                     continue
 
         return cls(

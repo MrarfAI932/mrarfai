@@ -150,7 +150,8 @@ class MarketEngine:
                         weaknesses=[s.strip() for s in str(row.iloc[6]).split(",")] if len(row) > 6 else [],
                         market_share=float(row.iloc[7]) / 100 if len(row) > 7 else 0,
                     ))
-                except Exception:
+                except Exception as e:
+                    logger.debug(f"Failed to parse competitor record {row.iloc[0] if len(row) > 0 else 'unknown'}: {e}")
                     continue
 
         return cls(competitors=competitors if competitors else None)

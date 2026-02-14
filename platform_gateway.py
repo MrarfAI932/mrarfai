@@ -75,7 +75,8 @@ class UserPreferenceTracker:
             try:
                 with open(path, "r", encoding="utf-8") as f:
                     self._cache[user] = json.load(f)
-            except Exception:
+            except Exception as e:
+                logger.debug(f"Failed to load preferences for user {user}, using defaults: {e}")
                 self._cache[user] = self._default()
         else:
             self._cache[user] = self._default()
@@ -190,6 +191,19 @@ try:
     HAS_MARKET = True
 except ImportError:
     HAS_MARKET = False
+
+# V9 Agent 引擎 (Risk / Strategist)
+try:
+    from agent_risk import RiskEngine
+    HAS_RISK = True
+except ImportError:
+    HAS_RISK = False
+
+try:
+    from agent_strategist import StrategistEngine
+    HAS_STRATEGIST = True
+except ImportError:
+    HAS_STRATEGIST = False
 
 # 数据库连接器（可选 — 用于从 ERP/MES 加载数据）
 try:
@@ -578,8 +592,8 @@ class CollaborationMemory:
         for old_file in files[self._max:]:
             try:
                 os.remove(os.path.join(self.STORAGE_DIR, old_file))
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning(f"Failed to prune old collaboration memory file {old_file}: {e}")
 
     def list_recent(self, n: int = 20, user: str = "") -> List[Dict]:
         """列出最近 N 条协作记录（摘要）"""
@@ -604,7 +618,8 @@ class CollaborationMemory:
                     "total_agents": entry.get("total_agents", 0),
                     "completed": entry.get("completed", 0),
                 })
-            except Exception:
+            except Exception as e:
+                logger.debug(f"Skipping corrupted collaboration memory file {fname}: {e}")
                 continue
         return results
 
@@ -616,7 +631,8 @@ class CollaborationMemory:
         try:
             with open(filepath, "r", encoding="utf-8") as f:
                 return json.load(f)
-        except Exception:
+        except Exception as e:
+            logger.debug(f"Collaboration memory {memory_id} not found or corrupted: {e}")
             return None
 
     def get_stats(self) -> Dict:
@@ -630,7 +646,8 @@ class CollaborationMemory:
                     entry = json.load(f)
                 by_scenario[entry.get("scenario", "unknown")] += 1
                 by_user[entry.get("user", "unknown")] += 1
-            except Exception:
+            except Exception as e:
+                logger.warning(f"Skipping corrupted collaboration memory in stats {fname}: {e}")
                 continue
         return {
             "total_records": len(files),
@@ -669,6 +686,12 @@ class CollaborationEngine:
             self.engines["finance"] = db_engines.get("finance", FinanceEngine())
         if HAS_MARKET:
             self.engines["market"] = db_engines.get("market", MarketEngine())
+
+        # V9 Agent 引擎 (Risk / Strategist)
+        if HAS_RISK:
+            self.engines["risk"] = RiskEngine()
+        if HAS_STRATEGIST:
+            self.engines["strategist"] = StrategistEngine()
 
     def add_custom_scenario(self, name: str, chain: List[str], description: str = "") -> str:
         """添加自定义协作场景，返回 scenario_id"""

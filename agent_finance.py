@@ -130,7 +130,8 @@ class FinanceEngine:
                         status=str(row.iloc[5]).lower() if len(row) > 5 else "outstanding",
                         aging_days=int(row.iloc[6]) if len(row) > 6 else 0,
                     ))
-                except Exception:
+                except Exception as e:
+                    logger.warning(f"Failed to parse AR record {row.iloc[0] if len(row) > 0 else 'unknown'}: {e}")
                     continue
 
         margins = []
@@ -143,7 +144,8 @@ class FinanceEngine:
                         revenue=float(row.iloc[2]) if len(row) > 2 else 0,
                         cogs=float(row.iloc[3]) if len(row) > 3 else 0,
                     ))
-                except Exception:
+                except Exception as e:
+                    logger.warning(f"Failed to parse margin record {row.iloc[0] if len(row) > 0 else 'unknown'}: {e}")
                     continue
 
         return cls(

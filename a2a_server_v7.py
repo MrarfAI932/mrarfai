@@ -423,32 +423,70 @@ class MRARFAIAnalystExecutor(AgentExecutor):
 
 
 class MRARFAIRiskExecutor(AgentExecutor):
-    """MRARFAI 风险 Agent"""
+    """MRARFAI 风险 Agent — 接入 anomaly_detector + health_score"""
+
+    def __init__(self):
+        try:
+            from agent_risk import RiskEngine
+            self.engine = RiskEngine()
+        except ImportError:
+            self.engine = None
 
     async def execute(self, task: Task, message: Message) -> Task:
         question = message.parts[0].text if message.parts else ""
         task.status = TaskStatus(state=TaskState.WORKING)
         task.history.append(message)
 
-        answer = f"[风险评估] {question} — 基于异常检测和健康评分的风险分析"
+        try:
+            if self.engine:
+                answer = self.engine.answer(question)
+            else:
+                answer = f"[风险评估] {question} — RiskEngine 未加载"
+        except Exception as e:
+            answer = f"[风险评估失败] {str(e)}"
+
         agent_msg = Message.agent_text(answer)
         task.history.append(agent_msg)
         task.status = TaskStatus(state=TaskState.COMPLETED, message=agent_msg)
+        task.artifacts.append(Artifact(
+            name="risk_result",
+            description="风险评估结果",
+            parts=[MessagePart(type="text", text=answer)],
+        ))
         return task
 
 
 class MRARFAIStrategistExecutor(AgentExecutor):
-    """MRARFAI 策略 Agent"""
+    """MRARFAI 策略 Agent — 接入 industry_benchmark + forecast_engine"""
+
+    def __init__(self):
+        try:
+            from agent_strategist import StrategistEngine
+            self.engine = StrategistEngine()
+        except ImportError:
+            self.engine = None
 
     async def execute(self, task: Task, message: Message) -> Task:
         question = message.parts[0].text if message.parts else ""
         task.status = TaskStatus(state=TaskState.WORKING)
         task.history.append(message)
 
-        answer = f"[战略建议] {question} — 基于行业对标和预测模型的战略分析"
+        try:
+            if self.engine:
+                answer = self.engine.answer(question)
+            else:
+                answer = f"[战略建议] {question} — StrategistEngine 未加载"
+        except Exception as e:
+            answer = f"[战略分析失败] {str(e)}"
+
         agent_msg = Message.agent_text(answer)
         task.history.append(agent_msg)
         task.status = TaskStatus(state=TaskState.COMPLETED, message=agent_msg)
+        task.artifacts.append(Artifact(
+            name="strategy_result",
+            description="战略分析结果",
+            parts=[MessagePart(type="text", text=answer)],
+        ))
         return task
 
 

@@ -129,7 +129,8 @@ class QualityEngine:
                         yield_rate=round(passed / total, 4) if total > 0 else 0,
                         defect_types=defects,
                     ))
-                except Exception:
+                except Exception as e:
+                    logger.warning(f"Failed to parse yield record {row.iloc[0] if len(row) > 0 else 'unknown'}: {e}")
                     continue
 
         returns = []
@@ -144,7 +145,8 @@ class QualityEngine:
                         date=str(row.iloc[4]) if len(row) > 4 else "",
                         severity=str(row.iloc[5]) if len(row) > 5 else "中",
                     ))
-                except Exception:
+                except Exception as e:
+                    logger.warning(f"Failed to parse return record {row.iloc[0] if len(row) > 0 else 'unknown'}: {e}")
                     continue
 
         return cls(

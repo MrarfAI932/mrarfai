@@ -244,8 +244,8 @@ class MemoryGraph:
             """)
             conn.commit()
             conn.close()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"Memory graph database initialization failed: {e}")
 
     # ---- CRUD 操作 (AtomMem 6种工具) ----
 
@@ -504,8 +504,8 @@ class MemoryGraph:
             )
             conn.commit()
             conn.close()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"Failed to persist TELOS profile for {profile.customer_name}: {e}")
 
     def get_telos(self, customer_name: str) -> Optional[TELOSProfile]:
         """获取 TELOS 客户画像"""
@@ -641,8 +641,8 @@ class MemoryGraph:
                     f"- {name}: {strategy} (成功{count}次)"
                     for name, strategy, count in skills
                 )
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"Failed to retrieve memory skills: {e}")
         return ""
 
     # ---- 学习新技能 (MemSkill) ----
@@ -658,8 +658,8 @@ class MemoryGraph:
             )
             conn.commit()
             conn.close()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"Failed to persist memory skill {name}: {e}")
 
     def record_skill_result(self, name: str, success: bool):
         """记录技能使用结果"""
@@ -672,8 +672,8 @@ class MemoryGraph:
             )
             conn.commit()
             conn.close()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"Failed to record skill result for {name}: {e}")
 
     # ---- 持久化 ----
 
@@ -690,8 +690,8 @@ class MemoryGraph:
             )
             conn.commit()
             conn.close()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"Failed to persist memory node {node.node_id}: {e}")
 
     def _delete_node_db(self, node_id: str):
         try:
@@ -701,8 +701,8 @@ class MemoryGraph:
                         (node_id, node_id))
             conn.commit()
             conn.close()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"Failed to delete memory node {node_id}: {e}")
 
     def _load_all_nodes(self):
         """从数据库加载所有节点"""
@@ -722,8 +722,8 @@ class MemoryGraph:
                 )
                 self.nodes[node.node_id] = node
             conn.close()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"Failed to load memory nodes from {self.db_path}: {e}")
 
     def get_stats(self) -> Dict:
         """获取记忆图统计"""
