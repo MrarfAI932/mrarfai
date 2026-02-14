@@ -3228,6 +3228,8 @@ __all__ = [
     # V10 新增
     "get_platform_capabilities",
     "get_domain_engine",
+    "run_middleware_before",
+    "run_middleware_after",
 ]
 
 if __name__ == "__main__":

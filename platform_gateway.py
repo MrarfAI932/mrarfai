@@ -212,6 +212,18 @@ try:
 except ImportError:
     HAS_DB_CONNECTOR = False
 
+# StateGraph 质量门管线（V10 — 保证所有路径经过 Middleware + Langfuse + Critic）
+try:
+    from multi_agent import (
+        run_multi_agent_v7,
+        get_domain_engine,
+        run_middleware_before,
+        run_middleware_after,
+    )
+    HAS_STATEGRAPH = True
+except ImportError:
+    HAS_STATEGRAPH = False
+
 
 # ============================================================
 # 审计日志
@@ -756,10 +768,19 @@ class CollaborationEngine:
                 executed_steps.append(step)
                 continue
 
+            # 通过 Middleware 质量门执行 (P0-05 修复)
             engine = self.engines.get(agent_name)
             if engine:
                 try:
-                    result = engine.answer(query)
+                    import time as _time
+                    _t0 = _time.time()
+                    if HAS_STATEGRAPH:
+                        ctx = run_middleware_before(agent_name, query)
+                        result = engine.answer(query)
+                        _elapsed = (_time.time() - _t0) * 1000
+                        run_middleware_after(agent_name, result, _elapsed, **ctx)
+                    else:
+                        result = engine.answer(query)
                     results[agent_name] = result
                     step["status"] = "completed"
                     step["result_preview"] = result[:200] if isinstance(result, str) else str(result)[:200]
@@ -893,6 +914,58 @@ class PlatformGateway:
             for name in self.registry.list_agents()
         )
         logger.info(f"已注册 {agent_count} 个Agent, {total_skills} 个Skills")
+
+    def _query_via_quality_gate(self, agent_name: str, query: str,
+                                 provider: str = "claude", api_key: str = "") -> str:
+        """
+        通过 StateGraph 质量门管线查询 Agent — P0-05 修复
+
+        保证每个查询经过: Middleware → Engine/LLM → Critic → HITL → Reflect
+        而非直接 engine.answer() 绕过质量门。
+
+        降级策略:
+        1. 优先: StateGraph 完整管线 (有 Langfuse + Middleware + Critic)
+        2. 次选: Middleware before/after 包裹的 engine.answer()
+        3. 兜底: 裸 engine.answer() (仅当 multi_agent 不可用时)
+        """
+        import time as _time
+        t0 = _time.time()
+
+        # 策略1: 完整 StateGraph (如果有 data pipeline 上下文)
+        if HAS_STATEGRAPH and self.pipeline_fn:
+            try:
+                result = run_multi_agent_v7(
+                    question=query,
+                    data={}, results={},
+                    provider=provider, api_key=api_key,
+                    enable_tools=True, enable_critic=True,
+                    enable_hitl=True,
+                )
+                return result.get("answer", str(result))
+            except Exception as e:
+                logger.warning(f"StateGraph 完整管线失败，降级到 Middleware 模式: {e}")
+
+        # 策略2: Middleware 包裹 (有 Langfuse trace + before/after hooks)
+        if HAS_STATEGRAPH:
+            engine = self.collaboration.engines.get(agent_name)
+            if engine:
+                try:
+                    ctx = run_middleware_before(agent_name, query)
+                    raw = engine.answer(query)
+                    elapsed = (_time.time() - t0) * 1000
+                    run_middleware_after(agent_name, raw, elapsed, **ctx)
+                    return raw
+                except Exception as e:
+                    logger.warning(f"Middleware 模式失败，降级到裸引擎: {e}")
+
+        # 策略3: 裸引擎 (兜底)
+        engine = self.collaboration.engines.get(agent_name)
+        if engine:
+            return engine.answer(query)
+        return json.dumps({
+            "agent": agent_name, "query": query,
+            "note": "连接实际数据源后返回真实分析",
+        }, ensure_ascii=False)
 
     # ── LLM Agent 角色定义 ──
     _AGENT_ROLES = {
@@ -1125,16 +1198,9 @@ class PlatformGateway:
                     "routing": route_result,
                 }
             else:
-                # 单Agent查询
-                engine = self.collaboration.engines.get(agent_name)
-                if engine:
-                    raw_answer = engine.answer(query)
-                else:
-                    raw_answer = json.dumps({
-                        "agent": agent_name,
-                        "query": query,
-                        "note": "连接实际数据源后返回真实分析",
-                    }, ensure_ascii=False)
+                # 单Agent查询 — 通过质量门 (P0-05 修复)
+                raw_answer = self._query_via_quality_gate(
+                    agent_name, query, provider, api_key)
 
                 # LLM 智能合成 (有 Key 时转自然语言，含多轮记忆+偏好)
                 answer = self._llm_synthesize(
