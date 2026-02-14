@@ -668,6 +668,20 @@ MCP_REGISTRY_MANIFEST = {
             "args": ["mcp_server_v7.py", "--http", "8080"],
         },
     },
+    # V10.1: MCP Registry v0.1 新增字段
+    "packages": {
+        "pypi": {
+            "name": "mrarfai",
+            "version": "10.1.0",
+            "install": "pip install mrarfai",
+        },
+    },
+    "is_verified": False,
+    "source_url": "https://github.com/sprocomm/mrarfai",
+    "repository": {
+        "url": "https://github.com/sprocomm/mrarfai",
+        "source": "github",
+    },
 }
 
 
@@ -676,9 +690,10 @@ def get_registry_manifest() -> dict:
     return MCP_REGISTRY_MANIFEST
 
 
-def register_to_registry(registry_url: str = "https://registry.mcp.so") -> dict:
+def register_to_registry(registry_url: str = "https://registry.modelcontextprotocol.io") -> dict:
     """
-    注册到 MCP Registry (2000+ servers 生态)
+    注册到 MCP 官方 Registry (v0.1 API Freeze)
+    参考: blog.modelcontextprotocol.io/posts/2025-09-08
 
     调用方式:
         result = register_to_registry()
@@ -693,9 +708,12 @@ def register_to_registry(registry_url: str = "https://registry.mcp.so") -> dict:
     manifest = get_registry_manifest()
     try:
         resp = req.post(
-            f"{registry_url}/api/v1/servers",
+            f"{registry_url}/v0/servers",    # v0.1 API
             json=manifest,
-            headers={"Content-Type": "application/json"},
+            headers={
+                "Content-Type": "application/json",
+                "User-Agent": "mrarfai/10.1",
+            },
             timeout=15,
         )
         if resp.status_code in (200, 201):
@@ -707,7 +725,7 @@ def register_to_registry(registry_url: str = "https://registry.mcp.so") -> dict:
     except Exception as e:
         logger.warning(f"MCP Registry 注册失败: {e}")
         return {"status": "error", "detail": str(e),
-                "note": "可手动提交到 https://registry.mcp.so 或 https://glama.ai/mcp/servers"}
+                "note": "可手动提交到 https://registry.modelcontextprotocol.io 或使用 mcp-publisher CLI 工具"}
 
 
 # ============================================================
@@ -750,7 +768,7 @@ if __name__ == "__main__":
         print(json.dumps(get_registry_manifest(), indent=2, ensure_ascii=False))
     elif "--register" in sys.argv:
         # 自动注册到 MCP Registry
-        url = "https://registry.mcp.so"
+        url = "https://registry.modelcontextprotocol.io"
         try:
             idx = sys.argv.index("--register")
             if idx + 1 < len(sys.argv) and not sys.argv[idx + 1].startswith("--"):

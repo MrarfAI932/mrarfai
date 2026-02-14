@@ -255,44 +255,50 @@ try:
 except ImportError:
     HAS_EVALS_V9 = False
 
-# V10.0 ⑧ Deep Agents 集成 (Planning Tool + Sub-agent Spawning + VFS)
+# V10.1 ⑧ Deep Agents 0.4.1 (LangChain 官方)
+# pip install deepagents>=0.4.1
+# docs: docs.langchain.com/oss/python/deepagents
 HAS_DEEP_AGENTS = False
 _deep_agent = None
 try:
-    from deep_agents import Agent as DeepAgent
-    from deep_agents import PlanningTool, SubAgentTool
-    from deep_agents.vfs import VirtualFileSystem
+    from deepagents import create_deep_agent
+    from langchain.chat_models import init_chat_model
     HAS_DEEP_AGENTS = True
-    logger.info("✅ Deep Agents 0.4.1+ 已加载")
+    logger.info("✅ deepagents 0.4.1+ 已加载")
 except ImportError:
-    DeepAgent = None
-    PlanningTool = None
-    SubAgentTool = None
+    create_deep_agent = None
+    init_chat_model = None
 
 
 def _get_deep_agent():
     """
-    延迟初始化 Deep Agent — Planning + Sub-agent Spawning
-
-    Deep Agents 0.4.1 特性:
-      - PlanningTool: 自动任务分解 (替代手动 route)
-      - SubAgentTool: 运行时动态子 Agent 生成
-      - VFS: 虚拟文件系统 (中间产物管理)
-      - Langfuse 官方集成 (traces/spans 自动上报)
+    延迟初始化 Deep Agent — deepagents 0.4.1
+    返回 compiled LangGraph graph
+    支持: planning + 文件系统 + 子agent生成
     """
     global _deep_agent
     if _deep_agent is None and HAS_DEEP_AGENTS:
-        tools = [PlanningTool()]
-        if SubAgentTool:
-            tools.append(SubAgentTool(
-                available_agents=list(AGENTS.keys()) if 'AGENTS' in dir() else [],
-            ))
-        _deep_agent = DeepAgent(
-            name="mrarfai-deep-planner",
-            tools=tools,
-            model="claude-sonnet-4-5-20250929",
+        # 自定义工具 (可选)
+        custom_tools = []
+        if HAS_TOOLS:
+            try:
+                from tool_registry import sales_tools
+                custom_tools = list(sales_tools.values())[:5]
+            except Exception:
+                pass
+
+        _deep_agent = create_deep_agent(
+            model=init_chat_model(
+                "anthropic:claude-sonnet-4-5-20250929"
+            ),
+            tools=custom_tools,
+            system_prompt=(
+                "你是 MRARFAI V10.1 深度分析Agent。"
+                "你可以规划任务、委派子Agent、"
+                "管理文件。使用中文回答。"
+            ),
         )
-        logger.info("Deep Agent 初始化完成 (Planning + Sub-agent)")
+        logger.info("✅ Deep Agent 初始化完成")
     return _deep_agent
 
 
@@ -2211,6 +2217,9 @@ class AgentState(TypedDict):
     # V9.0 新增
     v9_attribution: Optional[Dict]    # 输出归因
 
+    # V10.1 新增: 规划器输出
+    execution_plan: Optional[Dict]
+
 
 # ============================================================
 # v7.0 LLM 调用层 (复用 v5.0, 增加 model routing)
@@ -2374,6 +2383,66 @@ def run_middleware_after(agent_id: str, output: str, elapsed_ms: float, **ctx) -
 
 
 # ============================================================
+# V10.1: Hierarchical Planner — 复杂查询任务分解
+# ============================================================
+
+class QueryPlanner:
+    """查询规划器 — 分解复杂查询为可并行步骤"""
+
+    COMPLEXITY_KEYWORDS = {
+        "multi": ["综合", "全面", "对比", "关联",
+                  "交叉", "多维", "CEO", "报告"],
+        "single": ["多少", "变化", "趋势", "排名"],
+    }
+
+    @staticmethod
+    def needs_planning(query: str, agents: list) -> bool:
+        """判断是否需要规划 (而非直接路由)"""
+        if len(agents) >= 3:
+            return True
+        q = query.lower()
+        return any(
+            kw in q
+            for kw in QueryPlanner.COMPLEXITY_KEYWORDS["multi"]
+        )
+
+    @staticmethod
+    def create_plan(query: str, agents: list) -> dict:
+        """
+        创建执行计划: {
+          "phases": [
+            {"phase": 1, "agents": [...], "parallel": True},
+            {"phase": 2, "agents": ["strategist"], "parallel": False}
+          ]
+        }
+        """
+        # Phase 1: 数据收集 (并行)
+        data_agents = [a for a in agents if a != "strategist"]
+        phases = []
+        if data_agents:
+            phases.append({
+                "phase": 1,
+                "agents": data_agents,
+                "parallel": True,
+                "desc": "数据收集与域分析",
+            })
+        # Phase 2: 综合分析 (串行)
+        if "strategist" in agents:
+            phases.append({
+                "phase": 2,
+                "agents": ["strategist"],
+                "parallel": False,
+                "desc": "战略综合与建议",
+            })
+        return {
+            "query": query,
+            "total_agents": len(agents),
+            "phases": phases,
+            "has_planning": True,
+        }
+
+
+# ============================================================
 # v7.0 LangGraph Nodes
 # ============================================================
 
@@ -2445,10 +2514,18 @@ def node_route(state: AgentState) -> dict:
     # 3. 规则路由 (兜底)
     agents = _rule_route(question)
     thinking.append(f"🧭 规则路由 → {agents}")
+
+    # V10.1: 规划分解 (复杂查询)
+    plan = None
+    if QueryPlanner.needs_planning(question, agents):
+        plan = QueryPlanner.create_plan(question, agents)
+        thinking.append(f"📋 规划: {len(plan['phases'])}阶段")
+
     return {
         "agents_needed": agents,
         "route_source": "rule",
         "thinking": thinking,
+        "execution_plan": plan,  # V10.1 新增
     }
 
 
@@ -3230,6 +3307,8 @@ __all__ = [
     "get_domain_engine",
     "run_middleware_before",
     "run_middleware_after",
+    # V10.1 新增
+    "QueryPlanner",
 ]
 
 if __name__ == "__main__":

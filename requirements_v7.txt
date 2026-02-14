@@ -34,6 +34,10 @@ pydantic>=2.0            # Pydantic v2 结构化合约
 grpcio>=1.60             # gRPC 传输层 (A2A over gRPC)
 grpcio-tools>=1.60       # gRPC proto 编译 (开发时需要)
 
+# --- V10.1 新增: Deep Agents ---
+deepagents>=0.4.1        # LangChain Deep Agent harness
+                         # planning + subagent + filesystem
+
 # --- V10.0 新增: PostgreSQL 生产数据库 ---
 psycopg2-binary>=2.9     # PostgreSQL 驱动 (docker-compose 默认使用)
 
