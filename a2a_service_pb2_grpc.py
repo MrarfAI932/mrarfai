@@ -10,6 +10,9 @@
 
 """A2A gRPC Servicer Stubs — 兼容 grpcio 接口"""
 
+# 手动 stub 标识 — 编译后此值不存在
+_MRARFAI_MANUAL_STUB = True
+
 import grpc
 
 from a2a_service_pb2 import (
@@ -76,40 +79,8 @@ def _deserialize_response(data):
     return A2AResponse.FromString(data)
 
 
-# 方法处理器定义
-_METHODS = {
-    "GetAgentCard": grpc.unary_unary_rpc_method_handler(
-        None,
-        request_deserializer=_deserialize_card_request,
-        response_serializer=_serialize,
-    ),
-    "SendTask": grpc.unary_unary_rpc_method_handler(
-        None,
-        request_deserializer=_deserialize_request,
-        response_serializer=_serialize,
-    ),
-    "GetTask": grpc.unary_unary_rpc_method_handler(
-        None,
-        request_deserializer=_deserialize_request,
-        response_serializer=_serialize,
-    ),
-    "CancelTask": grpc.unary_unary_rpc_method_handler(
-        None,
-        request_deserializer=_deserialize_request,
-        response_serializer=_serialize,
-    ),
-    "StreamTask": grpc.unary_stream_rpc_method_handler(
-        None,
-        request_deserializer=_deserialize_request,
-        response_serializer=_serialize,
-    ),
-}
-
-
 def add_A2AServiceServicer_to_server(servicer, server):
     """注册 A2AServiceServicer 到 gRPC Server"""
-    from grpc import method_service_handler
-
     rpc_method_handlers = {
         "GetAgentCard": grpc.unary_unary_rpc_method_handler(
             servicer.GetAgentCard,
@@ -137,7 +108,14 @@ def add_A2AServiceServicer_to_server(servicer, server):
             response_serializer=_serialize,
         ),
     }
-    generic_handler = grpc.method_service_handler(
-        _SERVICE_NAME, rpc_method_handlers,
-    )
-    server.add_generic_rpc_handlers((generic_handler,))
+    # 使用 GenericRpcHandler 类注册 (grpc 标准 API)
+    class _A2AGenericHandler(grpc.GenericRpcHandler):
+        def service(self, handler_call_details):
+            method = handler_call_details.method
+            # gRPC method format: /package.Service/Method
+            if method is not None:
+                method_name = method.split("/")[-1]
+                return rpc_method_handlers.get(method_name)
+            return None
+
+    server.add_generic_rpc_handlers((_A2AGenericHandler(),))

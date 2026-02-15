@@ -155,7 +155,15 @@ except ImportError:
     HAS_STRATEGIST_ENGINE = False
 
 # V10.0: Pydantic 结构化合约
-from contracts import AgentRequest, AgentResponse, GraphInput, GraphOutput
+try:
+    from contracts import AgentRequest, AgentResponse, GraphInput, GraphOutput
+    HAS_CONTRACTS = True
+except ImportError:
+    HAS_CONTRACTS = False
+    AgentRequest = None
+    AgentResponse = None
+    GraphInput = None
+    GraphOutput = None
 
 # V10.0: DB → Agent Bridge
 try:
@@ -286,6 +294,8 @@ except ImportError:
     add_planning_nodes = None
 
 
+_deep_agent_lock = threading.Lock()
+
 def _get_deep_agent():
     """
     延迟初始化 Deep Agent — deepagents 0.4.1
@@ -294,31 +304,34 @@ def _get_deep_agent():
     """
     global _deep_agent
     if _deep_agent is None and HAS_DEEP_AGENTS:
-        # 自定义工具 (可选)
-        custom_tools = []
-        if HAS_TOOLS:
-            try:
-                from tool_registry import sales_tools
-                custom_tools = list(sales_tools.values())[:5]
-            except Exception:
-                pass
+        with _deep_agent_lock:
+            if _deep_agent is not None:
+                return _deep_agent
+            # 自定义工具 (可选)
+            custom_tools = []
+            if HAS_TOOLS:
+                try:
+                    from tool_registry import sales_tools
+                    custom_tools = list(sales_tools.values())[:5]
+                except Exception:
+                    pass
 
-        try:
-            _deep_agent = create_deep_agent(
-                model=init_chat_model(
-                    "anthropic:claude-sonnet-4-5-20250929"
-                ),
-                tools=custom_tools,
-                system_prompt=(
-                    "你是 MRARFAI V10.1 深度分析Agent。"
-                    "你可以规划任务、委派子Agent、"
-                    "管理文件。使用中文回答。"
-                ),
-            )
-            logger.info("✅ Deep Agent 初始化完成")
-        except Exception as e:
-            logger.warning(f"Deep Agent 初始化失败: {e}")
-            _deep_agent = None
+            try:
+                _deep_agent = create_deep_agent(
+                    model=init_chat_model(
+                        "anthropic:claude-sonnet-4-5-20250929"
+                    ),
+                    tools=custom_tools,
+                    system_prompt=(
+                        "你是 MRARFAI V10.1 深度分析Agent。"
+                        "你可以规划任务、委派子Agent、"
+                        "管理文件。使用中文回答。"
+                    ),
+                )
+                logger.info("✅ Deep Agent 初始化完成")
+            except Exception as e:
+                logger.warning(f"Deep Agent 初始化失败: {e}")
+                _deep_agent = None
     return _deep_agent
 
 
@@ -1359,9 +1372,9 @@ def _call_llm_raw(system_prompt, user_prompt, provider, api_key,
             return result
         else:
             return _do_call()
-    except CircuitBreakerOpenError as e:
-        return f"[服务暂时不可用: {e}]"
     except Exception as e:
+        if HAS_GUARD and isinstance(e, CircuitBreakerOpenError):
+            return f"[服务暂时不可用: {e}]"
         return f"[调用失败: {e}]"
 
 
@@ -1408,10 +1421,10 @@ def _call_llm_with_tools(system_prompt, user_prompt, provider, api_key,
                             _trace_name=_trace_name)
 
     # V10.1: LangGraph ReAct 优先路径
-    if HAS_REACT_PLANNER:
+    if HAS_REACT_PLANNER and create_react_sales_agent:
         try:
             agent = create_react_sales_agent(
-                model_name=f"anthropic:claude-sonnet-4-20250514",
+                model=None,  # 让 react_planner 内部 init_chat_model()
                 tools=tools,
             )
             if agent:
@@ -1422,9 +1435,15 @@ def _call_llm_with_tools(system_prompt, user_prompt, provider, api_key,
                 for msg in reversed(messages):
                     if hasattr(msg, "content") and getattr(msg, "type", "") == "ai":
                         return msg.content
-                return "\n".join(m.content for m in messages if hasattr(m, "content"))
+                # fallback: 合并所有消息
+                combined = "\n".join(
+                    m.content for m in messages
+                    if hasattr(m, "content") and m.content
+                )
+                if combined:
+                    return combined
         except Exception as e:
-            logger.debug(f"LangGraph ReAct 回退至原生 Claude: {e}")
+            logger.warning(f"LangGraph ReAct 回退至原生 Claude: {e}")
 
     # Claude: 原生 tool_use — V10.1 ReAct agentic loop (fallback)
     try:
@@ -1740,7 +1759,7 @@ def ask_multi_agent(
                     data=context_data,
                     task=question,
                     llm_fn=lambda sys, usr: _call_llm_raw(
-                        sys, usr, provider, api_key, model="", max_tokens=1500
+                        sys, usr, provider, api_key, max_tokens=1500
                     ),
                 )
                 if rlm_result and hasattr(rlm_result, 'answer') and rlm_result.answer:
@@ -2437,6 +2456,8 @@ class QueryPlanner:
     @staticmethod
     def needs_planning(query: str, agents: list) -> bool:
         """判断是否需要规划 (而非直接路由)"""
+        if not query or not agents:
+            return False
         if len(agents) >= 3:
             return True
         q = query.lower()
@@ -3297,15 +3318,15 @@ def get_platform_capabilities() -> dict:
         "version": __version__,
         # V4 基础层
         "v4_pipeline": True,
-        "knowledge_graph": HAS_KG if 'HAS_KG' in dir() else False,
-        "observability": HAS_OBS if 'HAS_OBS' in dir() else False,
-        "tools": HAS_TOOLS if 'HAS_TOOLS' in dir() else False,
-        "guardrails": HAS_GUARD if 'HAS_GUARD' in dir() else False,
-        "streaming": HAS_STREAM if 'HAS_STREAM' in dir() else False,
-        "critic": HAS_CRITIC if 'HAS_CRITIC' in dir() else False,
+        "knowledge_graph": HAS_KG,
+        "observability": HAS_OBS,
+        "tools": HAS_TOOLS,
+        "guardrails": HAS_GUARD,
+        "streaming": HAS_STREAM,
+        "critic": HAS_CRITIC,
         # V7 LangGraph
         "langgraph": HAS_LANGGRAPH,
-        "hitl": HAS_HITL if 'HAS_HITL' in dir() else False,
+        "hitl": HAS_HITL,
         "langfuse": HAS_LANGFUSE,
         # V9 论文模块
         "rlm_engine": HAS_RLM,

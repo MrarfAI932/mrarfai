@@ -692,19 +692,52 @@ class A2AGrpcServicer:
             return A2AResponse(json_payload=json.dumps(error))
 
     async def GetTask(self, request, context):
-        """处理 tasks/get"""
-        return await self.SendTask(request, context)
+        """处理 tasks/get — 强制 method=tasks/get"""
+        from a2a_service_pb2 import A2AResponse
+        try:
+            payload = request.json_payload if hasattr(request, 'json_payload') else request
+            if isinstance(payload, bytes):
+                payload = payload.decode("utf-8")
+            req_dict = json.loads(payload)
+            req_dict["method"] = "tasks/get"  # 强制正确语义
+            result = await self.handler.handle(req_dict)
+            return A2AResponse(json_payload=json.dumps(result, ensure_ascii=False, default=str))
+        except Exception as e:
+            error = {"jsonrpc": "2.0", "id": None,
+                     "error": {"code": -32000, "message": str(e)}}
+            return A2AResponse(json_payload=json.dumps(error))
 
     async def CancelTask(self, request, context):
-        """处理 tasks/cancel"""
-        return await self.SendTask(request, context)
+        """处理 tasks/cancel — 强制 method=tasks/cancel"""
+        from a2a_service_pb2 import A2AResponse
+        try:
+            payload = request.json_payload if hasattr(request, 'json_payload') else request
+            if isinstance(payload, bytes):
+                payload = payload.decode("utf-8")
+            req_dict = json.loads(payload)
+            req_dict["method"] = "tasks/cancel"  # 强制正确语义
+            result = await self.handler.handle(req_dict)
+            return A2AResponse(json_payload=json.dumps(result, ensure_ascii=False, default=str))
+        except Exception as e:
+            error = {"jsonrpc": "2.0", "id": None,
+                     "error": {"code": -32000, "message": str(e)}}
+            return A2AResponse(json_payload=json.dumps(error))
 
     async def StreamTask(self, request, context):
-        """处理 tasks/sendSubscribe (流式)"""
+        """处理 tasks/sendSubscribe (流式) — 生成阶段性状态事件"""
         from a2a_service_pb2 import StreamEvent
-        # 执行任务并流式返回事件
-        result = await self.SendTask(request, context)
-        yield StreamEvent(event_json=result.json_payload)
+        # Phase 1: 已提交
+        yield StreamEvent(event_json=json.dumps({"state": "submitted"}))
+        # Phase 2: 执行中
+        yield StreamEvent(event_json=json.dumps({"state": "working"}))
+        # Phase 3: 执行并返回结果
+        try:
+            result = await self.SendTask(request, context)
+            yield StreamEvent(event_json=result.json_payload)
+        except Exception as e:
+            yield StreamEvent(event_json=json.dumps({
+                "state": "failed", "error": str(e)
+            }))
 
 
 # V10.1: 尝试加载 proto 编译生成的注册函数
@@ -767,7 +800,7 @@ async def create_grpc_server(handler: A2ARequestHandler, card: AgentCard,
 
 
 def _register_generic_handlers(servicer, server):
-    """使用 generic handler 注册 gRPC 方法 (无需 proto 编译)"""
+    """使用 GenericRpcHandler 注册 gRPC 方法 (无需 proto 编译)"""
     service_name = "mrarfai.a2a.A2AService"
 
     def _make_unary_handler(method_name):
@@ -782,15 +815,36 @@ def _register_generic_handlers(servicer, server):
 
         return grpc.unary_unary_rpc_method_handler(handler)
 
+    def _make_stream_handler(method_name):
+        method = getattr(servicer, method_name)
+
+        async def handler(request_bytes, context):
+            class _Req:
+                json_payload = request_bytes.decode("utf-8") if isinstance(request_bytes, bytes) else request_bytes
+            async for event in method(_Req(), context):
+                yield event.SerializeToString() if hasattr(event, 'SerializeToString') else event
+
+        return grpc.unary_stream_rpc_method_handler(handler)
+
     rpc_handlers = {
         "GetAgentCard": _make_unary_handler("GetAgentCard"),
         "SendTask": _make_unary_handler("SendTask"),
         "GetTask": _make_unary_handler("GetTask"),
         "CancelTask": _make_unary_handler("CancelTask"),
+        "StreamTask": _make_stream_handler("StreamTask"),
     }
 
-    generic_handler = grpc.method_service_handler(service_name, rpc_handlers)
-    server.add_generic_rpc_handlers((generic_handler,))
+    # 使用 GenericRpcHandler 类注册 (grpc 标准 API)
+    class _A2AGenericHandler(grpc.GenericRpcHandler):
+        def service(self, handler_call_details):
+            method = handler_call_details.method
+            if method is not None:
+                # gRPC method format: /package.Service/Method
+                method_name = method.split("/")[-1]
+                return rpc_handlers.get(method_name)
+            return None
+
+    server.add_generic_rpc_handlers((_A2AGenericHandler(),))
     logger.info("gRPC Servicer 注册方式: generic handler (无 proto 编译)")
 
 

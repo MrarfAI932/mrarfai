@@ -763,39 +763,45 @@ async def main():
                 get_registry_manifest(), ensure_ascii=False, indent=2
             ).encode("utf-8")
 
-            async def _well_known_middleware(app):
-                """注入 /.well-known/mcp/server.json 路由"""
-                try:
-                    from starlette.responses import Response
-                    from starlette.routing import Route
+            # V10.1: /.well-known/mcp/server.json — 独立轻量 HTTP 端点
+            # streamable_http_server 的 context manager 返回 (read, write) 流，
+            # 不是 Starlette app 对象，因此无法在其上注入路由。
+            # 解决方案: 用 asyncio 并发启动一个独立的轻量 HTTP server 来提供 .well-known
+            _well_known_server = None
+            try:
+                from starlette.applications import Starlette
+                from starlette.responses import Response
+                from starlette.routing import Route
+                import uvicorn
 
-                    async def well_known_handler(request):
-                        return Response(
-                            content=_well_known_json,
-                            media_type="application/json",
-                            headers={"Access-Control-Allow-Origin": "*"},
-                        )
+                async def well_known_handler(request):
+                    return Response(
+                        content=_well_known_json,
+                        media_type="application/json",
+                        headers={
+                            "Cache-Control": "public, max-age=3600",
+                        },
+                    )
 
-                    # 在 app.routes 最前面插入
-                    if hasattr(app, 'routes'):
-                        app.routes.insert(0, Route(
-                            "/.well-known/mcp/server.json",
-                            well_known_handler,
-                            methods=["GET"],
-                        ))
-                        logger.info("✅ /.well-known/mcp/server.json 端点已注册")
-                except ImportError:
-                    logger.debug("starlette 不可用，跳过 .well-known 端点")
-                return app
+                well_known_app = Starlette(routes=[
+                    Route("/.well-known/mcp/server.json", well_known_handler, methods=["GET"]),
+                ])
+
+                # 使用与 MCP 不同的端口 (port+1)
+                wk_port = port + 1
+                config = uvicorn.Config(well_known_app, host="0.0.0.0", port=wk_port, log_level="warning")
+                _well_known_server = uvicorn.Server(config)
+                asyncio.create_task(_well_known_server.serve())
+                logger.info(f"✅ /.well-known/mcp/server.json 端点已启动 @ port {wk_port}")
+            except ImportError:
+                logger.debug("starlette/uvicorn 不可用，跳过 .well-known 端点")
+            except Exception as e:
+                logger.warning(f"/.well-known 端点启动失败: {e}")
 
             async with streamable_http_server(server, host="0.0.0.0", port=port) as (r, w):
-                # 尝试注入 .well-known 端点
-                try:
-                    await _well_known_middleware(r) if hasattr(r, 'routes') else None
-                except Exception:
-                    pass
                 print(f"🚀 MRARFAI MCP v10.1 HTTP @ http://0.0.0.0:{port}")
-                print(f"   /.well-known/mcp/server.json → Registry 自动发现")
+                if _well_known_server:
+                    print(f"   /.well-known/mcp/server.json → http://0.0.0.0:{port + 1}")
                 await asyncio.Event().wait()
         except ImportError:
             print("❌ Streamable HTTP 需要额外依赖: pip install 'mcp[http]'")

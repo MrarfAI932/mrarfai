@@ -381,21 +381,23 @@ class PostgresConnector(BaseConnector):
         try:
             import psycopg2
             from psycopg2 import pool as pg_pool
-            self._pool = pg_pool.SimpleConnectionPool(
+            self._pool = pg_pool.ThreadedConnectionPool(
                 minconn=1,
-                maxconn=10,
+                maxconn=int(self.config.extra.get("maxconn", 10)) if self.config.extra else 10,
                 host=self.config.host or "localhost",
                 port=self.config.port or 5432,
                 dbname=self.config.database or "mrarfai_sales",
                 user=self.config.username or "mrarfai",
                 password=self.config.password,
             )
-            # 验证连接
+            # 验证连接 (try/finally 防止连接泄露)
             conn = self._pool.getconn()
-            conn.autocommit = True
-            with conn.cursor() as cur:
-                cur.execute("SELECT 1")
-            self._pool.putconn(conn)
+            try:
+                conn.autocommit = True
+                with conn.cursor() as cur:
+                    cur.execute("SELECT 1")
+            finally:
+                self._pool.putconn(conn)
             self._connected = True
             logger.info(f"PostgreSQL 已连接: {self.config.host}:{self.config.port or 5432}/{self.config.database}")
             return True
@@ -443,11 +445,7 @@ class PostgresConnector(BaseConnector):
                 return [dict(r) for r in rows]
         except Exception as e:
             logger.error(f"PostgreSQL 查询失败: {e}")
-            if conn:
-                try:
-                    conn.rollback()
-                except Exception:
-                    pass
+            # rollback 由 _put_conn 统一处理
             return []
         finally:
             if conn:
