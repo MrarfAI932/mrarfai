@@ -368,7 +368,7 @@ class PostgresConnector(BaseConnector):
     PostgreSQL 数据库连接器 — 生产级
 
     特性:
-      - psycopg2 连接池 (SimpleConnectionPool)
+      - psycopg2 连接池 (ThreadedConnectionPool)
       - 自动 rollback (防止事务泄露)
       - 与 init_postgres.sql schema 对齐
     """

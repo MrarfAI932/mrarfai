@@ -12,6 +12,8 @@ MRARFAI P2-05 — ReAct + Planning 模式集成
       LangGraph 1.0 create_react_agent()
 """
 
+__version__ = "10.1.0"
+
 import json
 import logging
 from typing import Any, Dict, List, Optional, Sequence

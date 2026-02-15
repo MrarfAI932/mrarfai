@@ -14,6 +14,8 @@ MRARFAI P2-04 — Deep Agents 0.4.1 集成适配器
 安装: pip install deepagents>=0.4.1
 """
 
+__version__ = "10.1.0"
+
 import logging
 from typing import Any, Dict, List, Optional
 

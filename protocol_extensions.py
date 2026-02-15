@@ -11,6 +11,8 @@ P3-04 — LangGraph 1.0 Advanced Features
 三合一模块 — 轻量协议扩展层
 """
 
+__version__ = "10.1.0"
+
 import json
 import asyncio
 import logging

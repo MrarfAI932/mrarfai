@@ -5,6 +5,7 @@
 # Secrets — 禁止任何 .env 变体进入版本控制
 .env*
 !env.example
+!.env.example
 .streamlit/secrets.toml
 *.key
 *.pem

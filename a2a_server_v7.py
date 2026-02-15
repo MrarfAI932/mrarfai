@@ -1228,7 +1228,7 @@ def create_a2a_app_v10(agent_name: str, executor: AgentExecutor,
 # 模块信息
 # ============================================================
 
-__version__ = "10.0.0"
+__version__ = "10.1.0"
 __all__ = [
     "AgentCard",
     "AgentSkill",
