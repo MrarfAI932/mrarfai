@@ -41,6 +41,8 @@ def parse_revenue_excel(path: str) -> dict:
         customer = ws.cell(row, 2).value
         total = ws.cell(row, 3).value
         if not customer or not total or customer == "汇总":
+        if not isinstance(total, (int, float)):
+            continue
             continue
         monthly = []
         for col in range(4, 16):
