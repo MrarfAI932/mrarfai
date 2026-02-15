@@ -657,16 +657,13 @@ def create_a2a_app(agent_card: AgentCard, handler: A2ARequestHandler):
 
 class A2AGrpcServicer:
     """
-    A2A gRPC Servicer — JSON-RPC over gRPC unary calls
+    A2A gRPC Servicer — V10.1 正式版 (proto-based)
 
-    当 grpcio 可用时，提供 gRPC 传输层。
-    消息格式: 复用现有 JSON-RPC 2.0 request/response。
+    继承自 a2a_service_pb2_grpc.A2AServiceServicer (如可用)
+    回退到 JSON-over-gRPC 模式
 
-    Usage:
-        if HAS_GRPC:
-            servicer = A2AGrpcServicer(handler)
-            server = grpc.aio.server()
-            # 注册到自定义 proto service
+    proto: proto/a2a_service.proto
+    编译: python -m grpc_tools.protoc -I proto --python_out=. --grpc_python_out=. proto/a2a_service.proto
     """
 
     def __init__(self, handler: A2ARequestHandler, card: AgentCard):
@@ -674,34 +671,59 @@ class A2AGrpcServicer:
         self.card = card
 
     async def GetAgentCard(self, request, context):
-        """返回 Agent Card (JSON bytes)"""
+        """返回 Agent Card"""
+        from a2a_service_pb2 import AgentCardResponse
         card_json = json.dumps(self.card.to_dict(), ensure_ascii=False)
-        return card_json.encode("utf-8")
+        return AgentCardResponse(card_json=card_json)
 
-    async def SendTask(self, request_bytes, context):
+    async def SendTask(self, request, context):
         """处理 tasks/send (JSON-RPC over gRPC)"""
+        from a2a_service_pb2 import A2AResponse
         try:
-            request = json.loads(request_bytes)
-            result = await self.handler.handle(request)
-            return json.dumps(result, ensure_ascii=False, default=str).encode("utf-8")
+            payload = request.json_payload if hasattr(request, 'json_payload') else request
+            if isinstance(payload, bytes):
+                payload = payload.decode("utf-8")
+            req_dict = json.loads(payload)
+            result = await self.handler.handle(req_dict)
+            return A2AResponse(json_payload=json.dumps(result, ensure_ascii=False, default=str))
         except Exception as e:
             error = {"jsonrpc": "2.0", "id": None,
                      "error": {"code": -32000, "message": str(e)}}
-            return json.dumps(error).encode("utf-8")
+            return A2AResponse(json_payload=json.dumps(error))
 
-    async def GetTask(self, request_bytes, context):
+    async def GetTask(self, request, context):
         """处理 tasks/get"""
-        return await self.SendTask(request_bytes, context)
+        return await self.SendTask(request, context)
 
-    async def CancelTask(self, request_bytes, context):
+    async def CancelTask(self, request, context):
         """处理 tasks/cancel"""
-        return await self.SendTask(request_bytes, context)
+        return await self.SendTask(request, context)
+
+    async def StreamTask(self, request, context):
+        """处理 tasks/sendSubscribe (流式)"""
+        from a2a_service_pb2 import StreamEvent
+        # 执行任务并流式返回事件
+        result = await self.SendTask(request, context)
+        yield StreamEvent(event_json=result.json_payload)
+
+
+# V10.1: 尝试加载 proto 编译生成的注册函数
+_HAS_PROTO_GRPC = False
+try:
+    from a2a_service_pb2_grpc import add_A2AServiceServicer_to_server
+    _HAS_PROTO_GRPC = True
+except ImportError:
+    add_A2AServiceServicer_to_server = None
 
 
 async def create_grpc_server(handler: A2ARequestHandler, card: AgentCard,
                               port: int = 50051) -> Any:
     """
-    创建 A2A gRPC Server
+    创建 A2A gRPC Server — V10.1 正式版
+
+    自动选择注册方式:
+      1. proto-based: add_A2AServiceServicer_to_server (完整 gRPC)
+      2. generic handler: 手动注册 (无需 proto 编译)
 
     Returns:
         grpc.aio.Server 或 None (如果 grpcio 未安装)
@@ -712,12 +734,64 @@ async def create_grpc_server(handler: A2ARequestHandler, card: AgentCard,
 
     servicer = A2AGrpcServicer(handler, card)
     server = grpc_aio.server()
-    # 注: 完整 gRPC 注册需要 proto 编译生成的 add_*Servicer_to_server
-    # 当前使用 JSON-over-gRPC 模式, servicer 绑定到 server 上下文
-    server._servicer = servicer  # 保持引用, 由调用方注册 proto service
+
+    # 策略1: proto-based 正式注册
+    if _HAS_PROTO_GRPC and add_A2AServiceServicer_to_server:
+        try:
+            add_A2AServiceServicer_to_server(servicer, server)
+            logger.info("gRPC Servicer 注册方式: proto-based (a2a_service.proto)")
+        except Exception as e:
+            logger.warning(f"proto-based 注册失败，回退到 generic handler: {e}")
+            _register_generic_handlers(servicer, server)
+    else:
+        # 策略2: generic handler 手动注册
+        _register_generic_handlers(servicer, server)
+
+    # Health Check (gRPC Health Checking Protocol)
+    try:
+        from grpc_health.v1 import health_pb2, health_pb2_grpc
+        from grpc_health.v1.health import HealthServicer
+
+        health_servicer = HealthServicer()
+        health_pb2_grpc.add_HealthServicer_to_server(health_servicer, server)
+        # 标记服务为 SERVING
+        health_servicer.set("mrarfai.a2a.A2AService", health_pb2.HealthCheckResponse.SERVING)
+        health_servicer.set("", health_pb2.HealthCheckResponse.SERVING)  # 全局健康
+        logger.info("✅ gRPC Health Check 已注册")
+    except ImportError:
+        logger.debug("gRPC Health Check 不可用: pip install grpcio-health-checking")
+
     server.add_insecure_port(f"[::]:{port}")
-    logger.info(f"A2A gRPC Server 准备就绪 @ port {port} (servicer={servicer.__class__.__name__})")
+    logger.info(f"A2A gRPC Server 准备就绪 @ port {port}")
     return server
+
+
+def _register_generic_handlers(servicer, server):
+    """使用 generic handler 注册 gRPC 方法 (无需 proto 编译)"""
+    service_name = "mrarfai.a2a.A2AService"
+
+    def _make_unary_handler(method_name):
+        method = getattr(servicer, method_name)
+
+        async def handler(request_bytes, context):
+            # 将 bytes 包装为类 protobuf 对象
+            class _Req:
+                json_payload = request_bytes.decode("utf-8") if isinstance(request_bytes, bytes) else request_bytes
+            result = await method(_Req(), context)
+            return result.SerializeToString() if hasattr(result, 'SerializeToString') else result
+
+        return grpc.unary_unary_rpc_method_handler(handler)
+
+    rpc_handlers = {
+        "GetAgentCard": _make_unary_handler("GetAgentCard"),
+        "SendTask": _make_unary_handler("SendTask"),
+        "GetTask": _make_unary_handler("GetTask"),
+        "CancelTask": _make_unary_handler("CancelTask"),
+    }
+
+    generic_handler = grpc.method_service_handler(service_name, rpc_handlers)
+    server.add_generic_rpc_handlers((generic_handler,))
+    logger.info("gRPC Servicer 注册方式: generic handler (无 proto 编译)")
 
 
 # ============================================================

@@ -361,12 +361,178 @@ class APIConnector(BaseConnector):
 
 
 # ============================================================
+# PostgreSQL 连接器 — 生产环境 (V10.1)
+# ============================================================
+class PostgresConnector(BaseConnector):
+    """
+    PostgreSQL 数据库连接器 — 生产级
+
+    特性:
+      - psycopg2 连接池 (SimpleConnectionPool)
+      - 自动 rollback (防止事务泄露)
+      - 与 init_postgres.sql schema 对齐
+    """
+
+    def __init__(self, config: DatabaseConfig):
+        super().__init__(config)
+        self._pool = None
+
+    def connect(self) -> bool:
+        try:
+            import psycopg2
+            from psycopg2 import pool as pg_pool
+            self._pool = pg_pool.SimpleConnectionPool(
+                minconn=1,
+                maxconn=10,
+                host=self.config.host or "localhost",
+                port=self.config.port or 5432,
+                dbname=self.config.database or "mrarfai_sales",
+                user=self.config.username or "mrarfai",
+                password=self.config.password,
+            )
+            # 验证连接
+            conn = self._pool.getconn()
+            conn.autocommit = True
+            with conn.cursor() as cur:
+                cur.execute("SELECT 1")
+            self._pool.putconn(conn)
+            self._connected = True
+            logger.info(f"PostgreSQL 已连接: {self.config.host}:{self.config.port or 5432}/{self.config.database}")
+            return True
+        except ImportError:
+            logger.error("PostgreSQL 连接需要 psycopg2: pip install psycopg2-binary")
+            return False
+        except Exception as e:
+            logger.error(f"PostgreSQL 连接失败: {e}")
+            return False
+
+    def disconnect(self):
+        if self._pool:
+            self._pool.closeall()
+            self._pool = None
+        super().disconnect()
+
+    def _get_conn(self):
+        """从连接池获取连接"""
+        if self._pool:
+            conn = self._pool.getconn()
+            conn.autocommit = False
+            return conn
+        return None
+
+    def _put_conn(self, conn):
+        """归还连接到池 (含 rollback 防止事务泄露)"""
+        if conn and self._pool:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+            self._pool.putconn(conn)
+
+    def execute_raw(self, sql: str, params: tuple = ()) -> List[Dict]:
+        if not self._connected or not self._pool:
+            return []
+        conn = None
+        try:
+            conn = self._get_conn()
+            import psycopg2.extras
+            with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+                cur.execute(sql, params)
+                rows = cur.fetchall()
+                conn.commit()
+                return [dict(r) for r in rows]
+        except Exception as e:
+            logger.error(f"PostgreSQL 查询失败: {e}")
+            if conn:
+                try:
+                    conn.rollback()
+                except Exception:
+                    pass
+            return []
+        finally:
+            if conn:
+                self._put_conn(conn)
+
+    def test_connection(self) -> Dict:
+        if not self._connected:
+            return {"connected": False, "error": "Not connected"}
+        conn = None
+        try:
+            conn = self._get_conn()
+            with conn.cursor() as cur:
+                cur.execute("SELECT version()")
+                ver = cur.fetchone()[0]
+                cur.execute("SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public'")
+                tables = cur.fetchone()[0]
+            conn.commit()
+            return {"connected": True, "version": ver, "tables": tables, "pool_size": self._pool.maxconn}
+        except Exception as e:
+            return {"connected": False, "error": str(e)}
+        finally:
+            if conn:
+                self._put_conn(conn)
+
+    # --- Agent 查询方法 (对齐 init_postgres.sql schema) ---
+
+    def query_suppliers(self) -> List[Dict]:
+        return self.execute_raw(
+            self.config.extra.get("sql_suppliers",
+                "SELECT * FROM dim_supplier ORDER BY supplier_name LIMIT 200"))
+
+    def query_orders(self) -> List[Dict]:
+        return self.execute_raw(
+            self.config.extra.get("sql_orders",
+                "SELECT * FROM fact_purchase_orders ORDER BY order_date DESC LIMIT 200"))
+
+    def query_accounts_receivable(self) -> List[Dict]:
+        return self.execute_raw(
+            self.config.extra.get("sql_ar",
+                "SELECT * FROM fact_accounts_receivable ORDER BY due_date LIMIT 200"))
+
+    def query_margins(self) -> List[Dict]:
+        return self.execute_raw(
+            self.config.extra.get("sql_margins",
+                "SELECT * FROM fact_product_margins ORDER BY product_name LIMIT 200"))
+
+    def query_yields(self) -> List[Dict]:
+        return self.execute_raw(
+            self.config.extra.get("sql_yields",
+                "SELECT * FROM fact_quality_yields ORDER BY record_date DESC LIMIT 200"))
+
+    def query_returns(self) -> List[Dict]:
+        return self.execute_raw(
+            self.config.extra.get("sql_returns",
+                "SELECT * FROM fact_quality_returns ORDER BY return_date DESC LIMIT 200"))
+
+    def query_competitors(self) -> List[Dict]:
+        return self.execute_raw(
+            self.config.extra.get("sql_competitors",
+                "SELECT * FROM dim_competitor ORDER BY competitor_name LIMIT 200"))
+
+    def query_sales(self, start_date: str = "", end_date: str = "") -> List[Dict]:
+        sql = "SELECT * FROM fact_sales"
+        params = []
+        conditions = []
+        if start_date:
+            conditions.append("sale_date >= %s")
+            params.append(start_date)
+        if end_date:
+            conditions.append("sale_date <= %s")
+            params.append(end_date)
+        if conditions:
+            sql += " WHERE " + " AND ".join(conditions)
+        sql += " ORDER BY sale_date DESC LIMIT 500"
+        return self.execute_raw(sql, tuple(params))
+
+
+# ============================================================
 # 工厂函数
 # ============================================================
 _CONNECTORS = {
     "none": NoDBConnector,
     "sqlite": SQLiteConnector,
     "mysql": MySQLConnector,
+    "postgresql": PostgresConnector,
     "api": APIConnector,
 }
 

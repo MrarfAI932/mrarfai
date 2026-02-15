@@ -1,0 +1,63 @@
+// MRARFAI V10.1 — A2A gRPC Service Definition
+// Agent-to-Agent Protocol over gRPC
+//
+// 编译命令:
+//   python -m grpc_tools.protoc -I proto \
+//     --python_out=. --grpc_python_out=. \
+//     proto/a2a_service.proto
+//
+// 生成文件:
+//   a2a_service_pb2.py      — 消息定义
+//   a2a_service_pb2_grpc.py — Servicer 基类 + Stub
+
+syntax = "proto3";
+
+package mrarfai.a2a;
+
+option python_generic_services = false;
+
+// ============================================================
+// 消息定义
+// ============================================================
+
+// JSON-RPC 风格的通用请求/响应 (兼容 A2A 规范)
+message A2ARequest {
+  string json_payload = 1;  // JSON-RPC 2.0 请求体
+}
+
+message A2AResponse {
+  string json_payload = 1;  // JSON-RPC 2.0 响应体
+}
+
+// Agent Card
+message AgentCardRequest {}
+
+message AgentCardResponse {
+  string card_json = 1;  // Agent Card JSON
+}
+
+// Streaming 事件
+message StreamEvent {
+  string event_json = 1;  // SSE-compatible JSON event
+}
+
+// ============================================================
+// 服务定义
+// ============================================================
+
+service A2AService {
+  // 获取 Agent Card (服务发现)
+  rpc GetAgentCard (AgentCardRequest) returns (AgentCardResponse);
+
+  // 发送任务 (tasks/send)
+  rpc SendTask (A2ARequest) returns (A2AResponse);
+
+  // 获取任务状态 (tasks/get)
+  rpc GetTask (A2ARequest) returns (A2AResponse);
+
+  // 取消任务 (tasks/cancel)
+  rpc CancelTask (A2ARequest) returns (A2AResponse);
+
+  // 流式任务 (tasks/sendSubscribe)
+  rpc StreamTask (A2ARequest) returns (stream StreamEvent);
+}

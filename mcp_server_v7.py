@@ -756,8 +756,46 @@ async def main():
 
         try:
             from mcp.server.streamable_http import streamable_http_server
+
+            # V10.1: /.well-known/mcp/server.json 自动发现端点
+            # MCP Registry v0.1 规范: HTTP 模式需暴露此端点
+            _well_known_json = json.dumps(
+                get_registry_manifest(), ensure_ascii=False, indent=2
+            ).encode("utf-8")
+
+            async def _well_known_middleware(app):
+                """注入 /.well-known/mcp/server.json 路由"""
+                try:
+                    from starlette.responses import Response
+                    from starlette.routing import Route
+
+                    async def well_known_handler(request):
+                        return Response(
+                            content=_well_known_json,
+                            media_type="application/json",
+                            headers={"Access-Control-Allow-Origin": "*"},
+                        )
+
+                    # 在 app.routes 最前面插入
+                    if hasattr(app, 'routes'):
+                        app.routes.insert(0, Route(
+                            "/.well-known/mcp/server.json",
+                            well_known_handler,
+                            methods=["GET"],
+                        ))
+                        logger.info("✅ /.well-known/mcp/server.json 端点已注册")
+                except ImportError:
+                    logger.debug("starlette 不可用，跳过 .well-known 端点")
+                return app
+
             async with streamable_http_server(server, host="0.0.0.0", port=port) as (r, w):
-                print(f"🚀 MRARFAI MCP v7.0 HTTP @ http://0.0.0.0:{port}")
+                # 尝试注入 .well-known 端点
+                try:
+                    await _well_known_middleware(r) if hasattr(r, 'routes') else None
+                except Exception:
+                    pass
+                print(f"🚀 MRARFAI MCP v10.1 HTTP @ http://0.0.0.0:{port}")
+                print(f"   /.well-known/mcp/server.json → Registry 自动发现")
                 await asyncio.Event().wait()
         except ImportError:
             print("❌ Streamable HTTP 需要额外依赖: pip install 'mcp[http]'")

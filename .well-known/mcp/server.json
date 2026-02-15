@@ -1,0 +1,127 @@
+{
+  "name": "mrarfai-sales",
+  "version": "10.1.0",
+  "description": "禾苗通讯 AI 决策平台 — 销售分析、品质监控、财务追踪、采购管理、风险预警、战略顾问",
+  "author": "禾苗科技 (Sprocomm Technologies)",
+  "homepage": "https://github.com/sprocomm/mrarfai",
+  "license": "MIT",
+  "categories": [
+    "analytics",
+    "business-intelligence",
+    "manufacturing",
+    "ai-agent"
+  ],
+  "tags": [
+    "sales-analysis",
+    "quality-control",
+    "finance",
+    "procurement",
+    "risk-management",
+    "strategy",
+    "multi-agent",
+    "enterprise",
+    "chinese",
+    "manufacturing",
+    "odm"
+  ],
+  "transport": [
+    "stdio",
+    "streamable-http"
+  ],
+  "tools_count": 14,
+  "tools_summary": [
+    {
+      "name": "query_sales_data",
+      "category": "analytics"
+    },
+    {
+      "name": "analyze_customer",
+      "category": "analytics"
+    },
+    {
+      "name": "detect_anomalies",
+      "category": "risk"
+    },
+    {
+      "name": "run_forecast",
+      "category": "strategy"
+    },
+    {
+      "name": "generate_report",
+      "category": "reporting"
+    },
+    {
+      "name": "quality_analysis",
+      "category": "quality"
+    },
+    {
+      "name": "market_analysis",
+      "category": "market"
+    },
+    {
+      "name": "finance_analysis",
+      "category": "finance"
+    },
+    {
+      "name": "procurement_analysis",
+      "category": "procurement"
+    },
+    {
+      "name": "risk_analysis",
+      "category": "risk"
+    },
+    {
+      "name": "strategy_analysis",
+      "category": "strategy"
+    },
+    {
+      "name": "create_task",
+      "category": "task-management"
+    },
+    {
+      "name": "get_task",
+      "category": "task-management"
+    },
+    {
+      "name": "cancel_task",
+      "category": "task-management"
+    }
+  ],
+  "resources_count": 3,
+  "prompts_count": 3,
+  "capabilities": {
+    "async_tasks": true,
+    "domain_agents": 6,
+    "pydantic_contracts": true,
+    "langfuse_observability": true
+  },
+  "installation": {
+    "stdio": {
+      "command": "python",
+      "args": [
+        "mcp_server_v7.py"
+      ]
+    },
+    "http": {
+      "command": "python",
+      "args": [
+        "mcp_server_v7.py",
+        "--http",
+        "8080"
+      ]
+    }
+  },
+  "packages": {
+    "pypi": {
+      "name": "mrarfai",
+      "version": "10.1.0",
+      "install": "pip install mrarfai"
+    }
+  },
+  "is_verified": false,
+  "source_url": "https://github.com/sprocomm/mrarfai",
+  "repository": {
+    "url": "https://github.com/sprocomm/mrarfai",
+    "source": "github"
+  }
+}

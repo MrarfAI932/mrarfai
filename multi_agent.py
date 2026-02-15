@@ -270,6 +270,21 @@ except ImportError:
     create_deep_agent = None
     init_chat_model = None
 
+# V10.1 ⑨ ReAct + Planning (LangGraph prebuilt)
+HAS_REACT_PLANNER = False
+try:
+    from react_planner import (
+        HierarchicalPlanner, create_react_sales_agent, add_planning_nodes,
+        HAS_REACT,
+    )
+    HAS_REACT_PLANNER = HAS_REACT
+    if HAS_REACT_PLANNER:
+        logger.info("✅ react_planner (LangGraph ReAct) 已加载")
+except ImportError:
+    HierarchicalPlanner = None
+    create_react_sales_agent = None
+    add_planning_nodes = None
+
 
 def _get_deep_agent():
     """
@@ -1392,7 +1407,26 @@ def _call_llm_with_tools(system_prompt, user_prompt, provider, api_key,
                             max_tokens=max_tokens, temperature=temperature,
                             _trace_name=_trace_name)
 
-    # Claude: 原生 tool_use — V10.0 ReAct agentic loop
+    # V10.1: LangGraph ReAct 优先路径
+    if HAS_REACT_PLANNER:
+        try:
+            agent = create_react_sales_agent(
+                model_name=f"anthropic:claude-sonnet-4-20250514",
+                tools=tools,
+            )
+            if agent:
+                from langchain_core.messages import HumanMessage
+                result = agent.invoke({"messages": [HumanMessage(content=user_prompt)]})
+                messages = result.get("messages", [])
+                # 提取最后一条 AI 消息
+                for msg in reversed(messages):
+                    if hasattr(msg, "content") and getattr(msg, "type", "") == "ai":
+                        return msg.content
+                return "\n".join(m.content for m in messages if hasattr(m, "content"))
+        except Exception as e:
+            logger.debug(f"LangGraph ReAct 回退至原生 Claude: {e}")
+
+    # Claude: 原生 tool_use — V10.1 ReAct agentic loop (fallback)
     try:
         import anthropic
         client = anthropic.Anthropic(api_key=api_key)
@@ -3285,6 +3319,7 @@ def get_platform_capabilities() -> dict:
         "pydantic_contracts": True,
         "middleware": True,
         "react_pattern": True,
+        "react_planner_langgraph": HAS_REACT_PLANNER,
         "query_planner": True,
         "deep_agents": HAS_DEEP_AGENTS,
         "db_bridge": HAS_DB_BRIDGE,
