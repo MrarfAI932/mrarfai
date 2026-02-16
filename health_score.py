@@ -220,9 +220,9 @@ def compute_health_scores(data: dict, results: dict) -> list:
 
 def _grade_color(grade):
     return {
-        'A': '#10b981', 'B': '#6366f1',
-        'C': '#f59e0b', 'D': '#f97316', 'F': '#ef4444',
-    }.get(grade, '#94a3b8')
+        'A': '#FFFFFF', 'B': '#CCCCCC',
+        'C': '#AAAAAA', 'D': '#888888', 'F': '#666666',
+    }.get(grade, '#888888')
 
 
 def make_health_overview_chart(scores: list):
@@ -266,9 +266,9 @@ def make_radar_chart(score: dict):
         r=normalized,
         theta=categories,
         fill='toself',
-        fillcolor=f"rgba(99,102,241,0.15)",
-        line=dict(color='#6366f1', width=2),
-        marker=dict(size=6, color='#6366f1'),
+        fillcolor=f"rgba(255,255,255,0.10)",
+        line=dict(color='#FFFFFF', width=2),
+        marker=dict(size=6, color='#FFFFFF'),
     ))
     fig.update_layout(
         polar=dict(
@@ -381,8 +381,8 @@ def render_health_dashboard(data: dict, results: dict):
     for i, s in enumerate(filtered[:20]):
         color = _grade_color(s['等级'])
         risk_html = " ".join(
-            f'<span style="font-size:0.7rem; background:rgba(239,68,68,0.1); '
-            f'padding:2px 6px; border-radius:4px; color:#fca5a5;">{t}</span>'
+            f'<span style="font-size:13px; background:rgba(136,136,136,0.1); '
+            f'padding:2px 6px; border-radius:0px; color:#AAAAAA;">{t}</span>'
             for t in s['风险标签']
         ) if s['风险标签'] else ''
         

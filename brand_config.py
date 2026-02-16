@@ -1,13 +1,9 @@
 #!/usr/bin/env python3
 """
-MRARFAI 品牌配置系统 v1.0
+MRARFAI 品牌配置系统 v2.0
 ============================
 白标方案 — 换Logo、公司名、主题色即可变成任何公司的产品
-
-使用方式：
-  1. 修改 BRAND_CONFIG 中的字段
-  2. 替换 logo 文件
-  3. 重启即可
+Colors aligned with ui_theme.COLORS design tokens.
 """
 
 # ============================================================
@@ -22,28 +18,31 @@ BRAND_CONFIG = {
     "stock_code": "Sprocomm 禾苗通讯 · 01401.HK",
     "version": "v4.3",
     "copyright": "© 2025 MrarfAI. All rights reserved.",
-    
+
     # Logo（支持URL或本地路径）
     "logo_url": "",  # 留空则用默认emoji logo
     "logo_emoji": "🧠",
     "favicon": "🧠",
-    
-    # 主题色
+
+    # Theme — Dark + neutral grays
     "colors": {
-        "primary": "#7c3aed",       # 紫色主色
-        "primary_light": "#a78bfa",
-        "secondary": "#06b6d4",     # 青色辅助色
-        "accent": "#f59e0b",        # 强调色
-        "success": "#10b981",
-        "warning": "#f97316",
-        "danger": "#ef4444",
-        "bg_dark": "#0f172a",       # 深色背景
-        "bg_card": "#1e293b",       # 卡片背景
-        "text_primary": "#f8fafc",
-        "text_secondary": "#94a3b8",
-        "text_muted": "#64748b",
+        "primary": "#EDEDED",
+        "primary_light": "#999999",
+        "secondary": "#666666",
+        "accent": "#EDEDED",
+        "success": "#EDEDED",
+        "warning": "#999999",
+        "danger": "#555555",
+        "bg_dark": "#050505",
+        "bg_base": "#0A0A0A",
+        "bg_card": "#111111",
+        "bg_overlay": "#1C1C1C",
+        "text_primary": "#EDEDED",
+        "text_secondary": "#999999",
+        "text_tertiary": "#666666",
+        "text_muted": "#444444",
     },
-    
+
     # 功能开关（SaaS化：不同客户开放不同功能）
     "features": {
         "multi_agent": True,
@@ -55,7 +54,7 @@ BRAND_CONFIG = {
         "benchmark": True,
         "ai_narrator": True,
     },
-    
+
     # 数据配置（SaaS化：不同行业不同术语）
     "industry": {
         "name": "手机ODM/OEM",
@@ -64,7 +63,7 @@ BRAND_CONFIG = {
         "typical_customers": "品牌商",
         "competitors": ["华勤", "闻泰", "龙旗", "天珑"],
     },
-    
+
     # 侧边栏
     "sidebar": {
         "show_stock_code": True,
@@ -73,7 +72,7 @@ BRAND_CONFIG = {
         "upload_file_types": ["xlsx"],
         "max_file_size_mb": 50,
     },
-    
+
     # 首页
     "landing": {
         "hero_title": "Sales Intelligence",
@@ -94,46 +93,40 @@ BRAND_CONFIG = {
 
 BRAND_TEMPLATES = {
     "mrarfai_default": BRAND_CONFIG,
-    
+
     "blue_corporate": {
         **BRAND_CONFIG,
         "company_name": "YourCompany",
         "product_name": "Sales Analytics Pro",
         "colors": {
             **BRAND_CONFIG["colors"],
-            "primary": "#2563eb",
-            "primary_light": "#60a5fa",
-            "secondary": "#0891b2",
-            "bg_dark": "#0c1222",
-            "bg_card": "#1a2332",
+            "primary": "#FFFFFF",
+            "primary_light": "#A0A0A0",
+            "secondary": "#707070",
         },
     },
-    
+
     "green_tech": {
         **BRAND_CONFIG,
         "company_name": "YourCompany",
         "product_name": "Revenue Intelligence",
         "colors": {
             **BRAND_CONFIG["colors"],
-            "primary": "#059669",
-            "primary_light": "#34d399",
-            "secondary": "#0891b2",
-            "bg_dark": "#0a1a14",
-            "bg_card": "#132a20",
+            "primary": "#FFFFFF",
+            "primary_light": "#A0A0A0",
+            "secondary": "#707070",
         },
     },
-    
+
     "red_enterprise": {
         **BRAND_CONFIG,
         "company_name": "YourCompany",
         "product_name": "Sales Command Center",
         "colors": {
             **BRAND_CONFIG["colors"],
-            "primary": "#dc2626",
-            "primary_light": "#f87171",
-            "secondary": "#ea580c",
-            "bg_dark": "#1a0a0a",
-            "bg_card": "#2a1515",
+            "primary": "#FFFFFF",
+            "primary_light": "#A0A0A0",
+            "secondary": "#707070",
         },
     },
 }
@@ -150,7 +143,7 @@ def get_brand():
 
 def get_color(key: str) -> str:
     """获取颜色"""
-    return BRAND_CONFIG["colors"].get(key, "#7c3aed")
+    return BRAND_CONFIG["colors"].get(key, "#FFFFFF")
 
 
 def is_feature_enabled(feature: str) -> bool:
@@ -172,9 +165,12 @@ def get_css_variables() -> str:
         --brand-warning: {colors['warning']};
         --brand-danger: {colors['danger']};
         --brand-bg-dark: {colors['bg_dark']};
+        --brand-bg-base: {colors['bg_base']};
         --brand-bg-card: {colors['bg_card']};
+        --brand-bg-overlay: {colors['bg_overlay']};
         --brand-text-primary: {colors['text_primary']};
         --brand-text-secondary: {colors['text_secondary']};
+        --brand-text-tertiary: {colors['text_tertiary']};
         --brand-text-muted: {colors['text_muted']};
     }}
     </style>
@@ -184,35 +180,35 @@ def get_css_variables() -> str:
 def render_brand_settings():
     """在Streamlit中渲染品牌设置面板"""
     import streamlit as st
-    
+
     st.markdown("""
     <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px;">
-        <div style="font-size:1.5rem;">🎨</div>
+        <div style="font-size:24px;">🎨</div>
         <div>
-            <div style="font-size:1.1rem; font-weight:700; color:#e2e8f0;">品牌与白标配置</div>
-            <div style="font-size:0.8rem; color:#64748b;">
+            <div style="font-size:18px; font-weight:700; color:#FFFFFF; font-family:'Inter',sans-serif;">品牌与白标配置</div>
+            <div style="font-size:14px; color:#707070;">
                 修改品牌信息，一键变成你的产品
             </div>
         </div>
     </div>
     """, unsafe_allow_html=True)
-    
+
     col1, col2 = st.columns(2)
-    
+
     with col1:
-        st.markdown("#### 🏢 基础信息")
+        st.markdown("#### 基础信息")
         new_company = st.text_input("公司名称", value=BRAND_CONFIG["company_name"])
         new_product = st.text_input("产品名称", value=BRAND_CONFIG["product_name"])
         new_subtitle = st.text_input("产品副标题", value=BRAND_CONFIG["product_subtitle"])
         new_stock = st.text_input("底部标识", value=BRAND_CONFIG["stock_code"])
-        
-        st.markdown("#### 🎨 主题色")
+
+        st.markdown("#### 主题色")
         new_primary = st.color_picker("主色", value=BRAND_CONFIG["colors"]["primary"])
         new_secondary = st.color_picker("辅助色", value=BRAND_CONFIG["colors"]["secondary"])
         new_accent = st.color_picker("强调色", value=BRAND_CONFIG["colors"]["accent"])
-    
+
     with col2:
-        st.markdown("#### 🏭 行业配置")
+        st.markdown("#### 行业配置")
         new_industry = st.text_input("行业", value=BRAND_CONFIG["industry"]["name"])
         new_unit = st.text_input("金额单位", value=BRAND_CONFIG["industry"]["revenue_unit"])
         new_qty_unit = st.text_input("数量单位", value=BRAND_CONFIG["industry"]["quantity_unit"])
@@ -220,30 +216,30 @@ def render_brand_settings():
             "竞争对手（逗号分隔）",
             value=", ".join(BRAND_CONFIG["industry"]["competitors"])
         )
-        
-        st.markdown("#### ⚙️ 功能开关")
+
+        st.markdown("#### 功能开关")
         for feat, enabled in BRAND_CONFIG["features"].items():
             BRAND_CONFIG["features"][feat] = st.toggle(
                 feat, value=enabled, key=f"brand_feat_{feat}"
             )
-    
+
     st.markdown("---")
-    
+
     # 预设模板
-    st.markdown("#### 📦 预设主题模板")
+    st.markdown("#### 预设主题模板")
     template_cols = st.columns(3)
     templates = [
-        ("blue_corporate", "🔵 企业蓝", "#2563eb"),
-        ("green_tech", "🟢 科技绿", "#059669"),
-        ("red_enterprise", "🔴 商务红", "#dc2626"),
+        ("blue_corporate", "企业白", "#FFFFFF"),
+        ("green_tech", "科技灰", "#A0A0A0"),
+        ("red_enterprise", "商务深", "#707070"),
     ]
     for i, (key, name, color) in enumerate(templates):
         with template_cols[i]:
             st.markdown(f"""
             <div style="padding:12px; background:{color}15; border:1px solid {color}30;
-                 border-radius:10px; text-align:center; cursor:pointer;">
-                <div style="font-size:1.2rem; margin-bottom:4px;">{name}</div>
-                <div style="width:100%; height:8px; background:{color}; border-radius:4px;"></div>
+                 border-radius:0; text-align:center; cursor:pointer;">
+                <div style="font-size:19px; margin-bottom:4px; font-family:'Inter',sans-serif;">{name}</div>
+                <div style="width:100%; height:4px; background:{color};"></div>
             </div>
             """, unsafe_allow_html=True)
             if st.button(f"应用 {name}", key=f"apply_{key}", use_container_width=True):
@@ -251,28 +247,32 @@ def render_brand_settings():
                 BRAND_CONFIG.update(template)
                 st.toast(f"已应用 {name} 主题")
                 st.rerun()
-    
+
     # 预览
     st.markdown("---")
-    st.markdown("#### 👁️ 预览")
+    st.markdown("#### 预览")
     st.markdown(f"""
     <div style="padding:20px; background:{BRAND_CONFIG['colors']['bg_card']};
-         border:1px solid {BRAND_CONFIG['colors']['primary']}30;
-         border-radius:14px;">
-        <div style="font-size:1.3rem; font-weight:800; color:{BRAND_CONFIG['colors']['text_primary']};">
+         border:1px solid rgba(255,255,255,0.12);
+         border-radius:0;">
+        <div style="font-size:21px; font-weight:800; color:{BRAND_CONFIG['colors']['text_primary']};
+             font-family:'Inter',sans-serif;">
             {BRAND_CONFIG['logo_emoji']} {BRAND_CONFIG['company_name']}
         </div>
-        <div style="font-size:0.8rem; color:{BRAND_CONFIG['colors']['text_secondary']};">
+        <div style="font-size:14px; color:{BRAND_CONFIG['colors']['text_secondary']};
+             font-family:'IBM Plex Sans',sans-serif;">
             {BRAND_CONFIG['product_name']}
         </div>
         <div style="margin-top:12px; display:flex; gap:8px;">
             <div style="padding:4px 12px; background:{BRAND_CONFIG['colors']['primary']};
-                 border-radius:6px; font-size:0.75rem; color:white;">
-                ✨ {BRAND_CONFIG['version']}
+                 border-radius:0; font-size:13px; color:#060606; font-weight:600;
+                 font-family:'Inter',sans-serif; letter-spacing:0.5px;">
+                {BRAND_CONFIG['version']}
             </div>
-            <div style="padding:4px 12px; background:{BRAND_CONFIG['colors']['secondary']}20;
-                 border:1px solid {BRAND_CONFIG['colors']['secondary']}40;
-                 border-radius:6px; font-size:0.75rem; color:{BRAND_CONFIG['colors']['secondary']};">
+            <div style="padding:4px 12px; background:rgba(255,255,255,0.06);
+                 border:1px solid rgba(255,255,255,0.12);
+                 border-radius:0; font-size:13px; color:{BRAND_CONFIG['colors']['text_secondary']};
+                 font-family:'IBM Plex Sans',sans-serif;">
                 {BRAND_CONFIG['industry']['name']}
             </div>
         </div>

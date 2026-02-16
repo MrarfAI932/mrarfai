@@ -29,125 +29,10 @@ st.set_page_config(
 )
 
 # ============================================================
-# 自定义样式
+# 主题 — from ui_theme (Single Source of Truth)
 # ============================================================
-
-st.markdown("""
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
-
-.stApp { background-color: #0a0e14; }
-
-.platform-header {
-    text-align: center;
-    padding: 1.5rem 0;
-    border-bottom: 1px solid #1c2128;
-    margin-bottom: 1.5rem;
-}
-.platform-header h1 {
-    background: linear-gradient(135deg, #00FF88, #58a6ff, #bc8cff);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    font-size: 2rem;
-    font-weight: 900;
-    margin: 0;
-}
-.platform-header p {
-    color: #6e7681;
-    font-size: 0.85rem;
-}
-
-.agent-card {
-    background: rgba(255,255,255,0.02);
-    border: 1px solid rgba(255,255,255,0.06);
-    border-radius: 12px;
-    padding: 1.2rem;
-    margin: 0.5rem 0;
-    transition: all 0.2s;
-}
-.agent-card:hover {
-    border-color: rgba(88,166,255,0.3);
-    background: rgba(88,166,255,0.03);
-}
-.agent-card .name {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: #f0f6fc;
-}
-.agent-card .desc {
-    font-size: 0.8rem;
-    color: #8b949e;
-    margin: 4px 0;
-}
-.agent-card .stats {
-    font-size: 0.7rem;
-    color: #6e7681;
-    font-family: 'JetBrains Mono', monospace;
-}
-
-.status-badge {
-    display: inline-block;
-    padding: 2px 10px;
-    border-radius: 999px;
-    font-size: 0.65rem;
-    font-weight: 600;
-}
-.status-online {
-    background: rgba(0,255,136,0.1);
-    color: #00FF88;
-    border: 1px solid rgba(0,255,136,0.2);
-}
-
-.chat-msg {
-    padding: 12px 16px;
-    border-radius: 12px;
-    margin: 8px 0;
-    font-size: 0.9rem;
-    line-height: 1.7;
-}
-.chat-user {
-    background: rgba(88,166,255,0.08);
-    border: 1px solid rgba(88,166,255,0.15);
-    margin-left: 2rem;
-}
-.chat-agent {
-    background: rgba(0,255,136,0.05);
-    border: 1px solid rgba(0,255,136,0.1);
-    margin-right: 2rem;
-}
-.chat-agent-tag {
-    font-size: 0.65rem;
-    color: #00FF88;
-    font-weight: 600;
-    margin-bottom: 4px;
-}
-
-.metric-box {
-    background: rgba(255,255,255,0.02);
-    border: 1px solid rgba(255,255,255,0.06);
-    border-radius: 10px;
-    padding: 1rem;
-    text-align: center;
-}
-.metric-box .value {
-    font-size: 2rem;
-    font-weight: 900;
-    color: #58a6ff;
-}
-.metric-box .label {
-    font-size: 0.75rem;
-    color: #6e7681;
-}
-
-.collab-step {
-    padding: 10px 14px;
-    background: rgba(255,255,255,0.02);
-    border-left: 3px solid #58a6ff;
-    margin: 6px 0;
-    border-radius: 0 8px 8px 0;
-}
-</style>
-""", unsafe_allow_html=True)
+from ui_theme import inject_theme
+inject_theme()
 
 # ============================================================
 # Gateway 初始化
@@ -437,7 +322,7 @@ def render_agents(gateway):
 
     cols[3].markdown(f"""
     <div class="metric-box">
-        <div class="value" style="color:#00FF88">✅</div>
+        <div class="value" style="color:#FFFFFF">✅</div>
         <div class="label">全部在线</div>
     </div>""", unsafe_allow_html=True)
 
@@ -449,15 +334,15 @@ def render_agents(gateway):
         "procurement": "🛒", "quality": "🔍", "finance": "💰", "market": "🌍",
     }
     agent_colors = {
-        "sales": "#00FF88", "risk": "#FF6B35", "strategist": "#58a6ff",
-        "procurement": "#F59E0B", "quality": "#A855F7", "finance": "#06B6D4", "market": "#EC4899",
+        "sales": "#FFFFFF", "risk": "#CCCCCC", "strategist": "#AAAAAA",
+        "procurement": "#999999", "quality": "#BBBBBB", "finance": "#DDDDDD", "market": "#888888",
     }
 
     cols = st.columns(3)
     for i, a in enumerate(agents):
         with cols[i % 3]:
             icon = agent_icons.get(a["name"], "🤖")
-            color = agent_colors.get(a["name"], "#58a6ff")
+            color = agent_colors.get(a["name"], "#CCCCCC")
             st.markdown(f"""
             <div class="agent-card" style="border-left: 3px solid {color}">
                 <div style="display:flex; justify-content:space-between; align-items:center">

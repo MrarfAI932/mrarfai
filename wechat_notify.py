@@ -254,7 +254,7 @@ def render_notification_settings(results: dict, health_scores: list = None):
         <div style="font-size:1.5rem;">🔔</div>
         <div>
             <div style="font-size:1.1rem; font-weight:700; color:#e2e8f0;">预警通知</div>
-            <div style="font-size:0.8rem; color:#64748b;">
+            <div style="font-size:14px; color:#64748b;">
                 企业微信群机器人 · 自动推送风险预警
             </div>
         </div>
@@ -310,9 +310,9 @@ def render_notification_settings(results: dict, health_scores: list = None):
         
         # 预览
         st.markdown(f"""
-        <div style="padding:12px 16px; background:rgba(30,41,59,0.8);
-             border:1px solid rgba(99,102,241,0.15); border-radius:10px;
-             max-height:300px; overflow-y:auto; font-size:0.82rem; color:#cbd5e1;">
+        <div style="padding:12px 16px; background:rgba(17,17,17,0.8);
+             border:1px solid rgba(255,255,255,0.10); border-radius:0px;
+             max-height:300px; overflow-y:auto; font-size:15px; color:#cbd5e1;">
             <div style="font-weight:700; margin-bottom:8px; color:#e2e8f0;">
                 {msg['title']}
             </div>

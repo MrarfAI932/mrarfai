@@ -1,11 +1,6 @@
 """
-MRARFAI v8 — Agent Chat Tab (Sprocomm 禾苗品牌版)
-Agent colors mapped to Sprocomm leaf palette:
-  🟢 Atlas (分析师) — Sprocomm Green
-  🔵 Shield (风控) — Sprocomm Blue
-  🔴 Nova (策略师) — Sprocomm Red
-  📝 Quill (报告) — blend
-  ⚡ V8.0 — Adaptive Gate + Context Eng + Meta-Memory + Self-Evolution
+MRARFAI v10 — Agent Chat Tab
+Colors imported from ui_theme design system.
 """
 
 import streamlit as st
@@ -24,15 +19,17 @@ try:
 except ImportError:
     HAS_V8 = False
 
-# ── Command Center palette ──────────────────────────────────────
-SP_GREEN = "#00FF88"       # Neon green — command center accent
-SP_BLUE  = "#00A0C8"
-SP_RED   = "#D94040"
-BRAND_GREEN = "#8CBF3F"    # Original Sprocomm green
-C_TEXT_MUTED = "#6a6a6a"
-C_TEXT_SEC   = "#8a8a8a"
-C_SUCCESS    = SP_GREEN
-C_WARNING    = "#FF8800"
+# ── Colors from design system ──────────────────────────────────
+from ui_theme import COLORS
+
+SP_GREEN     = COLORS["text_primary"]
+SP_BLUE      = COLORS["text_tertiary"]
+SP_RED       = COLORS["status_error"]
+BRAND_GREEN  = COLORS["text_secondary"]
+C_TEXT_MUTED = COLORS["text_muted"]
+C_TEXT_SEC   = COLORS["text_secondary"]
+C_SUCCESS    = COLORS["text_primary"]
+C_WARNING    = COLORS["status_warning"]
 
 # ── Agent Registry — mapped to Sprocomm 三叶 ───────────────────
 AGENTS = {
@@ -40,24 +37,24 @@ AGENTS = {
         "name": "数据分析师",
         "role": "DATA ANALYST",
         "color": SP_GREEN,
-        "bg": "rgba(0,255,136,0.08)",
-        "border": "rgba(0,255,136,0.20)",
+        "bg": "rgba(255,255,255,0.08)",
+        "border": "rgba(255,255,255,0.20)",
         "icon": "📊",
     },
     "🛡️ 风控专家": {
         "name": "风控专家",
         "role": "RISK CONTROL",
         "color": SP_RED,
-        "bg": "rgba(217,64,64,0.08)",
-        "border": "rgba(217,64,64,0.20)",
+        "bg": "rgba(102,102,102,0.08)",
+        "border": "rgba(102,102,102,0.20)",
         "icon": "🛡️",
     },
     "💡 策略师": {
         "name": "策略师",
         "role": "STRATEGIST",
         "color": SP_BLUE,
-        "bg": "rgba(0,160,200,0.08)",
-        "border": "rgba(0,160,200,0.20)",
+        "bg": "rgba(136,136,136,0.08)",
+        "border": "rgba(136,136,136,0.20)",
         "icon": "💡",
     },
     "🖊️ 报告员": {
@@ -72,8 +69,8 @@ AGENTS = {
         "name": "质量审查",
         "role": "QUALITY REVIEW",
         "color": SP_GREEN,
-        "bg": "rgba(0,255,136,0.06)",
-        "border": "rgba(0,255,136,0.18)",
+        "bg": "rgba(255,255,255,0.06)",
+        "border": "rgba(255,255,255,0.18)",
         "icon": "🔍",
     },
 }
@@ -284,14 +281,14 @@ def _inline_meta_html(critique: dict = None, hitl_decision: dict = None) -> str:
     if critique:
         score = critique.get("overall_score", 0)
         passed = critique.get("pass_threshold", score >= 7.0)
-        bg = "rgba(0,255,136,0.08)" if passed else "rgba(255,136,0,0.08)"
+        bg = "rgba(255,255,255,0.08)" if passed else "rgba(204,204,204,0.08)"
         color = SP_GREEN if passed else C_WARNING
-        border = "rgba(0,255,136,0.25)" if passed else "rgba(255,136,0,0.25)"
+        border = "rgba(255,255,255,0.25)" if passed else "rgba(204,204,204,0.25)"
         icon = "✓" if passed else "!"
         label = "PASS" if passed else "REVIEW"
         parts.append(
             f'<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;'
-            f'font-family:\'JetBrains Mono\',monospace;font-size:0.65rem;font-weight:700;'
+            f'font-family:Inter,sans-serif;font-size:12px;font-weight:700;'
             f'background:{bg};color:{color};border:1px solid {border};">'
             f'{icon} {label} {score:.1f}/10</span>'
         )
@@ -309,7 +306,7 @@ def _inline_meta_html(critique: dict = None, hitl_decision: dict = None) -> str:
         r, g, b = int(color[1:3], 16), int(color[3:5], 16), int(color[5:7], 16)
         parts.append(
             f'<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;'
-            f'font-family:\'JetBrains Mono\',monospace;font-size:0.65rem;font-weight:700;'
+            f'font-family:Inter,sans-serif;font-size:12px;font-weight:700;'
             f'background:rgba({r},{g},{b},0.08);color:{color};'
             f'border:1px solid rgba({r},{g},{b},0.25);">'
             f'{pct} {label}</span>'
@@ -351,17 +348,17 @@ def _update_agent_progress(container, active: dict, completed: set):
     for name in completed:
         a = AGENTS.get(name, {"icon": "✅", "color": SP_GREEN})
         html += (
-            f'<span style="background:rgba(0,255,136,0.08);border:1px solid rgba(0,255,136,0.25);'
-            f'padding:0.15rem 0.5rem;font-size:0.68rem;color:{SP_GREEN};'
-            f'font-family:\'JetBrains Mono\',monospace;font-weight:600;letter-spacing:0.03em;">'
+            f'<span style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.25);'
+            f'padding:0.15rem 0.5rem;font-size:13px;color:{SP_GREEN};'
+            f'font-family:Inter,sans-serif;font-weight:600;letter-spacing:0.03em;">'
             f'✓ {name}</span>'
         )
     for name, status in active.items():
         a = AGENTS.get(name, {"icon": "⏳", "color": C_TEXT_MUTED})
         html += (
             f'<span style="background:rgba(138,138,138,0.06);border:1px solid rgba(138,138,138,0.20);'
-            f'padding:0.15rem 0.5rem;font-size:0.68rem;color:{C_TEXT_MUTED};'
-            f'font-family:\'JetBrains Mono\',monospace;font-weight:600;letter-spacing:0.03em;">'
+            f'padding:0.15rem 0.5rem;font-size:13px;color:{C_TEXT_MUTED};'
+            f'font-family:Inter,sans-serif;font-weight:600;letter-spacing:0.03em;">'
             f'⏳ {name}</span>'
         )
     html += '</div>'
@@ -372,25 +369,25 @@ def _render_v4_badges(result: dict):
     """v4.0 feature status badges — command center style."""
     badges = []
     if result.get("tool_use_enabled"):
-        badges.append(f'<span style="background:rgba(0,255,136,0.06);color:{SP_GREEN};'
-                      f'border:1px solid rgba(0,255,136,0.20);'
-                      f'padding:0.1rem 0.4rem;font-size:0.58rem;font-weight:700;'
-                      f'letter-spacing:0.05em;font-family:\'JetBrains Mono\',monospace;">TOOL USE</span>')
+        badges.append(f'<span style="background:rgba(255,255,255,0.06);color:{SP_GREEN};'
+                      f'border:1px solid rgba(255,255,255,0.20);'
+                      f'padding:0.1rem 0.4rem;font-size:11px;font-weight:700;'
+                      f'letter-spacing:0.05em;font-family:Inter,sans-serif;">TOOL USE</span>')
     if result.get("guardrails_enabled"):
-        badges.append(f'<span style="background:rgba(0,160,200,0.06);color:{SP_BLUE};'
-                      f'border:1px solid rgba(0,160,200,0.20);'
-                      f'padding:0.1rem 0.4rem;font-size:0.58rem;font-weight:700;'
-                      f'letter-spacing:0.05em;font-family:\'JetBrains Mono\',monospace;">GUARDRAILS</span>')
+        badges.append(f'<span style="background:rgba(136,136,136,0.06);color:{SP_BLUE};'
+                      f'border:1px solid rgba(136,136,136,0.20);'
+                      f'padding:0.1rem 0.4rem;font-size:11px;font-weight:700;'
+                      f'letter-spacing:0.05em;font-family:Inter,sans-serif;">GUARDRAILS</span>')
     if result.get("streaming_enabled"):
         badges.append(f'<span style="background:rgba(138,138,138,0.06);color:#8a8a8a;'
                       f'border:1px solid rgba(138,138,138,0.20);'
-                      f'padding:0.1rem 0.4rem;font-size:0.58rem;font-weight:700;'
-                      f'letter-spacing:0.05em;font-family:\'JetBrains Mono\',monospace;">STREAMING</span>')
+                      f'padding:0.1rem 0.4rem;font-size:11px;font-weight:700;'
+                      f'letter-spacing:0.05em;font-family:Inter,sans-serif;">STREAMING</span>')
     if result.get("from_cache"):
-        badges.append(f'<span style="background:rgba(255,136,0,0.06);color:{C_WARNING};'
-                      f'border:1px solid rgba(255,136,0,0.20);'
-                      f'padding:0.1rem 0.4rem;font-size:0.58rem;font-weight:700;'
-                      f'letter-spacing:0.05em;font-family:\'JetBrains Mono\',monospace;">CACHED</span>')
+        badges.append(f'<span style="background:rgba(204,204,204,0.06);color:{C_WARNING};'
+                      f'border:1px solid rgba(204,204,204,0.20);'
+                      f'padding:0.1rem 0.4rem;font-size:11px;font-weight:700;'
+                      f'letter-spacing:0.05em;font-family:Inter,sans-serif;">CACHED</span>')
 
     budget = result.get("budget_status")
     if budget and budget.get("level") != "normal":
@@ -400,10 +397,10 @@ def _render_v4_badges(result: dict):
             "critical": SP_RED,
         }.get(budget["level"], C_TEXT_MUTED)
         badges.append(
-            f'<span style="background:rgba(217,64,64,0.06);color:{level_color};'
-            f'border:1px solid rgba(217,64,64,0.20);'
-            f'padding:0.1rem 0.4rem;font-size:0.58rem;font-weight:700;'
-            f'letter-spacing:0.05em;font-family:\'JetBrains Mono\',monospace;">'
+            f'<span style="background:rgba(102,102,102,0.06);color:{level_color};'
+            f'border:1px solid rgba(102,102,102,0.20);'
+            f'padding:0.1rem 0.4rem;font-size:11px;font-weight:700;'
+            f'letter-spacing:0.05em;font-family:Inter,sans-serif;">'
             f'{budget["usage_pct"]:.0f}% BUDGET</span>'
         )
 
@@ -418,9 +415,9 @@ def _render_v4_badges(result: dict):
 #  V8.0 RENDERING — Gate / Review / Eval / Memory
 # ════════════════════════════════════════════════════════════════
 
-V8_ORANGE = "#FF6B35"
-V8_PURPLE = "#A855F7"
-V8_CYAN   = "#06B6D4"
+V8_ORANGE = "#AAAAAA"
+V8_PURPLE = "#888888"
+V8_CYAN   = "#CCCCCC"
 
 def _badge_html(label: str, color: str) -> str:
     """Generate a V8 badge span."""
@@ -428,8 +425,8 @@ def _badge_html(label: str, color: str) -> str:
     return (
         f'<span style="background:rgba({r},{g},{b},0.06);color:{color};'
         f'border:1px solid rgba({r},{g},{b},0.20);'
-        f'padding:0.1rem 0.4rem;font-size:0.58rem;font-weight:700;'
-        f"letter-spacing:0.05em;font-family:'JetBrains Mono',monospace;"
+        f'padding:0.1rem 0.4rem;font-size:11px;font-weight:700;'
+        f"letter-spacing:0.05em;font-family:Inter,sans-serif;"
         f'">{label}</span>'
     )
 
@@ -489,9 +486,9 @@ def _render_v8_gate_card(result: dict):
     """V8.0 gate routing detail card."""
 
     # ── V9.0 COLORS ──
-V9_TEAL = "#2DD4BF"
-V9_INDIGO = "#818CF8"
-V9_ROSE = "#FB7185"
+V9_TEAL = "#CCCCCC"
+V9_INDIGO = "#AAAAAA"
+V9_ROSE = "#999999"
 
 def _render_v9_badges(result: dict):
     """V9.0 论文模块活动指标 — 实际被触发的模块."""
@@ -578,8 +575,8 @@ def _render_v9_details(result: dict):
     agents = gate.get("agents", [])
     reason = gate.get("reason", "")
 
-    level_colors = {"skip": "rgba(0,255,136,0.06)", "light": "rgba(255,107,53,0.06)", "full": "rgba(168,85,247,0.06)"}
-    level_borders = {"skip": "rgba(0,255,136,0.15)", "light": "rgba(255,107,53,0.15)", "full": "rgba(168,85,247,0.15)"}
+    level_colors = {"skip": "rgba(255,255,255,0.06)", "light": "rgba(170,170,170,0.06)", "full": "rgba(136,136,136,0.06)"}
+    level_borders = {"skip": "rgba(255,255,255,0.15)", "light": "rgba(170,170,170,0.15)", "full": "rgba(136,136,136,0.15)"}
     level_icons = {"skip": "⚡", "light": "🔀", "full": "🔥"}
 
     agents_str = " → ".join(agents) if agents else "SQL直查"
@@ -588,14 +585,14 @@ def _render_v9_details(result: dict):
     <div style="background:{level_colors.get(level, 'rgba(138,138,138,0.06)')};
          border:1px solid {level_borders.get(level, 'rgba(138,138,138,0.15)')};
          padding:8px 12px; margin:4px 0;">
-        <div style="font-family:'JetBrains Mono',monospace; font-size:0.6rem;
+        <div style="font-family:Inter,sans-serif; font-size:12px;
              color:#6a6a6a; letter-spacing:0.05em; margin-bottom:4px;">
             {level_icons.get(level, '🔥')} V8 GATE · {level.upper()} · score={score:.2f}
         </div>
-        <div style="font-size:0.72rem; color:#ccc;">
+        <div style="font-size:13px; color:#ccc;">
             {agents_str}
         </div>
-        <div style="font-size:0.58rem; color:#555; margin-top:2px;">
+        <div style="font-size:11px; color:#555; margin-top:2px;">
             {reason}
         </div>
     </div>
@@ -629,22 +626,22 @@ def _render_v8_review_card(result: dict):
         c_score = check_data.get("score", 0)
         c_passed = check_data.get("passed", True)
         icon = "✅" if c_passed else "❌"
-        checks_html += f'<span style="font-size:0.55rem;color:#888;margin-right:8px;">{icon} {check_name}: {c_score:.1f}</span>'
+        checks_html += f'<span style="font-size:11px;color:#888;margin-right:8px;">{icon} {check_name}: {c_score:.1f}</span>'
 
     blockers_html = ""
     if blockers:
         for b in blockers:
-            blockers_html += f'<div style="font-size:0.55rem;color:{SP_RED};margin-top:2px;">🚫 {b}</div>'
+            blockers_html += f'<div style="font-size:11px;color:{SP_RED};margin-top:2px;">🚫 {b}</div>'
 
     st.markdown(f"""
     <div style="background:rgba(138,138,138,0.04); border:1px solid rgba(138,138,138,0.10);
          padding:8px 12px; margin:4px 0;">
         <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span style="font-family:'JetBrains Mono',monospace; font-size:0.6rem;
+            <span style="font-family:Inter,sans-serif; font-size:12px;
                  color:#6a6a6a; letter-spacing:0.05em;">
                 📝 V8 REVIEW · {"PASS" if passed else "FAIL"}
             </span>
-            <span style="font-size:0.7rem; font-weight:700; color:{bar_color};">{score:.1f}/10</span>
+            <span style="font-size:13px; font-weight:700; color:{bar_color};">{score:.1f}/10</span>
         </div>
         <div style="background:rgba(138,138,138,0.10); height:3px; margin:4px 0; border-radius:2px;">
             <div style="background:{bar_color}; width:{bar_width}%; height:100%; border-radius:2px;"></div>
@@ -674,16 +671,16 @@ def _render_agent_cards(agents_used: list, agent_outputs: dict = None):
         })
 
         # All agents in agents_used list have completed
-        status = ('<span style="font-family:\'JetBrains Mono\',monospace;font-size:0.6rem;padding:0.2rem 0.6rem;'
+        status = ('<span style="font-family:Inter,sans-serif;font-size:12px;padding:0.2rem 0.6rem;'
                   'font-weight:700;flex-shrink:0;margin-left:auto;letter-spacing:0.05em;'
-                  'background:rgba(0,255,136,0.08);color:#00FF88;border:1px solid rgba(0,255,136,0.25);">DONE</span>')
+                  'background:rgba(255,255,255,0.08);color:#FFFFFF;border:1px solid rgba(255,255,255,0.25);">DONE</span>')
 
         cards_html += f"""
-        <div style="background:#111;border:1px solid #2f2f2f;border-left:2px solid {a['color']};padding:1rem 1.2rem;margin:0.5rem 0;display:flex;align-items:center;gap:1rem;">
-            <div style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;background:{a['bg']};border:1px solid {a['border']};">{a['icon']}</div>
+        <div class="agent-card" style="border-left:2px solid {a['color']};">
+            <div class="agent-avatar" style="background:{a['bg']};border:1px solid {a['border']};">{a['icon']}</div>
             <div style="flex:1;min-width:0;">
-                <div style="font-family:'Space Grotesk',sans-serif;font-size:0.85rem;font-weight:700;color:#fff;letter-spacing:0.03em;">{a['name']}</div>
-                <div style="font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:#6a6a6a;text-transform:uppercase;letter-spacing:0.1em;margin-top:2px;">{a['role']}</div>
+                <div class="agent-name">{a['name']}</div>
+                <div class="agent-role">{a['role']}</div>
             </div>
             {status}
         </div>"""
@@ -728,7 +725,7 @@ def _render_thinking_timeline(thinking_log: str, total_time: float = 0):
 
             time_m = re.search(r'(\d+\.?\d*)\s*[sS秒]', line)
             time_str = f' `{time_m.group(1)}s`' if time_m else ""
-            st.markdown(f"<span style='color:{color};font-size:8px;'>●</span> <span style='font-family:\"JetBrains Mono\",monospace;font-size:0.75rem;color:#aaa;line-height:1.8;'>{line}</span>{time_str}", unsafe_allow_html=True)
+            st.markdown(f"<span style='color:{color};font-size:8px;'>●</span> <span style='font-family:Inter,sans-serif;font-size:14px;color:#aaa;line-height:1.8;'>{line}</span>{time_str}", unsafe_allow_html=True)
 
 
 def _render_quality_badge(critique: dict):
@@ -745,21 +742,21 @@ def _render_quality_badge(critique: dict):
     abbr_map = {"completeness":"COM","accuracy":"ACC","actionability":"ACT","clarity":"CLA","consistency":"CON"}
     dim_text = " · ".join(f"{abbr_map.get(k,k[:3].upper())}:{v}" for k, v in dims.items()) if dims else ""
 
-    bg = "rgba(0,255,136,0.08)" if passed else "rgba(255,136,0,0.08)"
+    bg = "rgba(255,255,255,0.08)" if passed else "rgba(204,204,204,0.08)"
     color = SP_GREEN if passed else C_WARNING
-    border = "rgba(0,255,136,0.25)" if passed else "rgba(255,136,0,0.25)"
+    border = "rgba(255,255,255,0.25)" if passed else "rgba(204,204,204,0.25)"
     icon = "✓" if passed else "!"
     label = "PASS" if passed else "REVIEW"
 
     imp_html = f'<span style="color:{SP_GREEN};margin-left:0.3rem;">↑{imp:.1f}</span>' if imp and imp > 0 else ""
     iter_html = f'<span style="color:{C_TEXT_MUTED};margin-left:0.3rem;">×{iters}</span>' if iters and iters > 1 else ""
-    dim_html = f'<span style="font-size:0.58rem;color:{C_TEXT_MUTED};margin-left:0.4rem;">{dim_text}</span>' if dim_text else ""
+    dim_html = f'<span style="font-size:11px;color:{C_TEXT_MUTED};margin-left:0.4rem;">{dim_text}</span>' if dim_text else ""
 
     st.markdown(f"""
     <div style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.35rem 0.7rem;
-         font-family:'JetBrains Mono',monospace;font-size:0.68rem;font-weight:700;letter-spacing:0.05em;
+         font-family:Inter,sans-serif;font-size:13px;font-weight:700;letter-spacing:0.05em;
          margin:0.25rem 0;background:{bg};color:{color};border:1px solid {border};">
-        <span style="font-size:0.8rem;">{icon}</span>
+        <span style="font-size:14px;">{icon}</span>
         <span>{label}</span>
         <span style="font-weight:700;">{score:.1f}</span>
         <span style="color:{C_TEXT_MUTED};">/10</span>
@@ -800,17 +797,17 @@ def _render_hitl_card(hitl_decision: dict):
                 items.append(f"• {t.get('message', t.get('reason', str(t)))}")
             else:
                 items.append(f"• {t}")
-        trig_html = f'<div style="font-family:\'JetBrains Mono\',monospace;font-size:0.6rem;color:#6a6a6a;text-align:right;flex-shrink:0;">{"<br>".join(items)}</div>'
+        trig_html = f'<div style="font-family:Inter,sans-serif;font-size:12px;color:#6a6a6a;text-align:right;flex-shrink:0;">{"<br>".join(items)}</div>'
 
     gauge_bg = f"rgba({','.join(str(int(color.lstrip('#')[i:i+2],16)) for i in (0,2,4))},0.10)"
     gauge_border = f"rgba({','.join(str(int(color.lstrip('#')[i:i+2],16)) for i in (0,2,4))},0.35)"
 
     st.markdown(f"""
     <div style="background:#080808;border:1px solid #2f2f2f;padding:1rem 1.2rem;margin:0.8rem 0;display:flex;align-items:center;gap:1rem;">
-        <div style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-size:0.85rem;font-weight:700;flex-shrink:0;background:{gauge_bg};color:{color};border:2px solid {gauge_border};">{pct}</div>
+        <div style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;font-family:Inter,sans-serif;font-size:15px;font-weight:700;flex-shrink:0;background:{gauge_bg};color:{color};border:2px solid {gauge_border};">{pct}</div>
         <div style="flex:1;">
-            <div style="font-family:'Space Grotesk',sans-serif;font-size:0.75rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:{color};">{label}</div>
-            <div style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:#aaa;margin-top:0.2rem;">{act_text}</div>
+            <div style="font-family:Inter,sans-serif;font-size:14px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:{color};">{label}</div>
+            <div style="font-family:Inter,sans-serif;font-size:14px;color:#aaa;margin-top:0.2rem;">{act_text}</div>
         </div>
         {trig_html}
     </div>""", unsafe_allow_html=True)
@@ -820,25 +817,25 @@ def _render_trace_bar(trace_id: str = "", obs_summary: dict = None):
     """Compact trace info bar — adapted to multi_agent.py obs_summary format."""
     items = []
     if trace_id:
-        items.append(f'<span style="margin-right:0.5rem;">TRACE <span style="color:#00FF88;font-weight:700;">{trace_id[:8]}</span></span>')
+        items.append(f'<span style="margin-right:0.5rem;">TRACE <span style="color:#FFFFFF;font-weight:700;">{trace_id[:8]}</span></span>')
     if obs_summary:
         # Latency
         lb = obs_summary.get("latency_breakdown", {})
         total_ms = lb.get("total_ms", 0)
         if total_ms:
-            items.append(f'<span style="margin-right:0.5rem;">LATENCY <span style="color:#00FF88;font-weight:700;">{total_ms/1000:.1f}s</span></span>')
+            items.append(f'<span style="margin-right:0.5rem;">LATENCY <span style="color:#FFFFFF;font-weight:700;">{total_ms/1000:.1f}s</span></span>')
         # Tokens
         tokens = obs_summary.get("total_tokens", 0)
         if tokens:
-            items.append(f'<span style="margin-right:0.5rem;">TOKENS <span style="color:#00FF88;font-weight:700;">{tokens:,}</span></span>')
+            items.append(f'<span style="margin-right:0.5rem;">TOKENS <span style="color:#FFFFFF;font-weight:700;">{tokens:,}</span></span>')
         # Cost
         cost = obs_summary.get("total_cost_usd", 0)
         if cost:
-            items.append(f'<span style="margin-right:0.5rem;">COST <span style="color:#00FF88;font-weight:700;">${cost:.4f}</span></span>')
+            items.append(f'<span style="margin-right:0.5rem;">COST <span style="color:#FFFFFF;font-weight:700;">${cost:.4f}</span></span>')
         # LLM calls
         calls = obs_summary.get("total_llm_calls", 0)
         if calls:
-            items.append(f'<span style="margin-right:0.5rem;">CALLS <span style="color:#00FF88;font-weight:700;">{calls}</span></span>')
+            items.append(f'<span style="margin-right:0.5rem;">CALLS <span style="color:#FFFFFF;font-weight:700;">{calls}</span></span>')
 
     if items:
         st.markdown('<div class="trace-bar">' + " ".join(items) + '</div>', unsafe_allow_html=True)
@@ -859,35 +856,35 @@ def _render_welcome():
     st.markdown(f"""
     <div style="text-align:center; padding:24px 0 16px 0;">
         <div style="display:inline-flex; align-items:center; gap:8px; padding:6px 14px;
-             background:rgba(0,255,136,0.04); border:1px solid rgba(0,255,136,0.12);
+             background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12);
              margin-bottom:12px;">
-            <div style="width:5px;height:5px;border-radius:50%;background:#00FF88;
+            <div style="width:5px;height:5px;border-radius:50%;background:#FFFFFF;
                  animation:neon-pulse 2s ease-in-out infinite;"></div>
-            <span style="font-family:'JetBrains Mono',monospace;font-size:0.55rem;
-                  font-weight:700;color:#00FF88;letter-spacing:0.1em;">AGENT TERMINAL · V10.0</span>
+            <span style="font-family:Inter,sans-serif;font-size:11px;
+                  font-weight:700;color:#FFFFFF;letter-spacing:0.1em;">AGENT TERMINAL · V10.0</span>
         </div>
-        <div style="font-family:'Space Grotesk',sans-serif;font-size:1.2rem;font-weight:700;
+        <div style="font-family:Inter,sans-serif;font-size:1.2rem;font-weight:700;
              color:#FFFFFF;letter-spacing:-0.01em;margin-bottom:6px;">
             多智能体销售分析
         </div>
-        <div style="font-family:'JetBrains Mono',monospace;font-size:0.65rem;
+        <div style="font-family:Inter,sans-serif;font-size:12px;
              color:#6a6a6a;letter-spacing:0.02em;">
             // 12维深度分析 · 实时预警 · RLM 递归语言模型
         </div>
         <div style="display:flex;justify-content:center;gap:18px;margin-top:14px;">
             <div style="display:flex;align-items:center;gap:5px;">
-                <span style="color:{SP_GREEN};font-size:0.6rem;">◈</span>
-                <span style="font-family:'JetBrains Mono',monospace;font-size:0.5rem;
+                <span style="color:{SP_GREEN};font-size:12px;">◈</span>
+                <span style="font-family:Inter,sans-serif;font-size:10px;
                       color:#4a4a4a;letter-spacing:0.08em;">ANALYST</span>
             </div>
             <div style="display:flex;align-items:center;gap:5px;">
-                <span style="color:{SP_RED};font-size:0.6rem;">◆</span>
-                <span style="font-family:'JetBrains Mono',monospace;font-size:0.5rem;
+                <span style="color:{SP_RED};font-size:12px;">◆</span>
+                <span style="font-family:Inter,sans-serif;font-size:10px;
                       color:#4a4a4a;letter-spacing:0.08em;">RISK</span>
             </div>
             <div style="display:flex;align-items:center;gap:5px;">
-                <span style="color:{SP_BLUE};font-size:0.6rem;">◇</span>
-                <span style="font-family:'JetBrains Mono',monospace;font-size:0.5rem;
+                <span style="color:{SP_BLUE};font-size:12px;">◇</span>
+                <span style="font-family:Inter,sans-serif;font-size:10px;
                       color:#4a4a4a;letter-spacing:0.08em;">STRATEGY</span>
             </div>
         </div>
@@ -900,38 +897,38 @@ def _render_ready_state():
     st.markdown(f"""
     <div style="text-align:center; padding:40px 0 20px 0;">
         <div style="display:inline-flex; align-items:center; gap:8px; padding:8px 18px;
-             background:rgba(0,255,136,0.04); border:1px solid rgba(0,255,136,0.15);
+             background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.15);
              margin-bottom:20px;">
-            <div style="width:6px;height:6px;border-radius:50%;background:#00FF88;
+            <div style="width:6px;height:6px;border-radius:50%;background:#FFFFFF;
                  animation:neon-pulse 2s ease-in-out infinite;"></div>
-            <span style="font-family:'JetBrains Mono',monospace;font-size:0.6rem;
-                  font-weight:700;color:#00FF88;letter-spacing:0.1em;text-transform:uppercase;">
+            <span style="font-family:Inter,sans-serif;font-size:12px;
+                  font-weight:700;color:#FFFFFF;letter-spacing:0.1em;text-transform:uppercase;">
                 AGENTS READY · V10.0
             </span>
         </div>
-        <div style="font-family:'Space Grotesk',sans-serif;font-size:1.4rem;font-weight:700;
+        <div style="font-family:Inter,sans-serif;font-size:1.4rem;font-weight:700;
              color:#FFFFFF;letter-spacing:-0.02em;margin-bottom:6px;">
             多智能体分析就绪
         </div>
-        <div style="font-family:'JetBrains Mono',monospace;font-size:0.7rem;
+        <div style="font-family:Inter,sans-serif;font-size:13px;
              color:#6a6a6a;letter-spacing:0.03em;">
             // 在下方输入问题，或点击快捷提问开始分析
         </div>
     </div>
     <div style="display:flex;justify-content:center;gap:24px;margin-bottom:24px;">
         <div style="display:flex;align-items:center;gap:6px;">
-            <span style="color:{SP_GREEN};font-size:0.7rem;">◈</span>
-            <span style="font-family:'JetBrains Mono',monospace;font-size:0.58rem;
+            <span style="color:{SP_GREEN};font-size:13px;">◈</span>
+            <span style="font-family:Inter,sans-serif;font-size:11px;
                   color:#6a6a6a;letter-spacing:0.05em;">DATA ANALYST</span>
         </div>
         <div style="display:flex;align-items:center;gap:6px;">
-            <span style="color:{SP_RED};font-size:0.7rem;">◆</span>
-            <span style="font-family:'JetBrains Mono',monospace;font-size:0.58rem;
+            <span style="color:{SP_RED};font-size:13px;">◆</span>
+            <span style="font-family:Inter,sans-serif;font-size:11px;
                   color:#6a6a6a;letter-spacing:0.05em;">RISK CONTROL</span>
         </div>
         <div style="display:flex;align-items:center;gap:6px;">
-            <span style="color:{SP_BLUE};font-size:0.7rem;">◇</span>
-            <span style="font-family:'JetBrains Mono',monospace;font-size:0.58rem;
+            <span style="color:{SP_BLUE};font-size:13px;">◇</span>
+            <span style="font-family:Inter,sans-serif;font-size:11px;
                   color:#6a6a6a;letter-spacing:0.05em;">STRATEGIST</span>
         </div>
     </div>

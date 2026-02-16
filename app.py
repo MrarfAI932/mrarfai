@@ -8,8 +8,8 @@ V9.0 核心升级:
   - 全新 Command Center UI (内联主题)
   - real_pipeline.py 数据管线
 
-品牌配色: 🟢 Neon Green #00FF88  🔵 蓝叶 #00A0C8  🔴 红叶 #D94040
-字体: Space Grotesk (标题) + JetBrains Mono (数据)
+品牌配色: OLED Black + Pure White
+字体: Inter (body) + JetBrains Mono (data/code)
 """
 
 import streamlit as st
@@ -90,35 +90,39 @@ except ImportError:
 MONTHS = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月']
 
 # ============================================================
-# Sprocomm 禾苗配色系统 — Command Center
+# 配色系统 — from ui_theme Single Source of Truth
 # ============================================================
-SP_GREEN = "#00FF88"   # ⚡ Neon Green — 主色/活跃/CTA
-SP_BLUE  = "#00A0C8"   # 🔵 蓝叶 — 信息/分析/数据
-SP_RED   = "#D94040"   # 🔴 红叶 — 风险/预警/危险
-BRAND_GREEN = "#8CBF3F" # 原始品牌绿
-ACCENT = SP_GREEN
-CYAN   = SP_BLUE
-GREEN  = SP_GREEN
-RED    = SP_RED
-ORANGE = "#FF8800"
-PURPLE = "#8b5cf6"
-TEXT1  = "#FFFFFF"
-TEXT2  = "#8a8a8a"
-CHART_COLORS = [SP_GREEN, SP_BLUE, "#3b82f6", ORANGE, SP_RED, "#ec4899", PURPLE, "#06b6d4"]
+from ui_theme import inject_theme, COLORS
+
+SP_GREEN = COLORS["text_primary"]
+SP_BLUE  = COLORS["text_tertiary"]
+SP_RED   = COLORS["status_error"]
+BRAND_GREEN = COLORS["text_secondary"]
+ACCENT = COLORS["accent"]
+CYAN   = COLORS["text_tertiary"]
+GREEN  = COLORS["text_primary"]
+RED    = COLORS["status_error"]
+ORANGE = COLORS["status_warning"]
+PURPLE = COLORS["text_muted"]
+TEXT1  = COLORS["text_primary"]
+TEXT2  = COLORS["text_secondary"]
+CHART_COLORS = ["#EDEDED", "#BBBBBB", "#999999", "#777777", "#555555", "#999999", "#DDDDDD", "#AAAAAA"]
 PLOT_BG = "rgba(0,0,0,0)"
 PAPER_BG = "rgba(0,0,0,0)"
 GRID_COLOR = "rgba(255,255,255,0.04)"
 
 def plotly_layout(title="", height=400, showlegend=True):
+    _sans = "'Inter', sans-serif"
+    _mono = "'JetBrains Mono', monospace"  # for data/axis labels only
     return dict(
-        title=dict(text=title, font=dict(size=11, color=TEXT2, family="JetBrains Mono"), x=0),
+        title=dict(text=title, font=dict(size=12, color=TEXT2, family=_sans), x=0),
         paper_bgcolor=PAPER_BG, plot_bgcolor=PLOT_BG,
-        font=dict(color=TEXT2, size=11, family="JetBrains Mono"),
+        font=dict(color=TEXT2, size=11, family=_sans),
         height=height, showlegend=showlegend,
-        legend=dict(bgcolor="rgba(0,0,0,0)", font=dict(size=10, family="JetBrains Mono")),
+        legend=dict(bgcolor="rgba(0,0,0,0)", font=dict(size=10, family=_sans)),
         margin=dict(l=50, r=20, t=36, b=40),
-        xaxis=dict(gridcolor=GRID_COLOR, showgrid=True, tickfont=dict(size=10, family="JetBrains Mono"), zeroline=False),
-        yaxis=dict(gridcolor=GRID_COLOR, showgrid=True, tickfont=dict(size=10, family="JetBrains Mono"), zeroline=False),
+        xaxis=dict(gridcolor=GRID_COLOR, showgrid=True, tickfont=dict(size=10, family=_mono), zeroline=False),
+        yaxis=dict(gridcolor=GRID_COLOR, showgrid=True, tickfont=dict(size=10, family=_mono), zeroline=False),
     )
 
 def fmt(v, unit="万"):
@@ -190,491 +194,12 @@ def _t(key: str) -> str:
 
 
 # ============================================================
-# 内联主题 — Command Center (完整版)
+# 主题注入 — from ui_theme.py (Single Source of Truth)
 # ============================================================
-# 内联主题 — Command Center (完整版)
-# ============================================================
-st.markdown("""<style>
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+inject_theme()
 
-:root {
-    --bg-deep: #0C0C0C; --bg-base: #080808; --bg-elevated: #111111;
-    --bg-overlay: #1a1a1a; --bg-glass: rgba(12,12,12,0.85);
-    --border-subtle: #2f2f2f; --border-default: #2f2f2f;
-    --border-hover: rgba(0,255,136,0.30);
-    --text-1: #FFFFFF; --text-2: #8a8a8a; --text-3: #6a6a6a;
-    --neon: #00FF88; --sp-green: #00FF88; --sp-blue: #00A0C8; --sp-red: #D94040;
-    --warn: #FF8800; --radius-sm: 0px; --radius-md: 0px; --radius-lg: 0px;
-    --font-sans: 'Space Grotesk', -apple-system, sans-serif;
-    --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
-}
-
-#MainMenu, footer, .stDeployButton,
-[data-testid="stToolbar"], [data-testid="stDecoration"],
-[data-testid="stStatusWidget"],
-[data-testid="stHeader"] { display: none !important; }
-
-.stApp { background: var(--bg-deep) !important; }
-.block-container { padding: 1rem 2rem 3rem !important; max-width: 1600px; }
-/* Solid background for chat messages */
-[data-testid="stChatMessage"] { background: #0C0C0C !important; }
-.stChatMessage { background: #0C0C0C !important; }
-
-/* ── Hide sidebar completely ── */
-[data-testid="stSidebar"] { display: none !important; }
-[data-testid="collapsedControl"] { display: none !important; }
-[data-testid="stSidebarCollapseButton"] { display: none !important; }
-button[kind="headerNoPadding"] { display: none !important; }
-
-/* ── Top Config Bar ── */
-.top-bar {
-    display:flex; align-items:center; gap:16px; padding:10px 20px;
-    background:var(--bg-base); border:1px solid var(--border-subtle);
-    margin-bottom:16px; flex-wrap:wrap;
-}
-.top-bar-logo {
-    display:flex; align-items:center; gap:10px; margin-right:auto;
-}
-.top-bar-section {
-    display:flex; align-items:center; gap:8px;
-}
-.top-bar-label {
-    font-family:var(--font-mono); font-size:0.55rem; font-weight:700;
-    letter-spacing:0.1em; text-transform:uppercase; color:var(--text-3);
-}
-/* ── Upload Zone (welcome page) ── */
-.upload-zone {
-    max-width:600px; margin:0 auto; padding:32px;
-    background:var(--bg-elevated); border:1px solid var(--border-subtle);
-    position:relative;
-}
-.upload-zone::before {
-    content:""; position:absolute; left:0; top:0; bottom:0; width:3px;
-    background:linear-gradient(180deg, #00FF88, rgba(0,255,136,0.15));
-}
-.upload-zone .stFileUploader {
-    border:1px dashed rgba(255,255,255,0.08) !important;
-    transition:border-color 0.2s;
-}
-.upload-zone .stFileUploader:hover {
-    border-color:rgba(0,255,136,0.25) !important;
-}
-
-.stMarkdown p { font-family: var(--font-mono) !important; color: var(--text-2) !important; font-size: 0.82rem !important; line-height: 1.7 !important; }
-.stMarkdown h1 { font-family: var(--font-sans) !important; color: var(--text-1) !important; font-weight: 700 !important; letter-spacing: -0.03em !important; }
-.stMarkdown h2 { font-family: var(--font-sans) !important; color: var(--text-1) !important; font-weight: 600 !important; letter-spacing: -0.02em !important; }
-.stMarkdown h3, .stMarkdown h4 { font-family: var(--font-mono) !important; color: var(--neon) !important; font-weight: 700 !important; letter-spacing: 0.05em !important; text-transform: uppercase !important; font-size: 0.72rem !important; }
-
-.stTabs [data-baseweb="tab-list"] { gap: 0; border-bottom: 1px solid var(--border-subtle); }
-.stTabs [data-baseweb="tab"] { font-family: var(--font-mono) !important; font-size: 0.62rem !important; font-weight: 600 !important; letter-spacing: 0.12em !important; text-transform: uppercase !important; color: var(--text-3) !important; border-radius: 0 !important; padding: 0.7rem 1rem !important; }
-.stTabs [aria-selected="true"] { color: var(--neon) !important; border-bottom: 2px solid var(--neon) !important; background: transparent !important; }
-.stTabs [data-baseweb="tab-list"]::-webkit-scrollbar { display: none; }
-
-.agent-card { background: var(--bg-elevated); border: 1px solid var(--border-subtle); padding: 0.8rem 1rem; margin: 0.3rem 0; transition: border-color 0.15s; display: flex; align-items: center; gap: 0.75rem; }
-.agent-card:hover { border-color: rgba(0,255,136,0.25); }
-.agent-card .agent-avatar { width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:0.9rem;flex-shrink:0; }
-.agent-card .agent-name { font-family:var(--font-mono);font-size:0.78rem;font-weight:700;color:#fff;letter-spacing:0.03em; }
-.agent-card .agent-role { font-family:var(--font-mono);font-size:0.58rem;color:#6a6a6a;text-transform:uppercase;letter-spacing:0.1em; }
-.agent-card .agent-status { font-family:var(--font-mono);font-size:0.58rem;padding:0.15rem 0.5rem;font-weight:700;flex-shrink:0;margin-left:auto;letter-spacing:0.05em; }
-.status-complete { background:rgba(0,255,136,0.08);color:#00FF88;border:1px solid rgba(0,255,136,0.25); }
-.status-running { background:rgba(0,160,200,0.08);color:#00A0C8;border:1px solid rgba(0,160,200,0.25); }
-.status-error { background:rgba(217,64,64,0.08);color:#D94040;border:1px solid rgba(217,64,64,0.25); }
-
-.thinking-timeline { background:#080808;border:1px solid #2f2f2f;border-left:2px solid rgba(0,255,136,0.30);padding:0.8rem 1rem;margin:0.5rem 0; }
-.thinking-step { display:flex;align-items:flex-start;gap:0.6rem;padding:0.3rem 0;margin-left:0.55rem;border-left:1px solid #2f2f2f;padding-left:1rem; }
-.thinking-step .step-dot { width:6px;height:6px;margin-top:0.35rem;flex-shrink:0;margin-left:-1.35rem; }
-.thinking-step .step-text { font-family:var(--font-mono);font-size:0.72rem;color:#aaa;line-height:1.5; }
-.thinking-step .step-meta { font-family:var(--font-mono);font-size:0.58rem;color:#00FF88;margin-left:auto;flex-shrink:0;white-space:nowrap;font-weight:600; }
-
-.quality-badge { display:inline-flex;align-items:center;gap:0.4rem;padding:0.35rem 0.7rem;font-family:var(--font-mono);font-size:0.65rem;font-weight:700;letter-spacing:0.05em;margin:0.25rem 0.25rem 0.25rem 0; }
-.quality-pass { background:rgba(0,255,136,0.08);color:#00FF88;border:1px solid rgba(0,255,136,0.25); }
-.quality-fail { background:rgba(255,136,0,0.08);color:#FF8800;border:1px solid rgba(255,136,0,0.25); }
-
-.hitl-card { background:#080808;border:1px solid #2f2f2f;padding:0.7rem 1rem;margin:0.5rem 0;display:flex;align-items:center;gap:0.8rem; }
-.hitl-gauge { width:42px;height:42px;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:0.72rem;font-weight:700;flex-shrink:0; }
-.hitl-high { background:rgba(0,255,136,0.10);color:#00FF88;border:2px solid rgba(0,255,136,0.40); }
-.hitl-medium { background:rgba(255,136,0,0.10);color:#FF8800;border:2px solid rgba(255,136,0,0.35); }
-.hitl-low { background:rgba(217,64,64,0.10);color:#D94040;border:2px solid rgba(217,64,64,0.35); }
-.hitl-info { flex:1; }
-.hitl-info .hitl-level { font-family:var(--font-mono);font-size:0.65rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase; }
-.hitl-info .hitl-action { font-family:var(--font-mono);font-size:0.72rem;color:#aaa;margin-top:0.1rem; }
-.hitl-triggers { font-family:var(--font-mono);font-size:0.55rem;color:#6a6a6a;text-align:right;flex-shrink:0; }
-
-.trace-bar { display:flex;align-items:center;gap:1.2rem;padding:0.6rem 1rem;background:#080808;border:1px solid #2f2f2f;font-family:var(--font-mono);font-size:0.6rem;color:#6a6a6a;margin:0.8rem 0;letter-spacing:0.03em; }
-.trace-bar .trace-value { color:#00FF88;font-weight:700; }
-
-/* ======================================== */
-/* V9.0 UI POLISH — Animations & Keyframes */
-/* ======================================== */
-@keyframes neon-pulse {
-    0%, 100% { opacity:1; box-shadow:0 0 0 0 rgba(0,255,136,0.5); }
-    50%      { opacity:0.7; box-shadow:0 0 8px 4px rgba(0,255,136,0.15); }
-}
-@keyframes fade-in-up {
-    from { opacity:0; transform:translateY(16px); }
-    to   { opacity:1; transform:translateY(0); }
-}
-@keyframes glow-border {
-    0%, 100% { border-color:rgba(0,255,136,0.12); }
-    50%      { border-color:rgba(0,255,136,0.30); }
-}
-@keyframes v9-spin { to { transform:rotate(360deg); } }
-@keyframes badge-glow {
-    0%, 100% { box-shadow:0 0 0 0 rgba(0,255,136,0.08); }
-    50%      { box-shadow:0 0 12px rgba(0,255,136,0.12), 0 0 0 1px rgba(0,255,136,0.20); }
-}
-
-/* ── Status Bar (post-load) ── */
-.status-bar {
-    display:flex; align-items:center; gap:8px;
-    padding:8px 14px; margin-bottom:16px;
-    background:rgba(0,255,136,0.03); border:1px solid rgba(0,255,136,0.10);
-    animation:fade-in-up 0.5s ease-out;
-}
-.status-bar .status-dot {
-    width:6px; height:6px; border-radius:50%; background:#00FF88;
-    animation:neon-pulse 2s ease-in-out infinite; flex-shrink:0;
-}
-.status-bar .status-text {
-    font-family:var(--font-mono); font-size:0.62rem; font-weight:700;
-    color:#00FF88; letter-spacing:0.1em; text-transform:uppercase;
-}
-.status-bar .status-meta {
-    font-family:var(--font-mono); font-size:0.55rem; color:#6a6a6a;
-    letter-spacing:0.05em; margin-left:auto;
-}
-
-/* ── Section Header ── */
-.section-header {
-    font-family:var(--font-mono); font-size:0.65rem; font-weight:700;
-    letter-spacing:0.12em; text-transform:uppercase; color:var(--text-2);
-    padding:8px 0 6px; margin:16px 0 10px;
-    border-bottom:2px solid var(--neon);
-    display:inline-block;
-}
-
-/* ── Welcome Page ── */
-.welcome-badge {
-    display:inline-flex; align-items:center; gap:8px;
-    padding:6px 16px;
-    background:rgba(0,255,136,0.06); border:1px solid rgba(0,255,136,0.25);
-    font-size:0.62rem; color:#00FF88; font-weight:700;
-    letter-spacing:0.1em; font-family:var(--font-mono);
-    text-transform:uppercase;
-    animation:badge-glow 3s ease-in-out infinite;
-}
-.welcome-badge .badge-dot {
-    width:6px; height:6px; border-radius:50%; background:#00FF88;
-    animation:neon-pulse 2s ease-in-out infinite;
-}
-.welcome-title-green {
-    font-size:3rem; font-weight:700; color:#00FF88; letter-spacing:-2px;
-    margin:0; line-height:1.1; font-family:'Space Grotesk',sans-serif;
-    text-shadow: 0 0 30px rgba(0,255,136,0.20), 0 0 60px rgba(0,255,136,0.06);
-}
-.welcome-title-white {
-    font-size:3rem; font-weight:700; color:#FFFFFF; letter-spacing:-2px;
-    margin:0; line-height:1.1; font-family:'Space Grotesk',sans-serif;
-}
-.welcome-card {
-    background:var(--bg-elevated); border:1px solid var(--border-subtle);
-    border-left:2px solid var(--neon); display:block; text-align:left;
-    padding:1.2rem; position:relative; overflow:hidden;
-    transition:transform 0.2s, border-color 0.2s, box-shadow 0.2s;
-}
-.welcome-card::after {
-    content:""; position:absolute; bottom:0; left:0; right:0; height:1px;
-    background:linear-gradient(90deg, transparent, rgba(0,255,136,0.25), transparent);
-    opacity:0; transition:opacity 0.3s;
-}
-.welcome-card:hover {
-    transform:translateY(-2px); border-color:rgba(0,255,136,0.25);
-    box-shadow:0 6px 24px rgba(0,0,0,0.3);
-}
-.welcome-card:hover::after { opacity:1; }
-
-/* ── Logo Box (reused in top bar) ── */
-.sidebar-logo-box {
-    width:32px; height:32px; background:transparent;
-    display:flex; align-items:center; justify-content:center; flex-shrink:0;
-}
-/* ── File uploader styling ── */
-.stFileUploader {
-    border:1px dashed rgba(255,255,255,0.08) !important;
-    transition:border-color 0.2s;
-}
-.stFileUploader:hover {
-    border-color:rgba(0,255,136,0.25) !important;
-}
-.stCaption, small {
-    font-family:var(--font-mono) !important; font-size:0.55rem !important;
-    color:#6a6a6a !important; letter-spacing:0.03em !important;
-}
-.agent-active-badge {
-    display:flex; align-items:center; gap:6px; padding:4px 8px;
-    background:rgba(0,255,136,0.06); border:1px solid rgba(0,255,136,0.15);
-    margin-top:4px;
-}
-.agent-active-badge .pulse-dot {
-    width:5px; height:5px; border-radius:50%; background:#00FF88;
-    animation:neon-pulse 2s ease-in-out infinite;
-    box-shadow:0 0 6px rgba(0,255,136,0.4);
-}
-
-/* ── Metric Card Enhancements ── */
-[data-testid="stMetric"] {
-    background:var(--bg-elevated) !important; border:1px solid var(--border-subtle) !important;
-    padding:14px 16px !important; position:relative;
-    transition:border-color 0.2s, box-shadow 0.2s;
-    overflow:hidden;
-}
-[data-testid="stMetric"]::before {
-    content:""; position:absolute; left:0; top:0; bottom:0; width:3px;
-    background:linear-gradient(180deg, #00FF88, rgba(0,255,136,0.15));
-}
-[data-testid="stMetric"]:hover {
-    border-color:rgba(0,255,136,0.20) !important;
-    box-shadow:0 0 12px rgba(0,255,136,0.06);
-}
-[data-testid="stMetricLabel"] {
-    font-family:var(--font-mono) !important; font-size:0.55rem !important;
-    font-weight:700 !important; letter-spacing:0.1em !important;
-    text-transform:uppercase !important; color:var(--text-3) !important;
-}
-[data-testid="stMetricValue"] {
-    font-family:var(--font-sans) !important; font-weight:700 !important;
-    color:var(--text-1) !important;
-}
-[data-testid="stMetricDelta"] {
-    font-family:var(--font-mono) !important; font-size:0.65rem !important;
-}
-
-/* ── Tab Enhancements ── */
-.stTabs [aria-selected="true"] {
-    text-shadow:0 0 8px rgba(0,255,136,0.3) !important;
-}
-.stTabs [data-baseweb="tab"]:hover {
-    background:rgba(255,255,255,0.02) !important;
-}
-
-/* ── Expander Enhancements ── */
-.streamlit-expanderHeader {
-    font-family:var(--font-mono) !important; font-size:0.72rem !important;
-    background:var(--bg-elevated) !important;
-}
-[data-testid="stExpander"] {
-    background:var(--bg-elevated) !important;
-    border:1px solid var(--border-subtle) !important;
-    transition:border-color 0.2s;
-}
-[data-testid="stExpander"]:hover {
-    border-color:rgba(0,255,136,0.15) !important;
-}
-
-/* ── Chat Area — Breathing Room ── */
-[data-testid="stChatMessage"] {
-    padding:1rem 1.2rem !important; margin-bottom:0.8rem !important;
-}
-[data-testid="stChatMessage"] p {
-    font-family:'JetBrains Mono',monospace !important;
-    font-size:0.82rem !important; line-height:1.85 !important;
-    color:#d4d4d4 !important;
-}
-[data-testid="stChatMessage"] h1,
-[data-testid="stChatMessage"] h2 {
-    font-family:'Space Grotesk',sans-serif !important;
-    color:#FFFFFF !important; margin-top:1rem !important;
-}
-[data-testid="stChatMessage"] h3,
-[data-testid="stChatMessage"] h4 {
-    font-family:'Space Grotesk',sans-serif !important;
-    color:#e2e8f0 !important; font-size:0.95rem !important;
-    margin-top:0.8rem !important;
-}
-[data-testid="stChatMessage"] li {
-    font-family:'JetBrains Mono',monospace !important;
-    font-size:0.8rem !important; line-height:1.8 !important;
-    color:#b4b4b4 !important; margin-bottom:0.3rem !important;
-}
-[data-testid="stChatMessage"] strong {
-    color:#FFFFFF !important;
-}
-/* Chat input */
-[data-testid="stChatInput"] {
-    border-top:1px solid #2f2f2f !important;
-    padding-top:0.8rem !important;
-}
-[data-testid="stChatInput"] textarea {
-    font-family:'JetBrains Mono',monospace !important;
-    font-size:0.82rem !important;
-}
-/* Status expander in chat */
-[data-testid="stStatus"] {
-    margin:0.6rem 0 !important;
-}
-[data-testid="stStatus"] p {
-    font-size:0.75rem !important; line-height:1.6 !important;
-}
-
-/* ── Suggestion Chips ── */
-.stButton button {
-    font-family:'JetBrains Mono',monospace !important;
-}
-
-/* ── Scrollbar ── */
-::-webkit-scrollbar { width:4px; height:4px; }
-::-webkit-scrollbar-track { background:transparent; }
-::-webkit-scrollbar-thumb { background:#2f2f2f; border-radius:2px; }
-::-webkit-scrollbar-thumb:hover { background:#00FF88; }
-
-/* ════════════════════════════════════════════════════════ */
-/* AI RESPONSE — Card-based Answer Layout                  */
-/* ════════════════════════════════════════════════════════ */
-
-.ai-response-container {
-    display:flex; flex-direction:column; gap:10px;
-    margin:4px 0 14px; animation:fade-in-up 0.4s ease-out;
-}
-
-/* Summary — Hero card */
-.ai-summary {
-    background:rgba(0,255,136,0.04); border:1px solid rgba(0,255,136,0.15);
-    border-left:3px solid #00FF88; padding:16px 20px; position:relative;
-}
-.ai-summary::after {
-    content:""; position:absolute; bottom:0; left:0; right:0; height:1px;
-    background:linear-gradient(90deg, #00FF88, transparent 80%); opacity:0.25;
-}
-.ai-summary-label {
-    font-family:var(--font-mono); font-size:0.55rem; font-weight:700;
-    letter-spacing:0.12em; text-transform:uppercase; color:#00FF88; margin-bottom:6px;
-}
-.ai-summary-text {
-    font-family:var(--font-sans); font-size:0.92rem; font-weight:500;
-    color:#FFFFFF; line-height:1.75;
-}
-
-/* Section cards */
-.ai-section {
-    background:#0C0C0C; border:1px solid rgba(255,255,255,0.06);
-    border-left:3px solid #6a6a6a; padding:12px 16px;
-    transition:border-color 0.2s;
-}
-.ai-section:hover { border-color:rgba(255,255,255,0.12); }
-.ai-section-header {
-    font-family:var(--font-mono); font-size:0.62rem; font-weight:700;
-    letter-spacing:0.08em; text-transform:uppercase; color:#8a8a8a;
-    margin-bottom:6px; padding-bottom:4px;
-    border-bottom:1px solid rgba(255,255,255,0.04);
-}
-.ai-section-icon { color:#00FF88; margin-right:4px; }
-.ai-section-body {
-    font-family:var(--font-mono); font-size:0.8rem;
-    color:#b4b4b4; line-height:1.8;
-}
-
-/* Section color variants */
-.ai-section-growth { border-left-color:#00FF88; }
-.ai-section-growth .ai-section-header { color:#00FF88; }
-.ai-section-risk { border-left-color:#D94040; }
-.ai-section-risk .ai-section-header { color:#D94040; }
-.ai-section-action { border-left-color:#00A0C8; }
-.ai-section-action .ai-section-header { color:#00A0C8; }
-.ai-section-analysis { border-left-color:#8a8a8a; }
-
-/* Metric chips — inline number highlights */
-.ai-metric-chip {
-    display:inline; padding:1px 5px;
-    font-family:var(--font-mono); font-weight:700;
-    font-size:inherit; letter-spacing:0.02em;
-}
-.ai-metric-positive {
-    color:#00FF88; background:rgba(0,255,136,0.08);
-    border:1px solid rgba(0,255,136,0.20);
-}
-.ai-metric-negative {
-    color:#D94040; background:rgba(217,64,64,0.08);
-    border:1px solid rgba(217,64,64,0.20);
-}
-.ai-metric-neutral {
-    color:#FFFFFF; background:rgba(255,255,255,0.06);
-    border:1px solid rgba(255,255,255,0.10);
-}
-
-/* Action items */
-.ai-action-item {
-    display:flex; align-items:flex-start; gap:10px;
-    padding:8px 12px; margin:4px 0;
-    background:rgba(0,160,200,0.03); border-left:2px solid rgba(0,160,200,0.30);
-}
-.ai-action-num {
-    font-family:var(--font-mono); font-size:0.6rem; font-weight:700;
-    color:#00A0C8; background:rgba(0,160,200,0.10);
-    border:1px solid rgba(0,160,200,0.25);
-    width:20px; height:20px; display:flex; align-items:center;
-    justify-content:center; flex-shrink:0; margin-top:1px;
-}
-.ai-action-text {
-    font-family:var(--font-mono); font-size:0.8rem; color:#ccc; line-height:1.7;
-}
-
-/* Expert mini-cards (inside expander) */
-.ai-expert-card {
-    background:#080808; border:1px solid #2f2f2f;
-    padding:10px 14px; margin:6px 0; border-left:3px solid #6a6a6a;
-}
-.ai-expert-header {
-    display:flex; align-items:center; gap:8px; margin-bottom:6px;
-}
-.ai-expert-icon { font-size:0.9rem; }
-.ai-expert-name {
-    font-family:var(--font-sans); font-size:0.78rem; font-weight:700;
-    letter-spacing:0.03em;
-}
-.ai-expert-role {
-    font-family:var(--font-mono); font-size:0.52rem; color:#6a6a6a;
-    text-transform:uppercase; letter-spacing:0.1em; margin-left:auto;
-}
-.ai-expert-body {
-    font-family:var(--font-mono); font-size:0.75rem; color:#999;
-    line-height:1.7; max-height:140px; overflow-y:auto;
-}
-
-/* Inline meta row */
-.ai-inline-meta {
-    display:flex; align-items:center; gap:8px;
-    flex-wrap:wrap; margin:6px 0;
-}
-
-/* ── Welcome Background Gradient ── */
-.welcome-bg {
-    position:relative;
-}
-.welcome-bg::before {
-    content:""; position:absolute; top:-60px; left:50%; transform:translateX(-50%);
-    width:600px; height:300px;
-    background:radial-gradient(ellipse, rgba(0,255,136,0.04) 0%, transparent 70%);
-    pointer-events:none; z-index:0;
-}
-
-/* ── 移动端适配 ── */
-@media (max-width: 768px) {
-    .block-container { padding: 0.5rem 0.8rem 2rem !important; }
-    .stTabs [data-baseweb="tab"] { font-size: 0.5rem !important; padding: 0.5rem 0.5rem !important; letter-spacing: 0.05em !important; }
-    .stTabs [data-baseweb="tab-list"] { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-    .upload-zone { padding: 16px; max-width: 100%; }
-    .agent-card { padding: 0.5rem 0.6rem; }
-    .top-bar { padding: 6px 10px; gap: 8px; }
-    [data-testid="stDataFrame"] { overflow-x: auto !important; }
-    .js-plotly-plot { overflow-x: auto !important; }
-}
-@media (max-width: 480px) {
-    .block-container { padding: 0.3rem 0.5rem 1.5rem !important; }
-    .stTabs [data-baseweb="tab"] { font-size: 0.45rem !important; padding: 0.4rem 0.35rem !important; }
-}
-
-</style>""", unsafe_allow_html=True)
+# Legacy CSS removed — all styles now in ui_theme.py
+# (480 lines of dead CSS deleted)
 
 # ============================================================
 # 顶部导航栏 (替代侧边栏)
@@ -691,25 +216,17 @@ with _bar1:
             _topbar_logo_b64 = _tf.read().strip()
     except Exception:
         pass
-    _topbar_logo_html = f'<img src="data:image/png;base64,{_topbar_logo_b64}" style="width:28px;height:auto;filter:brightness(0) invert(1);" />' if _topbar_logo_b64 else '<span style="font-weight:700;font-size:0.85rem;color:#FFF;">M</span>'
+    _topbar_logo_html = f'<img src="data:image/png;base64,{_topbar_logo_b64}" style="width:28px;height:auto;filter:brightness(0) invert(1);" />' if _topbar_logo_b64 else '<span style="font-weight:700;font-size:15px;color:#FFF;">M</span>'
 
     st.markdown(f"""
-    <div style="display:flex; align-items:center; gap:12px; padding:4px 0;">
-        <div style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;">
-            {_topbar_logo_html}
-        </div>
-        <div>
-            <span style="font-size:0.88rem; font-weight:700; color:#FFFFFF;
-                 letter-spacing:0.1em; font-family:'Space Grotesk',sans-serif;
-                 text-transform:uppercase;">MRARFAI</span>
-            <span style="font-size:0.5rem; color:#6a6a6a; font-family:'JetBrains Mono',monospace;
-                 letter-spacing:0.08em; margin-left:12px;">V10.0 · Enterprise Agent Platform</span>
-        </div>
-        <div style="margin-left:auto; display:flex; align-items:center; gap:8px;">
-            <span style="font-family:'JetBrains Mono',monospace; font-size:0.55rem;
-                 color:#6a6a6a; letter-spacing:0.05em;">
-                👤 {_user['display_name']} · <span style="color:#FFFFFF;">{_role_perms.get('label', _user['role'].upper())}</span>
-            </span>
+    <div class="top-nav">
+        {_topbar_logo_html}
+        <span class="top-nav-brand">MRARFAI</span>
+        <span class="top-nav-version">V10.0</span>
+        <div class="top-nav-user">
+            <span class="pulse-dot" style="width:5px;height:5px;"></span>
+            {_user['display_name']}
+            <span class="top-nav-role">{_role_perms.get('label', _user['role'].upper())}</span>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -780,16 +297,15 @@ _bl, _bc, _br = st.columns([1, 2, 1])
 with _bc:
     if _logo_b64:
         st.markdown(f"""
-        <div style="text-align:center;padding:32px 0 8px 0;">
+        <div style="text-align:center;padding:24px 0 0;">
             <img src="data:image/png;base64,{_logo_b64}"
-                 style="width:120px;height:auto;filter:brightness(0) invert(1);margin-bottom:8px;" />
+                 style="width:80px;height:auto;filter:brightness(0) invert(1);opacity:0.9;" />
         </div>
         """, unsafe_allow_html=True)
     else:
-        st.markdown(f"""
-        <div style="text-align:center;padding:32px 0 8px 0;">
-            <div style="font-family:'Space Grotesk',sans-serif;font-weight:800;font-size:2rem;
-                  color:#FFFFFF;letter-spacing:0.18em;">MRARFAI</div>
+        st.markdown("""
+        <div style="text-align:center;padding:24px 0 0;">
+            <div class="logo-mark" style="width:40px;height:40px;font-size:18px;margin:0 auto;">M</div>
         </div>
         """, unsafe_allow_html=True)
 
@@ -850,27 +366,19 @@ if HAS_V10_GATEWAY:
 
         # ── 如果没有选择 Agent，显示主面板 ──
         if st.session_state.active_agent is None:
-            # Command Center 标题
+            # Command Center
             st.markdown(f"""
-            <div style="background:linear-gradient(135deg,#0d1117,#161b22);padding:20px 24px;
-                        border:1px solid rgba(255,255,255,0.08);margin-bottom:20px;">
-                <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
-                    <span style="font-family:'Space Grotesk',sans-serif;font-size:1rem;
-                          font-weight:700;color:#FFF;letter-spacing:0.06em;">{_t('command_center')}</span>
-                    <span style="font-size:0.5rem;color:#555;font-family:'JetBrains Mono',monospace;
-                          border:1px solid #333;padding:2px 6px;">V10.0 · {len(_allowed_agents)} {_t('agents_available')}</span>
-                </div>
-                <div style="font-size:0.6rem;color:#555;font-family:'JetBrains Mono',monospace;">
-                    {_t('select_agent')}　｜　{_t('current_role')}: {_role_perms.get('label', _user_role)}
-                </div>
+            <div class="cmd-hero">
+                <div class="cmd-title">{_t('command_center')}</div>
+                <div class="cmd-sub">{_t('select_agent')}</div>
+                <div class="cmd-badge">{len(_allowed_agents)} {_t('agents_available')} · {_role_perms.get('label', _user_role)}</div>
             </div>
             """, unsafe_allow_html=True)
 
             # ── KPI 仪表盘 ──
             _dash_label = "运营快览" if st.session_state.lang == "zh" else "Operations Snapshot"
             with st.container():
-                st.markdown(f"""<div style="font-size:0.55rem;color:#555;font-family:'JetBrains Mono',monospace;
-                    letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px;">📊 {_dash_label}</div>""",
+                st.markdown(f"""<div class="sec-hdr">{_dash_label}</div>""",
                     unsafe_allow_html=True)
 
                 _kpi_cols = st.columns(5)
@@ -892,7 +400,7 @@ if HAS_V10_GATEWAY:
                         _delayed = sum(1 for o in _orders if getattr(o, 'status', '') == 'delayed')
                         _kpi_data.append(("📦", "采购订单" if st.session_state.lang == "zh" else "PO Orders",
                                           f"{len(_orders)}", f"{_delayed} 延迟" if _delayed else "正常",
-                                          "#D94040" if _delayed else "#4ade80"))
+                                          "#888888" if _delayed else "#FFFFFF"))
                     # 品质: 良率
                     if "quality" in _engines:
                         _qe = _engines["quality"]
@@ -901,7 +409,7 @@ if HAS_V10_GATEWAY:
                             _avg_yield = sum(l.yield_rate for l in _lines) / len(_lines) * 100
                             _kpi_data.append(("🔬", "平均良率" if st.session_state.lang == "zh" else "Avg Yield",
                                               f"{_avg_yield:.1f}%", "良好" if _avg_yield > 95 else "关注",
-                                              "#4ade80" if _avg_yield > 95 else "#f59e0b"))
+                                              "#FFFFFF" if _avg_yield > 95 else "#CCCCCC"))
                     # 财务: 逾期应收
                     if "finance" in _engines:
                         _fe = _engines["finance"]
@@ -910,13 +418,13 @@ if HAS_V10_GATEWAY:
                         _total_ar = len(_ar)
                         _kpi_data.append(("💰", "应收逾期" if st.session_state.lang == "zh" else "AR Overdue",
                                           f"{_overdue}/{_total_ar}", f"{_overdue} 笔逾期",
-                                          "#D94040" if _overdue > 0 else "#4ade80"))
+                                          "#888888" if _overdue > 0 else "#FFFFFF"))
                     # 市场: 竞品数
                     if "market" in _engines:
                         _me = _engines["market"]
                         _comps = getattr(_me, 'competitors', {})
                         _kpi_data.append(("🏭", "竞品监控" if st.session_state.lang == "zh" else "Competitors",
-                                          f"{len(_comps)}", "持续追踪", "#00A0C8"))
+                                          f"{len(_comps)}", "持续追踪", "#888888"))
                 except Exception:
                     pass
 
@@ -925,22 +433,18 @@ if HAS_V10_GATEWAY:
                 _avg_ms = _pstats.get("avg_duration_ms", 0)
                 _kpi_data.append(("⚡", "平台请求" if st.session_state.lang == "zh" else "Requests",
                                   f"{_total_req}", f"均 {_avg_ms:.0f}ms" if _avg_ms > 0 else "就绪",
-                                  "#00FF88"))
+                                  "#FFFFFF"))
 
                 # 渲染 KPI 卡片
                 for _ki, _kpi in enumerate(_kpi_data):
                     if _ki < len(_kpi_cols):
                         with _kpi_cols[_ki]:
                             _k_icon, _k_label, _k_value, _k_sub, _k_color = _kpi
-                            st.markdown(f"""<div style="background:#0c0c0c;border:1px solid #222;
-                                padding:12px;text-align:center;">
-                                <div style="font-size:1.2rem;">{_k_icon}</div>
-                                <div style="font-size:1rem;font-weight:700;color:{_k_color};
-                                    font-family:'Space Grotesk',sans-serif;margin:4px 0;">{_k_value}</div>
-                                <div style="font-size:0.5rem;color:#888;font-family:'JetBrains Mono',monospace;">
-                                    {_k_label}</div>
-                                <div style="font-size:0.4rem;color:{_k_color};font-family:'JetBrains Mono',monospace;
-                                    margin-top:2px;">{_k_sub}</div>
+                            st.markdown(f"""<div class="kpi-card">
+                                <div class="kpi-icon">{_k_icon}</div>
+                                <div class="kpi-value" style="color:{_k_color};">{_k_value}</div>
+                                <div class="kpi-label">{_k_label}</div>
+                                <div class="kpi-sub" style="color:{_k_color};">{_k_sub}</div>
                             </div>""", unsafe_allow_html=True)
 
                 st.markdown("")  # spacer
@@ -963,25 +467,18 @@ if HAS_V10_GATEWAY:
                 _ac = _gw.registry.get_card(_name) if _gw.registry else None
                 _sk = len(_ac.skills) if _ac else 0
                 _available = _name in _has_engine
-                _status_color = "#4ade80" if _available else "#f59e0b"
+                _status_color = "#FFFFFF" if _available else "#CCCCCC"
                 _status_text = _t("online") if _available else _t("need_upload")
 
                 with _col:
                     st.markdown(f"""
-                    <div style="background:#0d1117;border:1px solid rgba(255,255,255,0.08);
-                         padding:16px;text-align:center;min-height:160px;">
-                        <div style="font-size:2rem;margin-bottom:4px;">{_icon}</div>
-                        <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;
-                             font-size:0.8rem;color:#FFF;margin-bottom:4px;">{_cn}</div>
-                        <div style="font-family:'JetBrains Mono',monospace;font-size:0.45rem;
-                             color:#666;margin-bottom:8px;line-height:1.4;">{_desc}</div>
-                        <div style="font-family:'JetBrains Mono',monospace;font-size:0.45rem;color:#555;">
-                            {_sk} {_t('skills')}</div>
-                        <div style="display:flex;align-items:center;justify-content:center;gap:4px;margin-top:4px;">
-                            <div style="width:5px;height:5px;border-radius:50%;background:{_status_color};"></div>
-                            <span style="font-size:0.4rem;color:{_status_color};font-family:'JetBrains Mono',monospace;">
-                                {_status_text}</span>
+                    <div class="ag-card">
+                        <div class="ag-av">{_icon}</div>
+                        <div class="ag-body">
+                            <div class="ag-name">{_cn}</div>
+                            <div class="ag-desc">{_desc}</div>
                         </div>
+                        <span class="ag-st st-on">{_status_text}</span>
                     </div>""", unsafe_allow_html=True)
 
                     if st.button(f"{_t('enter')} {_cn}", key=f"enter_{_name}", use_container_width=True):
@@ -995,21 +492,13 @@ if HAS_V10_GATEWAY:
                 if _collab_col:
                     with _collab_col:
                         st.markdown(f"""
-                        <div style="background:#0d1117;border:1px solid rgba(255,255,255,0.08);
-                             padding:16px;text-align:center;min-height:160px;">
-                            <div style="font-size:2rem;margin-bottom:4px;">⚡</div>
-                            <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;
-                                 font-size:0.8rem;color:#FFF;margin-bottom:4px;">{_t('cross_agent_collab')}</div>
-                            <div style="font-family:'JetBrains Mono',monospace;font-size:0.45rem;
-                                 color:#666;margin-bottom:8px;line-height:1.4;">
-                                 {_t('collab_desc')}</div>
-                            <div style="font-family:'JetBrains Mono',monospace;font-size:0.45rem;color:#555;">
-                                4 {_t('scenarios')}</div>
-                            <div style="display:flex;align-items:center;justify-content:center;gap:4px;margin-top:4px;">
-                                <div style="width:5px;height:5px;border-radius:50%;background:#4ade80;"></div>
-                                <span style="font-size:0.4rem;color:#4ade80;font-family:'JetBrains Mono',monospace;">
-                                    {_t('online')}</span>
+                        <div class="ag-card">
+                            <div class="ag-av">⚡</div>
+                            <div class="ag-body">
+                                <div class="ag-name">{_t('cross_agent_collab')}</div>
+                                <div class="ag-desc">{_t('collab_desc')}</div>
                             </div>
+                            <span class="ag-st st-on">{_t('online')}</span>
                         </div>""", unsafe_allow_html=True)
                         if st.button(f"{_t('enter')} {_t('cross_agent_collab')}", key="enter_collab", use_container_width=True):
                             st.session_state.active_agent = "_collab"
@@ -1023,19 +512,19 @@ if HAS_V10_GATEWAY:
                     _db_type = _db_status.get("type", "none")
                     _db_msg = _db_status.get("message", "")
                     if _db_type == "none":
-                        st.markdown(f"""<div style="font-size:0.6rem;color:#f59e0b;font-family:'JetBrains Mono',monospace;">
+                        st.markdown(f"""<div style="font-size:12px;color:#CCCCCC;font-family:'Inter',sans-serif;">
                             ⚠ 当前使用内置样本数据。配置 .env 中的 DB_* 变量可连接真实 ERP/MES 数据库。</div>""",
                             unsafe_allow_html=True)
                     elif _db_status.get("status") == "ok":
-                        st.markdown(f"""<div style="font-size:0.6rem;color:#4ade80;font-family:'JetBrains Mono',monospace;">
+                        st.markdown(f"""<div style="font-size:12px;color:#FFFFFF;font-family:'Inter',sans-serif;">
                             ✅ 已连接: {_db_type.upper()} — {_db_msg}</div>""",
                             unsafe_allow_html=True)
                     else:
-                        st.markdown(f"""<div style="font-size:0.6rem;color:#D94040;font-family:'JetBrains Mono',monospace;">
+                        st.markdown(f"""<div style="font-size:12px;color:#888888;font-family:'Inter',sans-serif;">
                             ❌ 连接失败: {_db_msg}</div>""",
                             unsafe_allow_html=True)
 
-                    st.markdown(f"""<div style="font-size:0.5rem;color:#555;font-family:'JetBrains Mono',monospace;margin-top:8px;">
+                    st.markdown(f"""<div style="font-size:11px;color:#555;font-family:'Inter',sans-serif;margin-top:8px;">
                         <b>支持的数据源:</b><br>
                         · SQLite — 本地 Demo 数据库<br>
                         · MySQL — ERP (用友/金蝶/SAP)<br>
@@ -1052,13 +541,13 @@ if HAS_V10_GATEWAY:
                     _rpt_enabled = _rpt_config.enabled
 
                     if _rpt_enabled:
-                        st.markdown(f"""<div style="font-size:0.6rem;color:#4ade80;font-family:'JetBrains Mono',monospace;">
+                        st.markdown(f"""<div style="font-size:12px;color:#FFFFFF;font-family:'Inter',sans-serif;">
                             ✅ 邮件报告已启用 — {_rpt_config.schedule}
                             · SMTP: {_rpt_config.smtp_host}
                             · 收件人: {', '.join(_rpt_config.recipients)}</div>""",
                             unsafe_allow_html=True)
                     else:
-                        st.markdown(f"""<div style="font-size:0.6rem;color:#f59e0b;font-family:'JetBrains Mono',monospace;">
+                        st.markdown(f"""<div style="font-size:12px;color:#CCCCCC;font-family:'Inter',sans-serif;">
                             ⚠ 邮件报告未配置。配置 .env 中的 REPORT_SMTP_* 变量启用自动报告推送。</div>""",
                             unsafe_allow_html=True)
 
@@ -1115,7 +604,7 @@ if HAS_V10_GATEWAY:
                                 except Exception as e:
                                     st.error(f"发送失败: {e}")
 
-                    st.markdown(f"""<div style="font-size:0.5rem;color:#555;font-family:'JetBrains Mono',monospace;margin-top:8px;">
+                    st.markdown(f"""<div style="font-size:11px;color:#555;font-family:'Inter',sans-serif;margin-top:8px;">
                         <b>报告频率:</b> daily (日报) / weekly (周报) / monthly (月报)<br>
                         <b>推送方式:</b> SMTP 邮件 + 本地文件保存<br>
                         <b>配置方法:</b> 编辑 .env 中 REPORT_SMTP_HOST, REPORT_SMTP_USER, REPORT_RECIPIENTS 等变量
@@ -1132,27 +621,27 @@ if HAS_V10_GATEWAY:
                     _log_c1, _log_c2, _log_c3 = st.columns(3)
                     with _log_c1:
                         st.markdown(f"""<div style="text-align:center;padding:8px;background:#0a0a0a;border:1px solid #222;">
-                            <div style="font-size:1rem;font-weight:700;color:#00FF88;font-family:'Space Grotesk',sans-serif;">
+                            <div style="font-size:1rem;font-weight:700;color:#FFFFFF;font-family:'Inter',sans-serif;">
                                 {_audit_stats.get('total_requests', 0)}</div>
-                            <div style="font-size:0.4rem;color:#555;font-family:'JetBrains Mono',monospace;">
+                            <div style="font-size:10px;color:#555;font-family:'Inter',sans-serif;">
                                 {'总请求' if st.session_state.lang == 'zh' else 'Total Requests'}</div>
                         </div>""", unsafe_allow_html=True)
                     with _log_c2:
                         _avg_ms = _audit_stats.get('avg_duration_ms', 0)
                         st.markdown(f"""<div style="text-align:center;padding:8px;background:#0a0a0a;border:1px solid #222;">
-                            <div style="font-size:1rem;font-weight:700;color:#00A0C8;font-family:'Space Grotesk',sans-serif;">
+                            <div style="font-size:1rem;font-weight:700;color:#888888;font-family:'Inter',sans-serif;">
                                 {_avg_ms:.0f}ms</div>
-                            <div style="font-size:0.4rem;color:#555;font-family:'JetBrains Mono',monospace;">
+                            <div style="font-size:10px;color:#555;font-family:'Inter',sans-serif;">
                                 {'平均响应' if st.session_state.lang == 'zh' else 'Avg Response'}</div>
                         </div>""", unsafe_allow_html=True)
                     with _log_c3:
                         _by_status = _audit_stats.get('by_status', {})
                         _fail_count = _by_status.get('failed', 0) + _by_status.get('error', 0)
-                        _fail_color = "#D94040" if _fail_count > 0 else "#4ade80"
+                        _fail_color = "#888888" if _fail_count > 0 else "#FFFFFF"
                         st.markdown(f"""<div style="text-align:center;padding:8px;background:#0a0a0a;border:1px solid #222;">
-                            <div style="font-size:1rem;font-weight:700;color:{_fail_color};font-family:'Space Grotesk',sans-serif;">
+                            <div style="font-size:1rem;font-weight:700;color:{_fail_color};font-family:'Inter',sans-serif;">
                                 {_fail_count}</div>
-                            <div style="font-size:0.4rem;color:#555;font-family:'JetBrains Mono',monospace;">
+                            <div style="font-size:10px;color:#555;font-family:'Inter',sans-serif;">
                                 {'失败请求' if st.session_state.lang == 'zh' else 'Failed'}</div>
                         </div>""", unsafe_allow_html=True)
 
@@ -1160,16 +649,16 @@ if HAS_V10_GATEWAY:
                     _by_agent = _audit_stats.get('by_agent', {})
                     if _by_agent:
                         _agent_dist_label = "Agent 请求分布" if st.session_state.lang == "zh" else "Agent Distribution"
-                        st.markdown(f"""<div style="font-size:0.5rem;color:#888;font-family:'JetBrains Mono',monospace;
+                        st.markdown(f"""<div style="font-size:11px;color:#888;font-family:'Inter',sans-serif;
                             margin:12px 0 4px;">{_agent_dist_label}:</div>""", unsafe_allow_html=True)
                         for _ag, _cnt in sorted(_by_agent.items(), key=lambda x: -x[1]):
                             _pct = (_cnt / max(1, _audit_stats.get('total_requests', 1))) * 100
                             _ag_icon = _agent_icons.get(_ag, "🤖")
-                            st.markdown(f"""<div style="font-size:0.5rem;font-family:'JetBrains Mono',monospace;
+                            st.markdown(f"""<div style="font-size:11px;font-family:'Inter',sans-serif;
                                 color:#e0e0e0;display:flex;align-items:center;gap:6px;padding:2px 0;">
                                 <span>{_ag_icon} {_ag}</span>
                                 <div style="flex:1;background:#111;height:6px;border-radius:3px;">
-                                    <div style="width:{min(_pct, 100):.0f}%;background:#00FF88;height:6px;border-radius:3px;"></div>
+                                    <div style="width:{min(_pct, 100):.0f}%;background:#FFFFFF;height:6px;border-radius:3px;"></div>
                                 </div>
                                 <span style="color:#888;min-width:50px;text-align:right;">{_cnt} ({_pct:.0f}%)</span>
                             </div>""", unsafe_allow_html=True)
@@ -1177,7 +666,7 @@ if HAS_V10_GATEWAY:
                     # 最近日志列表
                     if _recent_logs:
                         _recent_label = "最近请求" if st.session_state.lang == "zh" else "Recent Requests"
-                        st.markdown(f"""<div style="font-size:0.5rem;color:#888;font-family:'JetBrains Mono',monospace;
+                        st.markdown(f"""<div style="font-size:11px;color:#888;font-family:'Inter',sans-serif;
                             margin:12px 0 4px;">{_recent_label}:</div>""", unsafe_allow_html=True)
                         for _log in reversed(_recent_logs[-15:]):
                             _ts = _log.get("timestamp", "")[:19].replace("T", " ")
@@ -1186,8 +675,8 @@ if HAS_V10_GATEWAY:
                             _lst = _log.get("status", "?")
                             _ldur = _log.get("duration_ms", 0)
                             _luser = _log.get("user", "")
-                            _st_color = "#4ade80" if _lst == "completed" else "#D94040" if _lst in ("failed","error") else "#f59e0b"
-                            st.markdown(f"""<div style="font-size:0.45rem;font-family:'JetBrains Mono',monospace;
+                            _st_color = "#FFFFFF" if _lst == "completed" else "#888888" if _lst in ("failed","error") else "#CCCCCC"
+                            st.markdown(f"""<div style="font-size:10px;font-family:'Inter',sans-serif;
                                 color:#aaa;padding:3px 0;border-bottom:1px solid #181818;">
                                 <span style="color:#555;">{_ts}</span>
                                 <span style="color:{_st_color};">●</span>
@@ -1199,14 +688,14 @@ if HAS_V10_GATEWAY:
 
                     # API 限流状态
                     _rl_label = "API 限流状态" if st.session_state.lang == "zh" else "API Rate Limit"
-                    st.markdown(f"""<div style="font-size:0.5rem;color:#888;font-family:'JetBrains Mono',monospace;
+                    st.markdown(f"""<div style="font-size:11px;color:#888;font-family:'Inter',sans-serif;
                         margin:12px 0 4px;">{_rl_label}:</div>""", unsafe_allow_html=True)
                     _rl = _gw.rate_limiter.get_usage()
                     _rl_min = _rl.get("global_last_minute", 0)
                     _rl_hr = _rl.get("global_last_hour", 0)
                     _rl_lim_min = _rl.get("global_limit_minute", 300)
                     _rl_lim_hr = _rl.get("global_limit_hour", 5000)
-                    st.markdown(f"""<div style="font-size:0.5rem;font-family:'JetBrains Mono',monospace;color:#e0e0e0;">
+                    st.markdown(f"""<div style="font-size:11px;font-family:'Inter',sans-serif;color:#e0e0e0;">
                         ⚡ 分钟: {_rl_min}/{_rl_lim_min} · 小时: {_rl_hr}/{_rl_lim_hr}
                     </div>""", unsafe_allow_html=True)
 
@@ -1245,7 +734,7 @@ if HAS_V10_GATEWAY:
                                 st.error(f"❌ {_msg}")
 
                     if not _wx_webhook:
-                        st.markdown(f"""<div style="font-size:0.5rem;color:#555;font-family:'JetBrains Mono',monospace;">
+                        st.markdown(f"""<div style="font-size:11px;color:#555;font-family:'Inter',sans-serif;">
                             配置方法: 企业微信群 → 群设置 → 群机器人 → 添加 → 复制 Webhook 地址
                         </div>""", unsafe_allow_html=True)
 
@@ -1274,12 +763,10 @@ if HAS_V10_GATEWAY:
                 st.rerun()
         with _title_col:
             st.markdown(f"""
-            <div style="display:flex;align-items:center;gap:10px;padding:4px 0;">
-                <span style="font-size:1.5rem;">{_icon}</span>
-                <span style="font-family:'Space Grotesk',sans-serif;font-size:1.1rem;
-                      font-weight:700;color:#FFF;letter-spacing:0.04em;">{_cn}</span>
-                <span style="font-size:0.5rem;color:#555;font-family:'JetBrains Mono',monospace;
-                      border:1px solid #333;padding:2px 6px;">{_t('agent_workspace')}</span>
+            <div class="ws-header">
+                <span class="ws-header-icon">{_icon}</span>
+                <span class="ws-header-title">{_cn}</span>
+                <span class="ws-header-badge">{_t('agent_workspace')}</span>
             </div>""", unsafe_allow_html=True)
 
         st.markdown("---")
@@ -1290,7 +777,7 @@ if HAS_V10_GATEWAY:
             _v10_api_key = _DEFAULT_API_KEY
             if _v10_api_key:
                 # 已内置 Key，显示状态
-                st.markdown(f"""<div style="font-size:0.55rem;color:#4ade80;font-family:'JetBrains Mono',monospace;
+                st.markdown(f"""<div style="font-size:11px;color:#FFFFFF;font-family:'Inter',sans-serif;
                     padding:4px 0 8px 0;">✅ {_t('ai_enabled')} · {_v10_provider} · {_t('key_builtin')}</div>""", unsafe_allow_html=True)
             else:
                 # 无内置 Key，显示输入框
@@ -1317,7 +804,7 @@ if HAS_V10_GATEWAY:
             if not can_upload(_user_role):
                 st.warning(f"⚠ {_t('no_upload')}")
                 st.stop()
-            st.markdown(f"""<div style="font-size:0.65rem;color:#888;font-family:'JetBrains Mono',monospace;
+            st.markdown(f"""<div style="font-size:12px;color:#888;font-family:'Inter',sans-serif;
                 margin-bottom:12px;">{_t('upload_hint_v9')}</div>""",
                 unsafe_allow_html=True)
 
@@ -1491,7 +978,7 @@ if HAS_V10_GATEWAY:
                         fig = go.Figure()
                         fig.add_trace(go.Scatter(x=list(range(1, len(cum)+1)), y=cum, mode='lines+markers',
                             line=dict(color=SP_GREEN, width=2), marker=dict(size=5, color=SP_GREEN),
-                            fill='tozeroy', fillcolor='rgba(0,255,136,0.06)'))
+                            fill='tozeroy', fillcolor='rgba(255,255,255,0.06)'))
                         fig.add_hline(y=80, line_dash="dash", line_color=ORANGE,
                             annotation_text="80% 帕累托线", annotation_font=dict(size=10, color=ORANGE))
                         fig.update_layout(**plotly_layout("客户集中度曲线", 350, False))
@@ -1718,7 +1205,7 @@ if HAS_V10_GATEWAY:
         elif _active == "_collab":
             # ── 协作场景界面 ──
             _scenarios = _gw.collaboration.scenarios
-            st.markdown(f"""<div style="font-size:0.7rem;color:#888;font-family:'JetBrains Mono',monospace;
+            st.markdown(f"""<div style="font-size:13px;color:#888;font-family:'Inter',sans-serif;
                 margin-bottom:12px;">{_t('collab_hint')}</div>""", unsafe_allow_html=True)
 
             # 预定义场景按钮
@@ -1754,7 +1241,7 @@ if HAS_V10_GATEWAY:
                 _agent_display = {k: f"{_agent_icons.get(k,'')} {v}" for k, v in _agent_names_cn.items()}
 
                 _chain_hint = "选择2-5个Agent组成自定义协作链" if st.session_state.lang == "zh" else "Select 2-5 Agents to build a custom chain"
-                st.markdown(f"""<div style="font-size:0.55rem;color:#888;font-family:'JetBrains Mono',monospace;">
+                st.markdown(f"""<div style="font-size:11px;color:#888;font-family:'Inter',sans-serif;">
                     {_chain_hint}</div>""", unsafe_allow_html=True)
 
                 _selected = st.multiselect(
@@ -1768,7 +1255,7 @@ if HAS_V10_GATEWAY:
 
                 if _selected and len(_selected) >= 2:
                     _chain_preview = " → ".join([f"{_agent_icons.get(a,'')} {_agent_names_cn.get(a,a)}" for a in _selected])
-                    st.markdown(f"""<div style="font-size:0.65rem;color:#4ade80;font-family:'JetBrains Mono',monospace;
+                    st.markdown(f"""<div style="font-size:12px;color:#FFFFFF;font-family:'Inter',sans-serif;
                         padding:8px 0;">链路: {_chain_preview}</div>""", unsafe_allow_html=True)
 
                     _cc1, _cc2 = st.columns([2, 1])
@@ -1819,12 +1306,12 @@ if HAS_V10_GATEWAY:
 
                 if not _mem_records:
                     _no_mem = "暂无协作记录。执行协作场景后，结果将自动存档。" if st.session_state.lang == "zh" else "No records yet. Run a collaboration scenario to create one."
-                    st.markdown(f"""<div style="font-size:0.55rem;color:#555;font-family:'JetBrains Mono',monospace;">
+                    st.markdown(f"""<div style="font-size:11px;color:#555;font-family:'Inter',sans-serif;">
                         {_no_mem}</div>""", unsafe_allow_html=True)
                 else:
                     _mem_stats = _mem.get_stats()
                     _total_label = "总记录" if st.session_state.lang == "zh" else "Total records"
-                    st.markdown(f"""<div style="font-size:0.5rem;color:#555;font-family:'JetBrains Mono',monospace;margin-bottom:8px;">
+                    st.markdown(f"""<div style="font-size:11px;color:#555;font-family:'Inter',sans-serif;margin-bottom:8px;">
                         📊 {_total_label}: {_mem_stats.get('total_records', 0)}</div>""", unsafe_allow_html=True)
 
                     for _rec in _mem_records:
@@ -1837,9 +1324,9 @@ if HAS_V10_GATEWAY:
 
                         _rec_col1, _rec_col2 = st.columns([4, 1])
                         with _rec_col1:
-                            st.markdown(f"""<div style="font-size:0.55rem;font-family:'JetBrains Mono',monospace;
+                            st.markdown(f"""<div style="font-size:11px;font-family:'Inter',sans-serif;
                                 color:#e0e0e0;padding:4px 0;border-bottom:1px solid #222;">
-                                {_status_dot} <span style="color:#00A0C8;">{_sc_name}</span>
+                                {_status_dot} <span style="color:#888888;">{_sc_name}</span>
                                 · {_agents} agents · {_ts}
                                 · <span style="color:#555;">{_rec.get('user','')}</span></div>""",
                                 unsafe_allow_html=True)
@@ -1853,7 +1340,7 @@ if HAS_V10_GATEWAY:
                         if st.session_state.get(f"_show_mem_{_mid}", False):
                             _full = _mem.load(_mid)
                             if _full:
-                                st.markdown(f"""<div style="font-size:0.5rem;font-family:'JetBrains Mono',monospace;
+                                st.markdown(f"""<div style="font-size:11px;font-family:'Inter',sans-serif;
                                     color:#888;background:#0a0a0a;padding:12px;margin:4px 0 12px;border:1px solid #222;">
                                     <b>场景:</b> {_full.get('scenario','')}<br>
                                     <b>描述:</b> {_full.get('description','')}<br>
@@ -1866,8 +1353,8 @@ if HAS_V10_GATEWAY:
                                 for _aname, _ares in _full.get("agent_results", {}).items():
                                     _a_icon = _agent_icons.get(_aname, "🤖")
                                     _a_cn = _agent_names_cn.get(_aname, _aname)
-                                    st.markdown(f"""<div style="font-size:0.5rem;font-family:'JetBrains Mono',monospace;
-                                        color:#00FF88;margin-top:6px;">▸ {_a_icon} {_a_cn}</div>""",
+                                    st.markdown(f"""<div style="font-size:11px;font-family:'Inter',sans-serif;
+                                        color:#FFFFFF;margin-top:6px;">▸ {_a_icon} {_a_cn}</div>""",
                                         unsafe_allow_html=True)
                                     try:
                                         _parsed = json.loads(_ares) if isinstance(_ares, str) else _ares
@@ -1903,7 +1390,7 @@ if HAS_V10_GATEWAY:
                     st.info(f"📊 使用已上传的自定义数据 ({sum(len(df) for df in _dfs.values())} 条记录)")
             else:
                 with st.expander(f"📎 {_t('upload_data')}", expanded=False):
-                    st.markdown(f"""<div style="font-size:0.55rem;color:#888;font-family:'JetBrains Mono',monospace;
+                    st.markdown(f"""<div style="font-size:11px;color:#888;font-family:'Inter',sans-serif;
                         white-space:pre-line;line-height:1.5;">{_upload_hints.get(_active, '')}</div>""", unsafe_allow_html=True)
                     _uploaded_data = st.file_uploader(
                         "上传 Excel", type=["xlsx"], key=f"upload_{_active}",
@@ -1978,17 +1465,13 @@ if HAS_V10_GATEWAY:
         # ── 对话历史 ──
         for _msg in _history:
             if _msg["role"] == "user":
-                st.markdown(f"""<div style="background:#1a1f2e;padding:10px 14px;margin:6px 0;
-                    border-left:3px solid #FFF;font-size:0.82rem;color:#ccc;">
-                    🧑 {_msg['content']}</div>""", unsafe_allow_html=True)
+                st.markdown(f"""<div class="chat-user-msg">
+                    {_msg['content']}</div>""", unsafe_allow_html=True)
             else:
                 _du = _msg.get("duration", 0)
                 _ag = _msg.get("agent", _active)
-                _badge = f"""<span style="font-size:0.5rem;font-family:'JetBrains Mono',monospace;
-                    color:#888;border:1px solid #333;padding:1px 6px;">
-                    {_agent_icons.get(_ag,'🤖')} {_agent_names_cn.get(_ag,_ag)} · {_du:.0f}ms</span>"""
-                st.markdown(f"""<div style="background:#0d1117;padding:12px 16px;margin:6px 0;
-                    border:1px solid rgba(255,255,255,0.06);font-size:0.8rem;color:#ddd;">
+                _badge = f"""<span class="v-badge">{_agent_icons.get(_ag,'🤖')} {_agent_names_cn.get(_ag,_ag)} · {_du:.0f}ms</span>"""
+                st.markdown(f"""<div class="chat-ai-msg">
                     <div style="margin-bottom:6px;">{_badge}</div>
                     <div style="white-space:pre-wrap;line-height:1.5;">{_msg['content']}</div>
                 </div>""", unsafe_allow_html=True)
@@ -2073,10 +1556,10 @@ with st.spinner("🌿 数据加载 + 深度分析中..."):
             sheet_name = err_msg.split("'")[1] if "'" in err_msg else "未知"
             st.error(f"📊 Excel 工作表不匹配")
             st.markdown(f"""
-            <div style="font-family:'JetBrains Mono',monospace; font-size:0.7rem;
-                 color:#8a8a8a; padding:12px; border:1px solid rgba(217,64,64,0.15);
-                 background:rgba(217,64,64,0.04); margin-top:8px;">
-                <p>找不到工作表 "<strong style="color:#D94040;">{sheet_name}</strong>"</p>
+            <div style="font-family:'Inter',sans-serif; font-size:13px;
+                 color:#8a8a8a; padding:12px; border:1px solid rgba(102,102,102,0.15);
+                 background:rgba(102,102,102,0.04); margin-top:8px;">
+                <p>找不到工作表 "<strong style="color:#888888;">{sheet_name}</strong>"</p>
                 <p style="margin-top:8px;">可能原因:</p>
                 <p>· 上传的文件不是 Sprocomm 销售报表</p>
                 <p>· Excel 文件中的 Sheet 名称已被修改</p>
@@ -2089,7 +1572,7 @@ with st.spinner("🌿 数据加载 + 深度分析中..."):
     except Exception as e:
         st.error("⚠️ 数据加载失败")
         st.markdown(f"""
-        <div style="font-family:'JetBrains Mono',monospace; font-size:0.65rem;
+        <div style="font-family:'Inter',sans-serif; font-size:12px;
              color:#6a6a6a; padding:12px; border:1px solid rgba(138,138,138,0.15);
              background:rgba(138,138,138,0.04); margin-top:8px;">
             <p>错误类型: <strong>{type(e).__name__}</strong></p>
@@ -2223,7 +1706,7 @@ with tabs[2]:
         fig.add_trace(go.Scatter(
             x=list(range(1, len(cum)+1)), y=cum, mode='lines+markers',
             line=dict(color=SP_GREEN, width=2), marker=dict(size=5, color=SP_GREEN),
-            fill='tozeroy', fillcolor='rgba(0,255,136,0.06)'))
+            fill='tozeroy', fillcolor='rgba(255,255,255,0.06)'))
         fig.add_hline(y=80, line_dash="dash", line_color=ORANGE,
             annotation_text="80% 帕累托线", annotation_font=dict(size=10, color=ORANGE))
         fig.update_layout(**plotly_layout("客户集中度曲线", 350, False))
@@ -2497,12 +1980,12 @@ if HAS_V10_GATEWAY:
             <div style="background:linear-gradient(135deg,#0d1117,#161b22);padding:24px 28px;
                         border:1px solid rgba(255,255,255,0.08);margin-bottom:20px;">
                 <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
-                    <span style="font-family:'Space Grotesk',sans-serif;font-size:1.1rem;
+                    <span style="font-family:'Inter',sans-serif;font-size:1.1rem;
                           font-weight:700;color:#FFF;letter-spacing:0.06em;">MRARFAI COMMAND CENTER</span>
-                    <span style="font-size:0.6rem;color:#555;font-family:'JetBrains Mono',monospace;
+                    <span style="font-size:12px;color:#555;font-family:'Inter',sans-serif;
                           border:1px solid #333;padding:2px 8px;">V10.0</span>
                 </div>
-                <div style="font-size:0.7rem;color:#555;font-family:'JetBrains Mono',monospace;">
+                <div style="font-size:13px;color:#555;font-family:'Inter',sans-serif;">
                     输入任何业务问题 → 自动路由到最佳 Agent → 返回分析结果
                 </div>
             </div>
@@ -2526,7 +2009,7 @@ if HAS_V10_GATEWAY:
             for msg in st.session_state.v10_chat_history:
                 if msg["role"] == "user":
                     st.markdown(f"""<div style="background:#1a1f2e;padding:12px 16px;margin:8px 0;
-                        border-left:3px solid #FFF;font-size:0.85rem;color:#ccc;">
+                        border-left:3px solid #FFF;font-size:14px;color:#ccc;">
                         🧑 {msg['content']}</div>""", unsafe_allow_html=True)
                 else:
                     agent = msg.get("agent", "platform")
@@ -2537,19 +2020,19 @@ if HAS_V10_GATEWAY:
                     _type = msg.get("type", "single_agent")
 
                     # 路由信息
-                    _route_badge = f"""<span style="display:inline-block;font-size:0.55rem;
-                        font-family:'JetBrains Mono',monospace;color:#888;
+                    _route_badge = f"""<span style="display:inline-block;font-size:11px;
+                        font-family:'Inter',sans-serif;color:#888;
                         border:1px solid #333;padding:1px 6px;margin-left:8px;">
                         {icon} {name} · 置信度 {conf:.0%} · {duration:.0f}ms</span>"""
 
                     if _type == "collaboration":
-                        _route_badge = f"""<span style="display:inline-block;font-size:0.55rem;
-                            font-family:'JetBrains Mono',monospace;color:#f0b040;
+                        _route_badge = f"""<span style="display:inline-block;font-size:11px;
+                            font-family:'Inter',sans-serif;color:#f0b040;
                             border:1px solid #665520;padding:1px 6px;margin-left:8px;">
                             ⚡ 跨Agent协作 · {msg.get('scenario', '')} · {duration:.0f}ms</span>"""
 
                     st.markdown(f"""<div style="background:#0d1117;padding:14px 18px;margin:8px 0;
-                        border:1px solid rgba(255,255,255,0.06);font-size:0.82rem;color:#ddd;">
+                        border:1px solid rgba(255,255,255,0.06);font-size:14px;color:#ddd;">
                         <div style="margin-bottom:8px;">{_route_badge}</div>
                         <div style="white-space:pre-wrap;line-height:1.6;">{msg['content']}</div>
                     </div>""", unsafe_allow_html=True)
@@ -2615,7 +2098,7 @@ if HAS_V10_GATEWAY:
             st.markdown("---")
 
             # ── Agent 状态面板 ──
-            st.markdown("""<div style="font-family:'Space Grotesk',sans-serif;font-size:0.9rem;
+            st.markdown("""<div style="font-family:'Inter',sans-serif;font-size:14px;
                 font-weight:700;color:#FFF;margin-bottom:12px;letter-spacing:0.04em;">
                 AGENT STATUS MATRIX</div>""", unsafe_allow_html=True)
 
@@ -2635,18 +2118,18 @@ if HAS_V10_GATEWAY:
                     <div style="background:#0d1117;border:1px solid rgba(255,255,255,0.08);
                          padding:14px;text-align:center;">
                         <div style="font-size:1.5rem;">{icon}</div>
-                        <div style="font-family:'Space Grotesk',sans-serif;font-weight:600;
-                             font-size:0.7rem;color:#FFF;margin:4px 0;">{display_name}</div>
-                        <div style="font-family:'JetBrains Mono',monospace;font-size:0.55rem;color:#555;">
+                        <div style="font-family:'Inter',sans-serif;font-weight:600;
+                             font-size:13px;color:#FFF;margin:4px 0;">{display_name}</div>
+                        <div style="font-family:'Inter',sans-serif;font-size:11px;color:#555;">
                             {skills_count} skills · {_calls} calls
                         </div>
-                        <div style="width:6px;height:6px;border-radius:50%;background:#4ade80;
+                        <div style="width:6px;height:6px;border-radius:50%;background:#FFFFFF;
                              margin:6px auto 0;"></div>
                     </div>""", unsafe_allow_html=True)
 
             # ── 快捷协作场景 ──
             st.markdown("")
-            st.markdown("""<div style="font-family:'Space Grotesk',sans-serif;font-size:0.9rem;
+            st.markdown("""<div style="font-family:'Inter',sans-serif;font-size:14px;
                 font-weight:700;color:#FFF;margin-bottom:12px;letter-spacing:0.04em;">
                 CROSS-AGENT COLLABORATION</div>""", unsafe_allow_html=True)
 
@@ -2675,7 +2158,7 @@ if HAS_V10_GATEWAY:
 
             # ── 快捷示例问题 ──
             st.markdown("")
-            st.markdown("""<div style="font-family:'Space Grotesk',sans-serif;font-size:0.9rem;
+            st.markdown("""<div style="font-family:'Inter',sans-serif;font-size:14px;
                 font-weight:700;color:#FFF;margin-bottom:8px;letter-spacing:0.04em;">
                 QUICK START</div>""", unsafe_allow_html=True)
 

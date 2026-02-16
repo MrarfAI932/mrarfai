@@ -250,17 +250,14 @@ def is_admin() -> bool:
 # 登录页面 UI
 # ============================================================
 
-SP_GREEN = "#00FF88"
-
 def _render_login_page():
-    """渲染登录页面 — 白色卡片 + 深色背景 (Streamlit 兼容方案)
-
-    核心思路:
-    把 [data-testid="stMainBlockContainer"] 当作白色卡片，同时确保其
-    所有内部子容器(stVerticalBlock, stVerticalBlockBorderWrapper,
-    block-container, stElementContainer 等)都是透明背景、零额外 padding，
-    使白色背景从最外层一路穿透到所有 widget。
+    """渲染登录页面 — 白色卡片 + OLED深色背景
+    CSS 由 ui_theme.inject_login_theme() 提供。
     """
+    from ui_theme import inject_login_theme
+
+    # ── 注入登录页 CSS（来自设计系统 Single Source of Truth）──
+    inject_login_theme()
 
     # ── 读取 logo base64 ──
     _login_logo_b64 = ""
@@ -278,363 +275,29 @@ def _render_login_page():
         else '<div class="horse-icon-fallback">&#x1F40E;</div>'
     )
 
-    # ================================================================
-    # 一次性注入所有 CSS — 这是唯一的 st.markdown(style) 调用
-    # ================================================================
-    st.markdown("""<style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
-    @keyframes fadeInUp {
-        from { opacity:0; transform:translateY(24px); }
-        to   { opacity:1; transform:translateY(0); }
-    }
+    # ── System status indicator ──
+    st.markdown("""
+    <div style="position:fixed; top:20px; right:24px; z-index:100;
+         display:flex; align-items:center; gap:8px;">
+        <div class="pulse-dot" style="width:6px; height:6px; background:#FFFFFF;"></div>
+        <span style="font-family:'Inter',sans-serif; font-size:10px;
+              color:#505050; letter-spacing:0.08em; text-transform:uppercase;">
+            SYSTEM ONLINE
+        </span>
+    </div>
+    """, unsafe_allow_html=True)
 
-    /* ── 1. 全局深色背景 ── */
-    html, body,
-    [data-testid="stApp"],
-    [data-testid="stAppViewContainer"],
-    .stApp {
-        background: #0a0a0a !important;
-    }
-    [data-testid="stApp"]::before {
-        content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
-        background-image:
-            linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
-        background-size: 40px 40px;
-    }
-    [data-testid="stMain"],
-    [data-testid="stAppViewContainer"] {
-        background: transparent !important;
-    }
-
-    /* ── 2. 彻底隐藏 Streamlit 所有 chrome ── */
-    [data-testid="stSidebar"],
-    [data-testid="collapsedControl"],
-    [data-testid="stSidebarCollapsedControl"],
-    [data-testid="stHeader"],
-    header[data-testid="stHeader"],
-    [data-testid="stToolbar"],
-    [data-testid="stDecoration"],
-    [data-testid="stStatusWidget"],
-    [data-testid="stBottom"],
-    #MainMenu, footer, .stDeployButton {
-        display: none !important;
-        visibility: hidden !important;
-        height: 0 !important;
-        overflow: hidden !important;
-    }
-    /* 顶部留白也消除 */
-    [data-testid="stAppViewContainer"] > section > div {
-        padding-top: 0 !important;
-    }
-
-    /* ── 3. 白色卡片 = stMainBlockContainer ── */
-    [data-testid="stMainBlockContainer"] {
-        max-width: 420px !important;
-        margin: 8vh auto 0 auto !important;
-        background: #FFFFFF !important;
-        border-radius: 16px !important;
-        padding: 48px 40px 36px 40px !important;
-        box-shadow: 0 20px 60px rgba(0,0,0,0.5) !important;
-        animation: fadeInUp 0.5s ease-out;
-        position: relative;
-        z-index: 1;
-        overflow: hidden !important;
-    }
-
-    /* ── 3a. 穿透所有内部 Streamlit 包装器 ── */
-    [data-testid="stMainBlockContainer"] .block-container,
-    [data-testid="stMainBlockContainer"] .stMainBlockContainer {
-        max-width: 100% !important;
-        width: 100% !important;
-        padding: 0 !important;
-        margin: 0 !important;
-        background: transparent !important;
-    }
-    [data-testid="stMainBlockContainer"] [data-testid="stVerticalBlockBorderWrapper"] {
-        background: transparent !important;
-        padding: 0 !important;
-        margin: 0 !important;
-        max-width: 100% !important;
-        width: 100% !important;
-    }
-    [data-testid="stMainBlockContainer"] [data-testid="stVerticalBlock"] {
-        background: transparent !important;
-        padding: 0 !important;
-        margin: 0 !important;
-        gap: 2px !important;
-        max-width: 100% !important;
-        width: 100% !important;
-    }
-    [data-testid="stMainBlockContainer"] [data-testid="stElementContainer"] {
-        background: transparent !important;
-        margin: 0 !important;
-        width: 100% !important;
-    }
-    /* login-label 所在的 stElementContainer — 确保标签和下方输入框之间有间距 */
-    [data-testid="stMainBlockContainer"] [data-testid="stElementContainer"]:has(.login-label) {
-        margin-bottom: 2px !important;
-    }
-
-    /* ── 4. Logo 区域 ── */
-    .login-logo-area {
-        text-align: center; margin-bottom: 10px;
-    }
-    .login-logo-area img.horse-logo {
-        width: 64px; height: auto; margin-bottom: 14px;
-        filter: brightness(0);
-    }
-    .login-logo-area .horse-icon-fallback {
-        font-size: 52px; margin-bottom: 8px; line-height: 1;
-    }
-    .login-logo-area .brand-name {
-        font-family: 'Inter', -apple-system, sans-serif;
-        font-weight: 900; font-size: 26px;
-        letter-spacing: 0.12em; color: #0a0a0a;
-    }
-    .login-logo-area .brand-sub {
-        font-family: 'Inter', sans-serif;
-        font-weight: 600; font-size: 11px;
-        letter-spacing: 0.15em; color: #999;
-        margin-top: 4px;
-    }
-
-    /* ── 5. 分隔线 ── */
-    .login-divider {
-        height: 1px; background: #e8e8e8;
-        margin: 18px auto 20px auto; width: 75%;
-    }
-
-    /* ── 6. USERNAME / PASSWORD 标签 ── */
-    .login-label {
-        font-family: 'Inter', sans-serif;
-        font-weight: 500; font-size: 11px;
-        color: #555; letter-spacing: 0.06em;
-        text-transform: uppercase;
-        margin: 0 0 16px 2px;
-        padding: 16px 0 0 0;
-        line-height: 1;
-        display: block;
-        position: relative;
-        z-index: 2;
-    }
-
-    /* ── 7. 错误提示 ── */
-    .login-error {
-        font-family: 'Inter', sans-serif; font-size: 13px;
-        color: #dc3545; padding: 10px 14px; margin-top: 10px;
-        border: 1px solid rgba(220,53,69,0.2);
-        background: rgba(220,53,69,0.06);
-        border-radius: 8px; text-align: center;
-    }
-
-    /* ── 8. 底部链接 (卡片外 — 深色背景上浅色文字) ── */
-    .login-links-outer {
-        text-align: center; margin-top: 20px;
-        font-family: 'Inter', sans-serif; font-size: 12px;
-    }
-    .login-links-outer a { color: rgba(255,255,255,0.5); text-decoration: none; }
-    .login-links-outer a:hover { color: rgba(255,255,255,0.8); }
-    .login-links-outer .sep { color: rgba(255,255,255,0.2); margin: 0 10px; }
-
-    /* ── 9. 页脚 (卡片外) ── */
-    .login-page-footer-outer {
-        font-family: 'Inter', sans-serif; font-size: 11px;
-        color: rgba(255,255,255,0.3); text-align: center; margin-top: 12px;
-    }
-
-    /* ── 10. Input 样式覆盖 (BaseUI + Dark Theme 强制白色) ── */
-    /* 隐藏 Streamlit 原生 label — 彻底消除占位 */
-    [data-testid="stMainBlockContainer"] .stTextInput label,
-    [data-testid="stMainBlockContainer"] .stTextInput > label,
-    [data-testid="stMainBlockContainer"] .stTextInput [data-testid="stWidgetLabel"],
-    [data-testid="stMainBlockContainer"] [data-testid="stWidgetLabel"] {
-        display: none !important; height: 0 !important;
-        margin: 0 !important; padding: 0 !important;
-        min-height: 0 !important; overflow: hidden !important;
-        max-height: 0 !important; line-height: 0 !important;
-        font-size: 0 !important; border: 0 !important;
-    }
-    /* TextInput 整体 wrapper */
-    [data-testid="stMainBlockContainer"] [data-testid="stTextInput"],
-    [data-testid="stMainBlockContainer"] .stTextInput {
-        width: 100% !important;
-        margin-bottom: 0 !important;
-        margin-top: 0 !important;
-        padding-top: 0 !important;
-    }
-    [data-testid="stMainBlockContainer"] .stTextInput > div {
-        width: 100% !important;
-    }
-    /* ★ 核弹覆盖: stTextInput 内所有 div 强制白色 (Dark theme) */
-    [data-testid="stMainBlockContainer"] .stTextInput div {
-        background-color: #FFFFFF !important;
-        background: #FFFFFF !important;
-    }
-    /* ★ stTextInputRootElement — 外层 wrapper，不要边框 */
-    [data-testid="stMainBlockContainer"] .stTextInput [data-testid="stTextInputRootElement"] {
-        background: #FFFFFF !important;
-        background-color: #FFFFFF !important;
-        border: none !important;
-        border-radius: 8px !important;
-        padding: 0 !important;
-        box-shadow: none !important;
-        outline: none !important;
-        overflow: hidden !important;
-    }
-    /* ★ [data-baseweb="input"] — 唯一可见边框 */
-    [data-testid="stMainBlockContainer"] .stTextInput [data-baseweb="input"] {
-        background: #FFFFFF !important;
-        background-color: #FFFFFF !important;
-        border: 1px solid #d5d5d5 !important;
-        border-radius: 8px !important;
-        padding: 0 !important;
-        box-shadow: none !important;
-        outline: none !important;
-        position: relative !important;
-        overflow: hidden !important;
-        transition: border-color 0.2s;
-    }
-    /* 聚焦时边框变深 */
-    [data-testid="stMainBlockContainer"] .stTextInput [data-baseweb="input"]:focus-within {
-        border-color: #999 !important;
-    }
-    /* Input 本体 — 无自身边框 */
-    [data-testid="stMainBlockContainer"] .stTextInput input {
-        background: transparent !important;
-        background-color: transparent !important;
-        border: none !important;
-        outline: none !important;
-        box-shadow: none !important;
-        color: #1a1a1a !important;
-        caret-color: #1a1a1a !important;
-        -webkit-text-fill-color: #1a1a1a !important;
-        font-family: 'Inter', sans-serif !important;
-        font-size: 14px !important;
-        padding: 10px 14px !important;
-        height: auto !important;
-        width: 100% !important;
-        box-sizing: border-box !important;
-    }
-    [data-testid="stMainBlockContainer"] .stTextInput input::placeholder {
-        color: #bbb !important;
-        -webkit-text-fill-color: #bbb !important;
-    }
-    [data-testid="stMainBlockContainer"] .stTextInput input:focus {
-        border: none !important;
-        outline: none !important;
-        box-shadow: none !important;
-    }
-    /* 密码眼睛 */
-    [data-testid="stMainBlockContainer"] .stTextInput button {
-        background: #FFFFFF !important;
-        background-color: #FFFFFF !important;
-        border: none !important;
-        box-shadow: none !important;
-        outline: none !important;
-        color: #aaa !important;
-        padding: 4px 8px !important;
-        min-height: 0 !important;
-        height: auto !important;
-    }
-    [data-testid="stMainBlockContainer"] .stTextInput button svg {
-        fill: #aaa !important;
-        stroke: #aaa !important;
-        width: 18px !important;
-        height: 18px !important;
-    }
-    [data-testid="stMainBlockContainer"] .stTextInput button:hover {
-        background: #f5f5f5 !important;
-        color: #666 !important;
-    }
-    [data-testid="stMainBlockContainer"] .stTextInput button:hover svg {
-        fill: #666 !important;
-        stroke: #666 !important;
-    }
-    /* 自动填充白底黑字 */
-    [data-testid="stMainBlockContainer"] .stTextInput input:-webkit-autofill,
-    [data-testid="stMainBlockContainer"] .stTextInput input:-webkit-autofill:focus {
-        -webkit-box-shadow: 0 0 0 1000px #FFFFFF inset !important;
-        -webkit-text-fill-color: #1a1a1a !important;
-        background-color: #FFFFFF !important;
-    }
-
-    /* ── 11. SIGN IN 按钮 — 最高优先级覆盖 ── */
-    [data-testid="stMainBlockContainer"] .stButton button,
-    [data-testid="stMainBlockContainer"] .stButton > button,
-    [data-testid="stMainBlockContainer"] button[data-testid="stBaseButton-secondary"],
-    [data-testid="stMainBlockContainer"] button[kind="secondary"],
-    [data-testid="stMainBlockContainer"] .stButton button[kind] {
-        width: 100% !important;
-        background: #0a0a0a !important;
-        background-color: #0a0a0a !important;
-        color: #FFFFFF !important;
-        font-family: 'Inter', sans-serif !important;
-        font-weight: 600 !important;
-        font-size: 12px !important;
-        letter-spacing: 0.1em !important;
-        text-transform: uppercase !important;
-        border: none !important;
-        border-radius: 8px !important;
-        padding: 8px 0 !important;
-        margin-top: 16px !important;
-        cursor: pointer !important;
-        line-height: 1.2 !important;
-        min-height: 0 !important;
-        max-height: 40px !important;
-        height: 40px !important;
-        transition: background 0.2s, transform 0.1s !important;
-        box-shadow: none !important;
-    }
-    [data-testid="stMainBlockContainer"] .stButton button:hover,
-    [data-testid="stMainBlockContainer"] .stButton > button:hover {
-        background: #222 !important;
-        background-color: #222 !important;
-        transform: translateY(-1px) !important;
-        box-shadow: 0 4px 16px rgba(0,0,0,0.25) !important;
-    }
-    [data-testid="stMainBlockContainer"] .stButton button:active {
-        transform: translateY(0) !important;
-    }
-    /* 按钮容器 */
-    [data-testid="stMainBlockContainer"] .stButton,
-    [data-testid="stMainBlockContainer"] [data-testid="stElementContainer"]:has(.stButton) {
-        margin-top: 8px !important;
-    }
-
-    /* ── 12. 移动端 ── */
-    @media (max-width: 768px) {
-        [data-testid="stMainBlockContainer"] {
-            max-width: 90vw !important;
-            padding: 36px 28px 28px 28px !important;
-            margin-top: 5vh !important;
-        }
-    }
-    @media (max-width: 480px) {
-        [data-testid="stMainBlockContainer"] {
-            max-width: 96vw !important;
-            padding: 28px 20px 22px 20px !important;
-            margin-top: 3vh !important;
-            border-radius: 12px !important;
-        }
-    }
-    </style>""", unsafe_allow_html=True)
-
-    # ================================================================
-    # Logo + 品牌名 + 分隔线
-    # ================================================================
+    # ── Logo + 品牌名 + 分隔线 ──
     st.markdown(f"""
     <div class="login-logo-area">
         {_horse_logo_html}
         <div class="brand-name">MRARFAI</div>
-        <div class="brand-sub">\u4f01\u4e1aAgent\u5e73\u53f0</div>
+        <div class="brand-sub">ENTERPRISE AGENT PLATFORM</div>
     </div>
     <div class="login-divider"></div>
     """, unsafe_allow_html=True)
 
-    # ================================================================
-    # 表单字段 — Streamlit 原生 widget，CSS 会自动样式化
-    # ================================================================
+    # ── 表单字段 ──
     st.markdown('<div class="login-label">USERNAME</div>', unsafe_allow_html=True)
     username = st.text_input(
         "用户名", label_visibility="collapsed", key="login_user",
@@ -654,7 +317,7 @@ def _render_login_page():
     if login_clicked:
         if not username or not password:
             st.markdown(
-                '<div class="login-error">\u26a0 Please enter username and password</div>',
+                '<div class="login-error">Please enter username and password</div>',
                 unsafe_allow_html=True,
             )
         else:
@@ -666,22 +329,20 @@ def _render_login_page():
                 st.rerun()
             else:
                 st.markdown(
-                    '<div class="login-error">\u26a0 Invalid username or password</div>',
+                    '<div class="login-error">Invalid username or password</div>',
                     unsafe_allow_html=True,
                 )
 
-    # ================================================================
-    # 底部链接 + 页脚 (卡片外 — 用 fixed position 渲染在深色背景上)
-    # ================================================================
+    # ── 底部链接 + 页脚 ──
     st.markdown("""
-    <div style="position:fixed;bottom:48px;left:0;right:0;z-index:10;pointer-events:auto;">
+    <div style="position:fixed; bottom:48px; left:0; right:0; z-index:10; pointer-events:auto;">
         <div class="login-links-outer">
             <a href="#">Forgot Password?</a>
-            <span class="sep">|</span>
+            <span class="sep">&middot;</span>
             <a href="#">Contact Support</a>
         </div>
         <div class="login-page-footer-outer">
-            &copy; 2024 MRARFAI &middot; Powered by Multi-Agent Intelligence
+            &copy; 2025 MRARFAI &middot; Powered by Multi-Agent Intelligence
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -695,7 +356,7 @@ def require_login():
     # 检查 session 超时
     if check_session_timeout():
         logout()
-        st.warning(f"⏰ 会话已超时（{SESSION_TIMEOUT_HOURS}小时），请重新登录。")
+        st.warning(f"Session expired ({SESSION_TIMEOUT_HOURS}h). Please login again.")
 
     if not is_logged_in():
         _render_login_page()

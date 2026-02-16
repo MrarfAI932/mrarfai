@@ -1,5 +1,5 @@
-# MRARFAI V9.0 — Sprocomm Command Center Theme
-# 品牌配色: Neon Green #00FF88 · 蓝叶 #00A0C8 · 红叶 #D94040
+# MRARFAI v10 — Dark Theme
+# Inter + JetBrains Mono
 
 [server]
 address = "0.0.0.0"
@@ -14,19 +14,19 @@ gatherUsageStats = false
 
 [theme]
 base = "dark"
-primaryColor = "#00FF88"
-backgroundColor = "#0C0C0C"
+primaryColor = "#EDEDED"
+backgroundColor = "#050505"
 secondaryBackgroundColor = "#111111"
-textColor = "#e2e8f0"
+textColor = "#EDEDED"
 font = "sans serif"
 
 [[theme.fontFaces]]
-family = "Space Grotesk"
-url = "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap"
+family = "Inter"
+url = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
 
 [[theme.fontFaces]]
 family = "JetBrains Mono"
-url = "https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap"
+url = "https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap"
 
 [logger]
 level = "warning"

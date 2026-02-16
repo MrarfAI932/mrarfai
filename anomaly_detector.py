@@ -341,10 +341,10 @@ def make_anomaly_timeline(detection: dict):
         x=month_names,
         y=y_labels,
         colorscale=[
-            [0, 'rgba(30,41,59,0.8)'],
-            [0.3, 'rgba(250,204,21,0.4)'],
-            [0.6, 'rgba(249,115,22,0.6)'],
-            [1, 'rgba(239,68,68,0.8)'],
+            [0, 'rgba(17,17,17,0.8)'],
+            [0.3, 'rgba(136,136,136,0.4)'],
+            [0.6, 'rgba(187,187,187,0.6)'],
+            [1, 'rgba(255,255,255,0.8)'],
         ],
         showscale=True,
         colorbar=dict(
@@ -373,15 +373,15 @@ def make_anomaly_type_chart(detection: dict):
         return None
     
     colors = {
-        'Z-Score': '#ef4444',
-        'IQR异常': '#f59e0b',
-        '趋势断裂': '#8b5cf6',
-        '波动率异常': '#06b6d4',
+        'Z-Score': '#FFFFFF',
+        'IQR异常': '#CCCCCC',
+        '趋势断裂': '#999999',
+        '波动率异常': '#AAAAAA',
     }
-    
+
     labels = list(type_dist.keys())
     values = list(type_dist.values())
-    bar_colors = [colors.get(l, '#6366f1') for l in labels]
+    bar_colors = [colors.get(l, '#888888') for l in labels]
     
     fig = go.Figure(go.Bar(
         x=labels, y=values,
@@ -412,7 +412,7 @@ def make_monthly_anomaly_chart(detection: dict):
     fig = go.Figure(go.Bar(
         x=months, y=values,
         marker=dict(
-            color=[f'rgba(239,68,68,{min(1, v/max(max(values),1)*0.8+0.2)})' for v in values],
+            color=[f'rgba(255,255,255,{min(1, v/max(max(values),1)*0.8+0.2)})' for v in values],
             line=dict(width=1, color='rgba(255,255,255,0.05)'),
         ),
         text=values, textposition='outside',

@@ -31,15 +31,15 @@ logger = logging.getLogger("mrarfai.pdf_report")
 # ============================================================
 # 颜色系统
 # ============================================================
-INDIGO = HexColor("#6366f1")
-INDIGO_LIGHT = HexColor("#a5b4fc")
-CYAN = HexColor("#22d3ee")
-GREEN = HexColor("#10b981")
-RED = HexColor("#ef4444")
-ORANGE = HexColor("#f59e0b")
-DARK_BG = HexColor("#0f172a")
-DARK2 = HexColor("#1e293b")
-TEXT_PRIMARY = HexColor("#1e293b")
+INDIGO = HexColor("#888888")
+INDIGO_LIGHT = HexColor("#CCCCCC")
+CYAN = HexColor("#AAAAAA")
+GREEN = HexColor("#FFFFFF")
+RED = HexColor("#888888")
+ORANGE = HexColor("#CCCCCC")
+DARK_BG = HexColor("#0C0C0C")
+DARK2 = HexColor("#111111")
+TEXT_PRIMARY = HexColor("#111111")
 TEXT_SECONDARY = HexColor("#475569")
 TEXT_MUTED = HexColor("#94a3b8")
 WHITE = HexColor("#ffffff")
@@ -797,7 +797,7 @@ def render_report_section(data, results, benchmark, forecast):
         <div style="font-size:1.5rem;">📄</div>
         <div>
             <div style="font-size:1.1rem; font-weight:700; color:#e2e8f0;">自动PDF报告</div>
-            <div style="font-size:0.8rem; color:#64748b;">一键生成专业分析报告 · 支持邮件推送</div>
+            <div style="font-size:14px; color:#64748b;">一键生成专业分析报告 · 支持邮件推送</div>
         </div>
     </div>
     """, unsafe_allow_html=True)

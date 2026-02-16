@@ -36,7 +36,7 @@ def render_obs_tab():
     st.markdown("""
     <div style="padding:12px 0 8px 0;">
         <span style="font-size:1.3rem; font-weight:700;">📡 可观测性中心</span>
-        <span style="font-size:0.8rem; color:#888; margin-left:8px;">
+        <span style="font-size:14px; color:#888; margin-left:8px;">
             OpenTelemetry标准 · SQLite持久化 · 实时分析
         </span>
     </div>
@@ -75,16 +75,16 @@ def _render_overview(metrics, days):
 
     with c1:
         _metric_card("🔢 总查询", f"{overview['total_queries']}",
-                     "次", "#60a5fa")
+                     "次", "#CCCCCC")
     with c2:
         avg_s = overview['avg_latency_ms'] / 1000
-        color = "#34d399" if avg_s < 5 else "#fbbf24" if avg_s < 15 else "#f87171"
+        color = "#FFFFFF" if avg_s < 5 else "#CCCCCC" if avg_s < 15 else "#999999"
         _metric_card("⏱️ 平均延迟", f"{avg_s:.1f}", "秒", color)
     with c3:
         _metric_card("🪙 总成本", f"${overview['total_cost_usd']:.4f}",
-                     "USD", "#a78bfa")
+                     "USD", "#AAAAAA")
     with c4:
-        err_color = "#34d399" if overview['error_rate'] < 5 else "#f87171"
+        err_color = "#FFFFFF" if overview['error_rate'] < 5 else "#999999"
         _metric_card("❌ 错误率", f"{overview['error_rate']}", "%", err_color)
 
     st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
@@ -93,18 +93,18 @@ def _render_overview(metrics, days):
     c5, c6, c7, c8 = st.columns(4)
 
     with c5:
-        _metric_card("📝 总Token", f"{overview['total_tokens']:,}", "", "#60a5fa")
+        _metric_card("📝 总Token", f"{overview['total_tokens']:,}", "", "#CCCCCC")
     with c6:
         _metric_card("📊 单次Token", f"{overview['avg_tokens_per_query']:,.0f}",
-                     "平均", "#60a5fa")
+                     "平均", "#CCCCCC")
     with c7:
         _metric_card("🤖 LLM调用", f"{overview['total_llm_calls']}",
-                     f"({overview['avg_llm_calls']:.1f}/次)", "#a78bfa")
+                     f"({overview['avg_llm_calls']:.1f}/次)", "#AAAAAA")
     with c8:
         rating = overview['avg_rating']
         stars = "⭐" * int(rating) if rating > 0 else "暂无"
         _metric_card("⭐ 用户评分", f"{rating:.1f}" if rating > 0 else "-",
-                     stars, "#fbbf24")
+                     stars, "#CCCCCC")
 
     # 延迟分位数
     st.markdown("### 延迟分布")
@@ -138,12 +138,12 @@ def _render_overview(metrics, days):
             label = label_map.get(kind, kind)
             st.markdown(f"""
             <div style="display:flex; align-items:center; margin:4px 0;">
-                <span style="width:140px; font-size:0.85rem;">{label}</span>
-                <div style="flex:1; background:#1e293b; border-radius:4px; height:20px; margin:0 8px;">
-                    <div style="width:{min(avg/30*100, 100):.0f}%; background:linear-gradient(90deg,#3b82f6,#60a5fa);
+                <span style="width:140px; font-size:15px;">{label}</span>
+                <div style="flex:1; background:#1a1a1a; border-radius:4px; height:20px; margin:0 8px;">
+                    <div style="width:{min(avg/30*100, 100):.0f}%; background:linear-gradient(90deg,#FFFFFF,#CCCCCC);
                          height:100%; border-radius:4px; min-width:2px;"></div>
                 </div>
-                <span style="font-size:0.8rem; color:#94a3b8; width:80px; text-align:right;">
+                <span style="font-size:14px; color:#94a3b8; width:80px; text-align:right;">
                     {avg:.1f}s ({count}次)
                 </span>
             </div>
@@ -160,10 +160,10 @@ def _render_overview(metrics, days):
             calls = item['calls'] or 0
             st.markdown(f"""
             <div style="display:flex; justify-content:space-between;
-                 padding:6px 12px; margin:2px 0; background:#0f172a;
-                 border-radius:6px; font-size:0.85rem;">
+                 padding:6px 12px; margin:2px 0; background:#111111;
+                 border-radius:6px; font-size:15px;">
                 <span>{stage}</span>
-                <span style="color:#a78bfa">${cost:.4f} · {tokens:,} tokens · {calls}次调用</span>
+                <span style="color:#AAAAAA">${cost:.4f} · {tokens:,} tokens · {calls}次调用</span>
             </div>
             """, unsafe_allow_html=True)
 
@@ -199,16 +199,16 @@ def _render_trends(metrics, days):
         errors = item['errors'] or 0
 
         bar_width = min(queries * 5, 100)
-        error_tag = f" <span style='color:#f87171'>({errors}错误)</span>" if errors > 0 else ""
+        error_tag = f" <span style='color:#999999'>({errors}错误)</span>" if errors > 0 else ""
 
         st.markdown(f"""
         <div style="display:flex; align-items:center; margin:3px 0;">
-            <span style="width:90px; font-size:0.82rem; color:#94a3b8;">{date}</span>
-            <div style="flex:1; background:#1e293b; border-radius:3px; height:18px; margin:0 8px;">
-                <div style="width:{bar_width}%; background:linear-gradient(90deg,#3b82f6,#60a5fa);
+            <span style="width:90px; font-size:15px; color:#94a3b8;">{date}</span>
+            <div style="flex:1; background:#1a1a1a; border-radius:3px; height:18px; margin:0 8px;">
+                <div style="width:{bar_width}%; background:linear-gradient(90deg,#FFFFFF,#CCCCCC);
                      height:100%; border-radius:3px;"></div>
             </div>
-            <span style="font-size:0.78rem; color:#94a3b8; width:220px; text-align:right;">
+            <span style="font-size:14px; color:#94a3b8; width:220px; text-align:right;">
                 {queries}次 · {avg_latency:.1f}s · ${cost:.4f}{error_tag}
             </span>
         </div>
@@ -243,7 +243,7 @@ def _render_trace_detail(metrics, days):
         with st.expander(f"{status_icon} {question}... — {duration_s:.1f}s / ${cost:.4f} / {tokens} tok {feedback_str}",
                         expanded=(i == 0)):
             st.markdown(f"""
-            <div style="font-size:0.8rem; color:#64748b; margin-bottom:8px;">
+            <div style="font-size:14px; color:#64748b; margin-bottom:8px;">
                 Trace: <code>{trace_id}</code> · {timestamp} ·
                 模式: {t.get('pattern_matched', '-')} ·
                 路由: {t.get('route_source', '-')}
@@ -264,17 +264,17 @@ def _render_trace_detail(metrics, days):
                     icon = {"trace": "🔄", "data_query": "📊", "routing": "🧭",
                             "llm_call": "🤖", "agent": "🧑‍💼", "reporter": "🖊️",
                             "kg_lookup": "📚"}.get(kind, "▪️")
-                    s_color = "#34d399" if sstatus == "ok" else "#f87171"
+                    s_color = "#FFFFFF" if sstatus == "ok" else "#999999"
 
                     tok_str = f" · {stok} tok · ${scost:.4f}" if stok > 0 else ""
 
                     st.markdown(f"""
                     <div style="display:flex; align-items:center; margin:2px 0;
-                         padding:4px 8px; background:#0f172a; border-radius:4px;
+                         padding:4px 8px; background:#111111; border-radius:4px;
                          border-left:3px solid {s_color};">
-                        <span style="font-size:0.82rem;">{icon} {name}</span>
+                        <span style="font-size:15px;">{icon} {name}</span>
                         <span style="flex:1"></span>
-                        <span style="font-size:0.78rem; color:#94a3b8;">
+                        <span style="font-size:14px; color:#94a3b8;">
                             {dur:.2f}s{tok_str}
                         </span>
                     </div>
@@ -347,12 +347,12 @@ def _render_system(days):
 def _metric_card(title: str, value: str, subtitle: str, color: str):
     """渲染KPI卡片"""
     st.markdown(f"""
-    <div style="padding:12px 16px; background:#0f172a; border-radius:10px;
+    <div style="padding:12px 16px; background:#111111; border-radius:10px;
          border-left:4px solid {color};">
-        <div style="font-size:0.75rem; color:#64748b;">{title}</div>
+        <div style="font-size:14px; color:#64748b;">{title}</div>
         <div style="font-size:1.5rem; font-weight:700; color:{color}; margin:2px 0;">
             {value}
         </div>
-        <div style="font-size:0.7rem; color:#475569;">{subtitle}</div>
+        <div style="font-size:13px; color:#475569;">{subtitle}</div>
     </div>
     """, unsafe_allow_html=True)
