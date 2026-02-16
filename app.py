@@ -1348,6 +1348,7 @@ if HAS_V10_GATEWAY:
 
             st.session_state["ai_provider"] = ai_provider
             st.session_state["api_key"] = api_key or ""
+            st.session_state["use_multi_agent"] = use_multi
 
             if not uploaded_files or len(uploaded_files) < 2:
                 st.info(f"📎 {_t('upload_please')}")
@@ -2028,6 +2029,7 @@ use_multi = False
 ai_provider, api_key = 'DeepSeek', None
 st.session_state["ai_provider"] = ai_provider
 st.session_state["api_key"] = ""
+st.session_state["use_multi_agent"] = use_multi
 if not uploaded_files or len(uploaded_files) < 2:
     st.stop()
 
