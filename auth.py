@@ -408,10 +408,10 @@ def _render_login_page():
     /* ── 6. USERNAME / PASSWORD 标签 ── */
     .login-label {
         font-family: 'Inter', sans-serif;
-        font-weight: 700; font-size: 11px;
-        color: #333; letter-spacing: 0.08em;
+        font-weight: 600; font-size: 13px;
+        color: #1a1a1a; letter-spacing: 0.02em;
         text-transform: uppercase;
-        margin: 14px 0 10px 2px;
+        margin: 16px 0 8px 0;
         padding: 0;
         line-height: 1;
         display: block;
@@ -472,8 +472,8 @@ def _render_login_page():
     [data-testid="stMainBlockContainer"] .stTextInput [data-baseweb="input"] {
         background: #FFFFFF !important;
         background-color: #FFFFFF !important;
-        border: 1.5px solid #d0d0d0 !important;
-        border-radius: 8px !important;
+        border: 1px solid #e0e0e0 !important;
+        border-radius: 10px !important;
         padding: 0 !important;
         box-shadow: none !important;
         outline: none !important;
@@ -484,7 +484,7 @@ def _render_login_page():
     /* 聚焦时边框变深 */
     [data-testid="stMainBlockContainer"] .stTextInput [data-testid="stTextInputRootElement"]:focus-within,
     [data-testid="stMainBlockContainer"] .stTextInput [data-baseweb="input"]:focus-within {
-        border-color: #999 !important;
+        border-color: #bbb !important;
     }
     /* Input 本体 — 无自身边框 */
     [data-testid="stMainBlockContainer"] .stTextInput input {
@@ -498,7 +498,7 @@ def _render_login_page():
         -webkit-text-fill-color: #1a1a1a !important;
         font-family: 'Inter', sans-serif !important;
         font-size: 14px !important;
-        padding: 10px 14px !important;
+        padding: 12px 14px !important;
         height: auto !important;
         width: 100% !important;
         box-sizing: border-box !important;
@@ -553,18 +553,18 @@ def _render_login_page():
         background: #0a0a0a !important;
         color: #FFFFFF !important;
         font-family: 'Inter', sans-serif !important;
-        font-weight: 700 !important;
-        font-size: 13px !important;
-        letter-spacing: 0.1em !important;
+        font-weight: 600 !important;
+        font-size: 14px !important;
+        letter-spacing: 0.08em !important;
         text-transform: uppercase !important;
         border: none !important;
-        border-radius: 8px !important;
+        border-radius: 10px !important;
         padding: 8px 0 !important;
-        margin-top: 10px;
+        margin-top: 14px;
         cursor: pointer;
         line-height: 1.2 !important;
         min-height: 0 !important;
-        height: 40px !important;
+        height: 44px !important;
         transition: background 0.2s, transform 0.1s;
     }
     [data-testid="stMainBlockContainer"] .stButton > button:hover {
