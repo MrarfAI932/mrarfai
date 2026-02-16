@@ -1235,6 +1235,83 @@ code, .stCode {{
 }}
 
 /* ════════════════════════════════════════════════════════════
+   SKELETON / SHIMMER LOADING
+   ════════════════════════════════════════════════════════════ */
+
+@keyframes shimmer {{
+  0% {{ background-position: -200px 0; }}
+  100% {{ background-position: calc(200px + 100%) 0; }}
+}}
+
+.skeleton {{
+  background: linear-gradient(90deg, #111111 25%, #1C1C1C 50%, #111111 75%);
+  background-size: 200px 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 6px;
+}}
+
+.skeleton-text {{
+  height: 14px;
+  margin-bottom: 8px;
+  border-radius: 4px;
+}}
+
+.skeleton-card {{
+  height: 120px;
+  border-radius: 8px;
+}}
+
+/* ════════════════════════════════════════════════════════════
+   FOCUS VISIBLE — ACCESSIBILITY
+   ════════════════════════════════════════════════════════════ */
+
+*:focus-visible {{
+  outline: 2px solid rgba(255,255,255,0.30) !important;
+  outline-offset: 2px !important;
+  border-radius: 4px;
+}}
+
+button:focus-visible,
+[role="button"]:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {{
+  outline: 2px solid rgba(255,255,255,0.30) !important;
+  outline-offset: 2px !important;
+}}
+
+/* ════════════════════════════════════════════════════════════
+   REDUCED MOTION — ACCESSIBILITY
+   ════════════════════════════════════════════════════════════ */
+
+@media (prefers-reduced-motion: reduce) {{
+  *, *::before, *::after {{
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }}
+  .pulse-dot {{ animation: none !important; opacity: 1 !important; }}
+  .skeleton {{ animation: none !important; background: #1C1C1C !important; }}
+}}
+
+/* ════════════════════════════════════════════════════════════
+   CURSOR & INTERACTIVITY
+   ════════════════════════════════════════════════════════════ */
+
+button,
+[role="button"],
+.stButton > button,
+.stDownloadButton > button,
+[data-baseweb="tab"],
+.ag-card,
+.kpi-card,
+a {{
+  cursor: pointer !important;
+}}
+
+/* ════════════════════════════════════════════════════════════
    RESPONSIVE
    ════════════════════════════════════════════════════════════ */
 

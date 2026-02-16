@@ -1573,7 +1573,7 @@ with st.spinner("🌿 数据加载 + 深度分析中..."):
         st.error("⚠️ 数据加载失败")
         st.markdown(f"""
         <div style="font-family:'Inter',sans-serif; font-size:12px;
-             color:#6a6a6a; padding:12px; border:1px solid rgba(138,138,138,0.15);
+             color:#888; padding:12px; border:1px solid rgba(138,138,138,0.15);
              background:rgba(138,138,138,0.04); margin-top:8px;">
             <p>错误类型: <strong>{type(e).__name__}</strong></p>
             <p>详情: {str(e)[:200]}</p>

@@ -586,7 +586,7 @@ def _render_v9_details(result: dict):
          border:1px solid {level_borders.get(level, 'rgba(138,138,138,0.15)')};
          padding:8px 12px; margin:4px 0;">
         <div style="font-family:Inter,sans-serif; font-size:12px;
-             color:#6a6a6a; letter-spacing:0.05em; margin-bottom:4px;">
+             color:#888; letter-spacing:0.05em; margin-bottom:4px;">
             {level_icons.get(level, '🔥')} V8 GATE · {level.upper()} · score={score:.2f}
         </div>
         <div style="font-size:13px; color:#ccc;">
@@ -638,7 +638,7 @@ def _render_v8_review_card(result: dict):
          padding:8px 12px; margin:4px 0;">
         <div style="display:flex; justify-content:space-between; align-items:center;">
             <span style="font-family:Inter,sans-serif; font-size:12px;
-                 color:#6a6a6a; letter-spacing:0.05em;">
+                 color:#888; letter-spacing:0.05em;">
                 📝 V8 REVIEW · {"PASS" if passed else "FAIL"}
             </span>
             <span style="font-size:13px; font-weight:700; color:{bar_color};">{score:.1f}/10</span>
@@ -797,7 +797,7 @@ def _render_hitl_card(hitl_decision: dict):
                 items.append(f"• {t.get('message', t.get('reason', str(t)))}")
             else:
                 items.append(f"• {t}")
-        trig_html = f'<div style="font-family:Inter,sans-serif;font-size:12px;color:#6a6a6a;text-align:right;flex-shrink:0;">{"<br>".join(items)}</div>'
+        trig_html = f'<div style="font-family:Inter,sans-serif;font-size:12px;color:#888;text-align:right;flex-shrink:0;">{"<br>".join(items)}</div>'
 
     gauge_bg = f"rgba({','.join(str(int(color.lstrip('#')[i:i+2],16)) for i in (0,2,4))},0.10)"
     gauge_border = f"rgba({','.join(str(int(color.lstrip('#')[i:i+2],16)) for i in (0,2,4))},0.35)"
@@ -868,7 +868,7 @@ def _render_welcome():
             多智能体销售分析
         </div>
         <div style="font-family:Inter,sans-serif;font-size:12px;
-             color:#6a6a6a;letter-spacing:0.02em;">
+             color:#888;letter-spacing:0.02em;">
             // 12维深度分析 · 实时预警 · RLM 递归语言模型
         </div>
         <div style="display:flex;justify-content:center;gap:18px;margin-top:14px;">
@@ -911,7 +911,7 @@ def _render_ready_state():
             多智能体分析就绪
         </div>
         <div style="font-family:Inter,sans-serif;font-size:13px;
-             color:#6a6a6a;letter-spacing:0.03em;">
+             color:#888;letter-spacing:0.03em;">
             // 在下方输入问题，或点击快捷提问开始分析
         </div>
     </div>
@@ -919,17 +919,17 @@ def _render_ready_state():
         <div style="display:flex;align-items:center;gap:6px;">
             <span style="color:{SP_GREEN};font-size:13px;">◈</span>
             <span style="font-family:Inter,sans-serif;font-size:11px;
-                  color:#6a6a6a;letter-spacing:0.05em;">DATA ANALYST</span>
+                  color:#888;letter-spacing:0.05em;">DATA ANALYST</span>
         </div>
         <div style="display:flex;align-items:center;gap:6px;">
             <span style="color:{SP_RED};font-size:13px;">◆</span>
             <span style="font-family:Inter,sans-serif;font-size:11px;
-                  color:#6a6a6a;letter-spacing:0.05em;">RISK CONTROL</span>
+                  color:#888;letter-spacing:0.05em;">RISK CONTROL</span>
         </div>
         <div style="display:flex;align-items:center;gap:6px;">
             <span style="color:{SP_BLUE};font-size:13px;">◇</span>
             <span style="font-family:Inter,sans-serif;font-size:11px;
-                  color:#6a6a6a;letter-spacing:0.05em;">STRATEGIST</span>
+                  color:#888;letter-spacing:0.05em;">STRATEGIST</span>
         </div>
     </div>
     """, unsafe_allow_html=True)
