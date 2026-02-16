@@ -39,6 +39,15 @@ env/
 .DS_Store
 Thumbs.db
 
+# Node / Next.js
+node_modules/
+.next/
+.turbo/
+next-env.d.ts
+
 # Logs
 logs/
 *.log
+
+# Claude
+.claude/
