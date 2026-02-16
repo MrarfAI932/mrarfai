@@ -456,37 +456,31 @@ def _render_login_page():
     [data-testid="stMainBlockContainer"] .stTextInput > div {
         width: 100% !important;
     }
-    /* ★ 核弹级覆盖: stTextInput 内所有 div 强制白色背景
-       (Dark theme 会在 BaseUI 内层多个 div 注入 background-color) */
+    /* ★ 核弹覆盖: stTextInput 内所有 div 强制白色 (Dark theme) */
     [data-testid="stMainBlockContainer"] .stTextInput div {
         background-color: #FFFFFF !important;
         background: #FFFFFF !important;
     }
-    /* ★ BaseUI input wrapper — 可视边框容器 */
+    /* ★ 整个 stTextInput 组件加上可见边框 (这才是目标设计里的圆角框) */
+    [data-testid="stMainBlockContainer"] .stTextInput [data-testid="stTextInputRootElement"],
     [data-testid="stMainBlockContainer"] .stTextInput [data-baseweb="input"] {
         background: #FFFFFF !important;
         background-color: #FFFFFF !important;
-        border: 1px solid #e0e0e0 !important;
+        border: 1.5px solid #d0d0d0 !important;
         border-radius: 8px !important;
         padding: 0 !important;
         box-shadow: none !important;
         outline: none !important;
         position: relative !important;
-        transition: border-color 0.2s, box-shadow 0.2s;
+        overflow: hidden !important;
+        transition: border-color 0.2s;
     }
+    /* 聚焦时边框变深 */
+    [data-testid="stMainBlockContainer"] .stTextInput [data-testid="stTextInputRootElement"]:focus-within,
     [data-testid="stMainBlockContainer"] .stTextInput [data-baseweb="input"]:focus-within {
-        border-color: #0a0a0a !important;
-        box-shadow: 0 0 0 3px rgba(10,10,10,0.06) !important;
+        border-color: #999 !important;
     }
-    /* root element wrapper 重置 */
-    [data-testid="stMainBlockContainer"] .stTextInput [data-testid="stTextInputRootElement"] {
-        border: none !important;
-        box-shadow: none !important;
-        outline: none !important;
-        background: #FFFFFF !important;
-        background-color: #FFFFFF !important;
-    }
-    /* Input 本体 */
+    /* Input 本体 — 无自身边框 */
     [data-testid="stMainBlockContainer"] .stTextInput input {
         background: transparent !important;
         background-color: transparent !important;
@@ -512,33 +506,33 @@ def _render_login_page():
         outline: none !important;
         box-shadow: none !important;
     }
-    /* 密码眼睛按钮 — 白色背景 + 透明视觉 */
+    /* 密码眼睛 */
     [data-testid="stMainBlockContainer"] .stTextInput button {
         background: #FFFFFF !important;
         background-color: #FFFFFF !important;
         border: none !important;
         box-shadow: none !important;
         outline: none !important;
-        color: #999 !important;
+        color: #aaa !important;
         padding: 4px 8px !important;
         min-height: 0 !important;
         height: auto !important;
     }
     [data-testid="stMainBlockContainer"] .stTextInput button svg {
-        fill: #999 !important;
-        stroke: #999 !important;
+        fill: #aaa !important;
+        stroke: #aaa !important;
         width: 18px !important;
         height: 18px !important;
     }
     [data-testid="stMainBlockContainer"] .stTextInput button:hover {
         background: #f5f5f5 !important;
-        color: #333 !important;
+        color: #666 !important;
     }
     [data-testid="stMainBlockContainer"] .stTextInput button:hover svg {
-        fill: #333 !important;
-        stroke: #333 !important;
+        fill: #666 !important;
+        stroke: #666 !important;
     }
-    /* 自动填充也强制白底黑字 */
+    /* 自动填充白底黑字 */
     [data-testid="stMainBlockContainer"] .stTextInput input:-webkit-autofill,
     [data-testid="stMainBlockContainer"] .stTextInput input:-webkit-autofill:focus {
         -webkit-box-shadow: 0 0 0 1000px #FFFFFF inset !important;
