@@ -411,7 +411,7 @@ def _render_login_page():
         font-weight: 700; font-size: 11px;
         color: #333; letter-spacing: 0.08em;
         text-transform: uppercase;
-        margin: 12px 0 6px 2px;
+        margin: 14px 0 10px 2px;
         padding: 0;
         line-height: 1;
         display: block;
