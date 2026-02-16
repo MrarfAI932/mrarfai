@@ -9,7 +9,7 @@ V9.0 核心升级:
   - real_pipeline.py 数据管线
 
 品牌配色: OLED Black + Pure White
-字体: Inter (body) + JetBrains Mono (data/code)
+字体: Fira Sans (body) + Fira Code (data/code)
 """
 
 import streamlit as st
@@ -113,7 +113,7 @@ GRID_COLOR = "rgba(255,255,255,0.04)"
 
 def plotly_layout(title="", height=400, showlegend=True):
     _sans = "'Inter', sans-serif"
-    _mono = "'JetBrains Mono', monospace"  # for data/axis labels only
+    _mono = "'Fira Code', monospace"  # for data/axis labels only
     return dict(
         title=dict(text=title, font=dict(size=12, color=TEXT2, family=_sans), x=0),
         paper_bgcolor=PAPER_BG, plot_bgcolor=PLOT_BG,
@@ -512,19 +512,19 @@ if HAS_V10_GATEWAY:
                     _db_type = _db_status.get("type", "none")
                     _db_msg = _db_status.get("message", "")
                     if _db_type == "none":
-                        st.markdown(f"""<div style="font-size:12px;color:#CCCCCC;font-family:'IBM Plex Sans',sans-serif;">
+                        st.markdown(f"""<div style="font-size:12px;color:#CCCCCC;font-family:'Fira Sans',sans-serif;">
                             ⚠ 当前使用内置样本数据。配置 .env 中的 DB_* 变量可连接真实 ERP/MES 数据库。</div>""",
                             unsafe_allow_html=True)
                     elif _db_status.get("status") == "ok":
-                        st.markdown(f"""<div style="font-size:12px;color:#FFFFFF;font-family:'IBM Plex Sans',sans-serif;">
+                        st.markdown(f"""<div style="font-size:12px;color:#FFFFFF;font-family:'Fira Sans',sans-serif;">
                             ✅ 已连接: {_db_type.upper()} — {_db_msg}</div>""",
                             unsafe_allow_html=True)
                     else:
-                        st.markdown(f"""<div style="font-size:12px;color:#888888;font-family:'IBM Plex Sans',sans-serif;">
+                        st.markdown(f"""<div style="font-size:12px;color:#888888;font-family:'Fira Sans',sans-serif;">
                             ❌ 连接失败: {_db_msg}</div>""",
                             unsafe_allow_html=True)
 
-                    st.markdown(f"""<div style="font-size:11px;color:#555;font-family:'IBM Plex Sans',sans-serif;margin-top:8px;">
+                    st.markdown(f"""<div style="font-size:11px;color:#555;font-family:'Fira Sans',sans-serif;margin-top:8px;">
                         <b>支持的数据源:</b><br>
                         · SQLite — 本地 Demo 数据库<br>
                         · MySQL — ERP (用友/金蝶/SAP)<br>
@@ -541,13 +541,13 @@ if HAS_V10_GATEWAY:
                     _rpt_enabled = _rpt_config.enabled
 
                     if _rpt_enabled:
-                        st.markdown(f"""<div style="font-size:12px;color:#FFFFFF;font-family:'IBM Plex Sans',sans-serif;">
+                        st.markdown(f"""<div style="font-size:12px;color:#FFFFFF;font-family:'Fira Sans',sans-serif;">
                             ✅ 邮件报告已启用 — {_rpt_config.schedule}
                             · SMTP: {_rpt_config.smtp_host}
                             · 收件人: {', '.join(_rpt_config.recipients)}</div>""",
                             unsafe_allow_html=True)
                     else:
-                        st.markdown(f"""<div style="font-size:12px;color:#CCCCCC;font-family:'IBM Plex Sans',sans-serif;">
+                        st.markdown(f"""<div style="font-size:12px;color:#CCCCCC;font-family:'Fira Sans',sans-serif;">
                             ⚠ 邮件报告未配置。配置 .env 中的 REPORT_SMTP_* 变量启用自动报告推送。</div>""",
                             unsafe_allow_html=True)
 
@@ -604,7 +604,7 @@ if HAS_V10_GATEWAY:
                                 except Exception as e:
                                     st.error(f"发送失败: {e}")
 
-                    st.markdown(f"""<div style="font-size:11px;color:#555;font-family:'IBM Plex Sans',sans-serif;margin-top:8px;">
+                    st.markdown(f"""<div style="font-size:11px;color:#555;font-family:'Fira Sans',sans-serif;margin-top:8px;">
                         <b>报告频率:</b> daily (日报) / weekly (周报) / monthly (月报)<br>
                         <b>推送方式:</b> SMTP 邮件 + 本地文件保存<br>
                         <b>配置方法:</b> 编辑 .env 中 REPORT_SMTP_HOST, REPORT_SMTP_USER, REPORT_RECIPIENTS 等变量
@@ -621,17 +621,17 @@ if HAS_V10_GATEWAY:
                     _log_c1, _log_c2, _log_c3 = st.columns(3)
                     with _log_c1:
                         st.markdown(f"""<div style="text-align:center;padding:8px;background:#0a0a0a;border:1px solid #222;">
-                            <div style="font-size:1rem;font-weight:700;color:#FFFFFF;font-family:'IBM Plex Sans',sans-serif;">
+                            <div style="font-size:1rem;font-weight:700;color:#FFFFFF;font-family:'Fira Sans',sans-serif;">
                                 {_audit_stats.get('total_requests', 0)}</div>
-                            <div style="font-size:10px;color:#555;font-family:'IBM Plex Sans',sans-serif;">
+                            <div style="font-size:10px;color:#555;font-family:'Fira Sans',sans-serif;">
                                 {'总请求' if st.session_state.lang == 'zh' else 'Total Requests'}</div>
                         </div>""", unsafe_allow_html=True)
                     with _log_c2:
                         _avg_ms = _audit_stats.get('avg_duration_ms', 0)
                         st.markdown(f"""<div style="text-align:center;padding:8px;background:#0a0a0a;border:1px solid #222;">
-                            <div style="font-size:1rem;font-weight:700;color:#888888;font-family:'IBM Plex Sans',sans-serif;">
+                            <div style="font-size:1rem;font-weight:700;color:#888888;font-family:'Fira Sans',sans-serif;">
                                 {_avg_ms:.0f}ms</div>
-                            <div style="font-size:10px;color:#555;font-family:'IBM Plex Sans',sans-serif;">
+                            <div style="font-size:10px;color:#555;font-family:'Fira Sans',sans-serif;">
                                 {'平均响应' if st.session_state.lang == 'zh' else 'Avg Response'}</div>
                         </div>""", unsafe_allow_html=True)
                     with _log_c3:
@@ -639,9 +639,9 @@ if HAS_V10_GATEWAY:
                         _fail_count = _by_status.get('failed', 0) + _by_status.get('error', 0)
                         _fail_color = "#888888" if _fail_count > 0 else "#FFFFFF"
                         st.markdown(f"""<div style="text-align:center;padding:8px;background:#0a0a0a;border:1px solid #222;">
-                            <div style="font-size:1rem;font-weight:700;color:{_fail_color};font-family:'IBM Plex Sans',sans-serif;">
+                            <div style="font-size:1rem;font-weight:700;color:{_fail_color};font-family:'Fira Sans',sans-serif;">
                                 {_fail_count}</div>
-                            <div style="font-size:10px;color:#555;font-family:'IBM Plex Sans',sans-serif;">
+                            <div style="font-size:10px;color:#555;font-family:'Fira Sans',sans-serif;">
                                 {'失败请求' if st.session_state.lang == 'zh' else 'Failed'}</div>
                         </div>""", unsafe_allow_html=True)
 
@@ -649,12 +649,12 @@ if HAS_V10_GATEWAY:
                     _by_agent = _audit_stats.get('by_agent', {})
                     if _by_agent:
                         _agent_dist_label = "Agent 请求分布" if st.session_state.lang == "zh" else "Agent Distribution"
-                        st.markdown(f"""<div style="font-size:11px;color:#888;font-family:'IBM Plex Sans',sans-serif;
+                        st.markdown(f"""<div style="font-size:11px;color:#888;font-family:'Fira Sans',sans-serif;
                             margin:12px 0 4px;">{_agent_dist_label}:</div>""", unsafe_allow_html=True)
                         for _ag, _cnt in sorted(_by_agent.items(), key=lambda x: -x[1]):
                             _pct = (_cnt / max(1, _audit_stats.get('total_requests', 1))) * 100
                             _ag_icon = _agent_icons.get(_ag, "🤖")
-                            st.markdown(f"""<div style="font-size:11px;font-family:'IBM Plex Sans',sans-serif;
+                            st.markdown(f"""<div style="font-size:11px;font-family:'Fira Sans',sans-serif;
                                 color:#e0e0e0;display:flex;align-items:center;gap:6px;padding:2px 0;">
                                 <span>{_ag_icon} {_ag}</span>
                                 <div style="flex:1;background:#111;height:6px;border-radius:3px;">
@@ -666,7 +666,7 @@ if HAS_V10_GATEWAY:
                     # 最近日志列表
                     if _recent_logs:
                         _recent_label = "最近请求" if st.session_state.lang == "zh" else "Recent Requests"
-                        st.markdown(f"""<div style="font-size:11px;color:#888;font-family:'IBM Plex Sans',sans-serif;
+                        st.markdown(f"""<div style="font-size:11px;color:#888;font-family:'Fira Sans',sans-serif;
                             margin:12px 0 4px;">{_recent_label}:</div>""", unsafe_allow_html=True)
                         for _log in reversed(_recent_logs[-15:]):
                             _ts = _log.get("timestamp", "")[:19].replace("T", " ")
@@ -676,7 +676,7 @@ if HAS_V10_GATEWAY:
                             _ldur = _log.get("duration_ms", 0)
                             _luser = _log.get("user", "")
                             _st_color = "#FFFFFF" if _lst == "completed" else "#888888" if _lst in ("failed","error") else "#CCCCCC"
-                            st.markdown(f"""<div style="font-size:10px;font-family:'IBM Plex Sans',sans-serif;
+                            st.markdown(f"""<div style="font-size:10px;font-family:'Fira Sans',sans-serif;
                                 color:#aaa;padding:3px 0;border-bottom:1px solid #181818;">
                                 <span style="color:#555;">{_ts}</span>
                                 <span style="color:{_st_color};">●</span>
@@ -688,14 +688,14 @@ if HAS_V10_GATEWAY:
 
                     # API 限流状态
                     _rl_label = "API 限流状态" if st.session_state.lang == "zh" else "API Rate Limit"
-                    st.markdown(f"""<div style="font-size:11px;color:#888;font-family:'IBM Plex Sans',sans-serif;
+                    st.markdown(f"""<div style="font-size:11px;color:#888;font-family:'Fira Sans',sans-serif;
                         margin:12px 0 4px;">{_rl_label}:</div>""", unsafe_allow_html=True)
                     _rl = _gw.rate_limiter.get_usage()
                     _rl_min = _rl.get("global_last_minute", 0)
                     _rl_hr = _rl.get("global_last_hour", 0)
                     _rl_lim_min = _rl.get("global_limit_minute", 300)
                     _rl_lim_hr = _rl.get("global_limit_hour", 5000)
-                    st.markdown(f"""<div style="font-size:11px;font-family:'IBM Plex Sans',sans-serif;color:#e0e0e0;">
+                    st.markdown(f"""<div style="font-size:11px;font-family:'Fira Sans',sans-serif;color:#e0e0e0;">
                         ⚡ 分钟: {_rl_min}/{_rl_lim_min} · 小时: {_rl_hr}/{_rl_lim_hr}
                     </div>""", unsafe_allow_html=True)
 
@@ -734,7 +734,7 @@ if HAS_V10_GATEWAY:
                                 st.error(f"❌ {_msg}")
 
                     if not _wx_webhook:
-                        st.markdown(f"""<div style="font-size:11px;color:#555;font-family:'IBM Plex Sans',sans-serif;">
+                        st.markdown(f"""<div style="font-size:11px;color:#555;font-family:'Fira Sans',sans-serif;">
                             配置方法: 企业微信群 → 群设置 → 群机器人 → 添加 → 复制 Webhook 地址
                         </div>""", unsafe_allow_html=True)
 
@@ -777,7 +777,7 @@ if HAS_V10_GATEWAY:
             _v10_api_key = _DEFAULT_API_KEY
             if _v10_api_key:
                 # 已内置 Key，显示状态
-                st.markdown(f"""<div style="font-size:11px;color:#FFFFFF;font-family:'IBM Plex Sans',sans-serif;
+                st.markdown(f"""<div style="font-size:11px;color:#FFFFFF;font-family:'Fira Sans',sans-serif;
                     padding:4px 0 8px 0;">✅ {_t('ai_enabled')} · {_v10_provider} · {_t('key_builtin')}</div>""", unsafe_allow_html=True)
             else:
                 # 无内置 Key，显示输入框
@@ -804,7 +804,7 @@ if HAS_V10_GATEWAY:
             if not can_upload(_user_role):
                 st.warning(f"⚠ {_t('no_upload')}")
                 st.stop()
-            st.markdown(f"""<div style="font-size:12px;color:#888;font-family:'IBM Plex Sans',sans-serif;
+            st.markdown(f"""<div style="font-size:12px;color:#888;font-family:'Fira Sans',sans-serif;
                 margin-bottom:12px;">{_t('upload_hint_v9')}</div>""",
                 unsafe_allow_html=True)
 
@@ -1205,7 +1205,7 @@ if HAS_V10_GATEWAY:
         elif _active == "_collab":
             # ── 协作场景界面 ──
             _scenarios = _gw.collaboration.scenarios
-            st.markdown(f"""<div style="font-size:13px;color:#888;font-family:'IBM Plex Sans',sans-serif;
+            st.markdown(f"""<div style="font-size:13px;color:#888;font-family:'Fira Sans',sans-serif;
                 margin-bottom:12px;">{_t('collab_hint')}</div>""", unsafe_allow_html=True)
 
             # 预定义场景按钮
@@ -1241,7 +1241,7 @@ if HAS_V10_GATEWAY:
                 _agent_display = {k: f"{_agent_icons.get(k,'')} {v}" for k, v in _agent_names_cn.items()}
 
                 _chain_hint = "选择2-5个Agent组成自定义协作链" if st.session_state.lang == "zh" else "Select 2-5 Agents to build a custom chain"
-                st.markdown(f"""<div style="font-size:11px;color:#888;font-family:'IBM Plex Sans',sans-serif;">
+                st.markdown(f"""<div style="font-size:11px;color:#888;font-family:'Fira Sans',sans-serif;">
                     {_chain_hint}</div>""", unsafe_allow_html=True)
 
                 _selected = st.multiselect(
@@ -1255,7 +1255,7 @@ if HAS_V10_GATEWAY:
 
                 if _selected and len(_selected) >= 2:
                     _chain_preview = " → ".join([f"{_agent_icons.get(a,'')} {_agent_names_cn.get(a,a)}" for a in _selected])
-                    st.markdown(f"""<div style="font-size:12px;color:#FFFFFF;font-family:'IBM Plex Sans',sans-serif;
+                    st.markdown(f"""<div style="font-size:12px;color:#FFFFFF;font-family:'Fira Sans',sans-serif;
                         padding:8px 0;">链路: {_chain_preview}</div>""", unsafe_allow_html=True)
 
                     _cc1, _cc2 = st.columns([2, 1])
@@ -1306,12 +1306,12 @@ if HAS_V10_GATEWAY:
 
                 if not _mem_records:
                     _no_mem = "暂无协作记录。执行协作场景后，结果将自动存档。" if st.session_state.lang == "zh" else "No records yet. Run a collaboration scenario to create one."
-                    st.markdown(f"""<div style="font-size:11px;color:#555;font-family:'IBM Plex Sans',sans-serif;">
+                    st.markdown(f"""<div style="font-size:11px;color:#555;font-family:'Fira Sans',sans-serif;">
                         {_no_mem}</div>""", unsafe_allow_html=True)
                 else:
                     _mem_stats = _mem.get_stats()
                     _total_label = "总记录" if st.session_state.lang == "zh" else "Total records"
-                    st.markdown(f"""<div style="font-size:11px;color:#555;font-family:'IBM Plex Sans',sans-serif;margin-bottom:8px;">
+                    st.markdown(f"""<div style="font-size:11px;color:#555;font-family:'Fira Sans',sans-serif;margin-bottom:8px;">
                         📊 {_total_label}: {_mem_stats.get('total_records', 0)}</div>""", unsafe_allow_html=True)
 
                     for _rec in _mem_records:
@@ -1324,7 +1324,7 @@ if HAS_V10_GATEWAY:
 
                         _rec_col1, _rec_col2 = st.columns([4, 1])
                         with _rec_col1:
-                            st.markdown(f"""<div style="font-size:11px;font-family:'IBM Plex Sans',sans-serif;
+                            st.markdown(f"""<div style="font-size:11px;font-family:'Fira Sans',sans-serif;
                                 color:#e0e0e0;padding:4px 0;border-bottom:1px solid #222;">
                                 {_status_dot} <span style="color:#888888;">{_sc_name}</span>
                                 · {_agents} agents · {_ts}
@@ -1340,7 +1340,7 @@ if HAS_V10_GATEWAY:
                         if st.session_state.get(f"_show_mem_{_mid}", False):
                             _full = _mem.load(_mid)
                             if _full:
-                                st.markdown(f"""<div style="font-size:11px;font-family:'IBM Plex Sans',sans-serif;
+                                st.markdown(f"""<div style="font-size:11px;font-family:'Fira Sans',sans-serif;
                                     color:#888;background:#0a0a0a;padding:12px;margin:4px 0 12px;border:1px solid #222;">
                                     <b>场景:</b> {_full.get('scenario','')}<br>
                                     <b>描述:</b> {_full.get('description','')}<br>
@@ -1353,7 +1353,7 @@ if HAS_V10_GATEWAY:
                                 for _aname, _ares in _full.get("agent_results", {}).items():
                                     _a_icon = _agent_icons.get(_aname, "🤖")
                                     _a_cn = _agent_names_cn.get(_aname, _aname)
-                                    st.markdown(f"""<div style="font-size:11px;font-family:'IBM Plex Sans',sans-serif;
+                                    st.markdown(f"""<div style="font-size:11px;font-family:'Fira Sans',sans-serif;
                                         color:#FFFFFF;margin-top:6px;">▸ {_a_icon} {_a_cn}</div>""",
                                         unsafe_allow_html=True)
                                     try:
@@ -1390,7 +1390,7 @@ if HAS_V10_GATEWAY:
                     st.info(f"📊 使用已上传的自定义数据 ({sum(len(df) for df in _dfs.values())} 条记录)")
             else:
                 with st.expander(f"📎 {_t('upload_data')}", expanded=False):
-                    st.markdown(f"""<div style="font-size:11px;color:#888;font-family:'IBM Plex Sans',sans-serif;
+                    st.markdown(f"""<div style="font-size:11px;color:#888;font-family:'Fira Sans',sans-serif;
                         white-space:pre-line;line-height:1.5;">{_upload_hints.get(_active, '')}</div>""", unsafe_allow_html=True)
                     _uploaded_data = st.file_uploader(
                         "上传 Excel", type=["xlsx"], key=f"upload_{_active}",
@@ -1556,7 +1556,7 @@ with st.spinner("🌿 数据加载 + 深度分析中..."):
             sheet_name = err_msg.split("'")[1] if "'" in err_msg else "未知"
             st.error(f"📊 Excel 工作表不匹配")
             st.markdown(f"""
-            <div style="font-family:'IBM Plex Sans',sans-serif; font-size:13px;
+            <div style="font-family:'Fira Sans',sans-serif; font-size:13px;
                  color:#8a8a8a; padding:12px; border:1px solid rgba(102,102,102,0.15);
                  background:rgba(102,102,102,0.04); margin-top:8px;">
                 <p>找不到工作表 "<strong style="color:#888888;">{sheet_name}</strong>"</p>
@@ -1572,7 +1572,7 @@ with st.spinner("🌿 数据加载 + 深度分析中..."):
     except Exception as e:
         st.error("⚠️ 数据加载失败")
         st.markdown(f"""
-        <div style="font-family:'IBM Plex Sans',sans-serif; font-size:12px;
+        <div style="font-family:'Fira Sans',sans-serif; font-size:12px;
              color:#888; padding:12px; border:1px solid rgba(138,138,138,0.15);
              background:rgba(138,138,138,0.04); margin-top:8px;">
             <p>错误类型: <strong>{type(e).__name__}</strong></p>
@@ -1980,12 +1980,12 @@ if HAS_V10_GATEWAY:
             <div style="background:linear-gradient(135deg,#0d1117,#161b22);padding:24px 28px;
                         border:1px solid rgba(255,255,255,0.08);margin-bottom:20px;">
                 <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
-                    <span style="font-family:'IBM Plex Sans',sans-serif;font-size:1.1rem;
+                    <span style="font-family:'Fira Sans',sans-serif;font-size:1.1rem;
                           font-weight:700;color:#FFF;letter-spacing:0.06em;">MRARFAI COMMAND CENTER</span>
-                    <span style="font-size:12px;color:#555;font-family:'IBM Plex Sans',sans-serif;
+                    <span style="font-size:12px;color:#555;font-family:'Fira Sans',sans-serif;
                           border:1px solid #333;padding:2px 8px;">V10.0</span>
                 </div>
-                <div style="font-size:13px;color:#555;font-family:'IBM Plex Sans',sans-serif;">
+                <div style="font-size:13px;color:#555;font-family:'Fira Sans',sans-serif;">
                     输入任何业务问题 → 自动路由到最佳 Agent → 返回分析结果
                 </div>
             </div>
@@ -2021,13 +2021,13 @@ if HAS_V10_GATEWAY:
 
                     # 路由信息
                     _route_badge = f"""<span style="display:inline-block;font-size:11px;
-                        font-family:'IBM Plex Sans',sans-serif;color:#888;
+                        font-family:'Fira Sans',sans-serif;color:#888;
                         border:1px solid #333;padding:1px 6px;margin-left:8px;">
                         {icon} {name} · 置信度 {conf:.0%} · {duration:.0f}ms</span>"""
 
                     if _type == "collaboration":
                         _route_badge = f"""<span style="display:inline-block;font-size:11px;
-                            font-family:'IBM Plex Sans',sans-serif;color:#f0b040;
+                            font-family:'Fira Sans',sans-serif;color:#f0b040;
                             border:1px solid #665520;padding:1px 6px;margin-left:8px;">
                             ⚡ 跨Agent协作 · {msg.get('scenario', '')} · {duration:.0f}ms</span>"""
 
@@ -2098,7 +2098,7 @@ if HAS_V10_GATEWAY:
             st.markdown("---")
 
             # ── Agent 状态面板 ──
-            st.markdown("""<div style="font-family:'IBM Plex Sans',sans-serif;font-size:14px;
+            st.markdown("""<div style="font-family:'Fira Sans',sans-serif;font-size:14px;
                 font-weight:700;color:#FFF;margin-bottom:12px;letter-spacing:0.04em;">
                 AGENT STATUS MATRIX</div>""", unsafe_allow_html=True)
 
@@ -2118,9 +2118,9 @@ if HAS_V10_GATEWAY:
                     <div style="background:#0d1117;border:1px solid rgba(255,255,255,0.08);
                          padding:14px;text-align:center;">
                         <div style="font-size:1.5rem;">{icon}</div>
-                        <div style="font-family:'IBM Plex Sans',sans-serif;font-weight:600;
+                        <div style="font-family:'Fira Sans',sans-serif;font-weight:600;
                              font-size:13px;color:#FFF;margin:4px 0;">{display_name}</div>
-                        <div style="font-family:'IBM Plex Sans',sans-serif;font-size:11px;color:#555;">
+                        <div style="font-family:'Fira Sans',sans-serif;font-size:11px;color:#555;">
                             {skills_count} skills · {_calls} calls
                         </div>
                         <div style="width:6px;height:6px;border-radius:50%;background:#FFFFFF;
@@ -2129,7 +2129,7 @@ if HAS_V10_GATEWAY:
 
             # ── 快捷协作场景 ──
             st.markdown("")
-            st.markdown("""<div style="font-family:'IBM Plex Sans',sans-serif;font-size:14px;
+            st.markdown("""<div style="font-family:'Fira Sans',sans-serif;font-size:14px;
                 font-weight:700;color:#FFF;margin-bottom:12px;letter-spacing:0.04em;">
                 CROSS-AGENT COLLABORATION</div>""", unsafe_allow_html=True)
 
@@ -2158,7 +2158,7 @@ if HAS_V10_GATEWAY:
 
             # ── 快捷示例问题 ──
             st.markdown("")
-            st.markdown("""<div style="font-family:'IBM Plex Sans',sans-serif;font-size:14px;
+            st.markdown("""<div style="font-family:'Fira Sans',sans-serif;font-size:14px;
                 font-weight:700;color:#FFF;margin-bottom:8px;letter-spacing:0.04em;">
                 QUICK START</div>""", unsafe_allow_html=True)
 

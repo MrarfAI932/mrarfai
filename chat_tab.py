@@ -288,7 +288,7 @@ def _inline_meta_html(critique: dict = None, hitl_decision: dict = None) -> str:
         label = "PASS" if passed else "REVIEW"
         parts.append(
             f'<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;'
-            f'font-family:IBM Plex Sans,sans-serif;font-size:12px;font-weight:700;'
+            f'font-family:Fira Sans,sans-serif;font-size:12px;font-weight:700;'
             f'background:{bg};color:{color};border:1px solid {border};">'
             f'{icon} {label} {score:.1f}/10</span>'
         )
@@ -306,7 +306,7 @@ def _inline_meta_html(critique: dict = None, hitl_decision: dict = None) -> str:
         r, g, b = int(color[1:3], 16), int(color[3:5], 16), int(color[5:7], 16)
         parts.append(
             f'<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;'
-            f'font-family:IBM Plex Sans,sans-serif;font-size:12px;font-weight:700;'
+            f'font-family:Fira Sans,sans-serif;font-size:12px;font-weight:700;'
             f'background:rgba({r},{g},{b},0.08);color:{color};'
             f'border:1px solid rgba({r},{g},{b},0.25);">'
             f'{pct} {label}</span>'
@@ -350,7 +350,7 @@ def _update_agent_progress(container, active: dict, completed: set):
         html += (
             f'<span style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.25);'
             f'padding:0.15rem 0.5rem;font-size:13px;color:{SP_GREEN};'
-            f'font-family:IBM Plex Sans,sans-serif;font-weight:600;letter-spacing:0.03em;">'
+            f'font-family:Fira Sans,sans-serif;font-weight:600;letter-spacing:0.03em;">'
             f'✓ {name}</span>'
         )
     for name, status in active.items():
@@ -358,7 +358,7 @@ def _update_agent_progress(container, active: dict, completed: set):
         html += (
             f'<span style="background:rgba(138,138,138,0.06);border:1px solid rgba(138,138,138,0.20);'
             f'padding:0.15rem 0.5rem;font-size:13px;color:{C_TEXT_MUTED};'
-            f'font-family:IBM Plex Sans,sans-serif;font-weight:600;letter-spacing:0.03em;">'
+            f'font-family:Fira Sans,sans-serif;font-weight:600;letter-spacing:0.03em;">'
             f'⏳ {name}</span>'
         )
     html += '</div>'
@@ -372,22 +372,22 @@ def _render_v4_badges(result: dict):
         badges.append(f'<span style="background:rgba(255,255,255,0.06);color:{SP_GREEN};'
                       f'border:1px solid rgba(255,255,255,0.20);'
                       f'padding:0.1rem 0.4rem;font-size:11px;font-weight:700;'
-                      f'letter-spacing:0.05em;font-family:IBM Plex Sans,sans-serif;">TOOL USE</span>')
+                      f'letter-spacing:0.05em;font-family:Fira Sans,sans-serif;">TOOL USE</span>')
     if result.get("guardrails_enabled"):
         badges.append(f'<span style="background:rgba(136,136,136,0.06);color:{SP_BLUE};'
                       f'border:1px solid rgba(136,136,136,0.20);'
                       f'padding:0.1rem 0.4rem;font-size:11px;font-weight:700;'
-                      f'letter-spacing:0.05em;font-family:IBM Plex Sans,sans-serif;">GUARDRAILS</span>')
+                      f'letter-spacing:0.05em;font-family:Fira Sans,sans-serif;">GUARDRAILS</span>')
     if result.get("streaming_enabled"):
         badges.append(f'<span style="background:rgba(138,138,138,0.06);color:#8a8a8a;'
                       f'border:1px solid rgba(138,138,138,0.20);'
                       f'padding:0.1rem 0.4rem;font-size:11px;font-weight:700;'
-                      f'letter-spacing:0.05em;font-family:IBM Plex Sans,sans-serif;">STREAMING</span>')
+                      f'letter-spacing:0.05em;font-family:Fira Sans,sans-serif;">STREAMING</span>')
     if result.get("from_cache"):
         badges.append(f'<span style="background:rgba(204,204,204,0.06);color:{C_WARNING};'
                       f'border:1px solid rgba(204,204,204,0.20);'
                       f'padding:0.1rem 0.4rem;font-size:11px;font-weight:700;'
-                      f'letter-spacing:0.05em;font-family:IBM Plex Sans,sans-serif;">CACHED</span>')
+                      f'letter-spacing:0.05em;font-family:Fira Sans,sans-serif;">CACHED</span>')
 
     budget = result.get("budget_status")
     if budget and budget.get("level") != "normal":
@@ -400,7 +400,7 @@ def _render_v4_badges(result: dict):
             f'<span style="background:rgba(102,102,102,0.06);color:{level_color};'
             f'border:1px solid rgba(102,102,102,0.20);'
             f'padding:0.1rem 0.4rem;font-size:11px;font-weight:700;'
-            f'letter-spacing:0.05em;font-family:IBM Plex Sans,sans-serif;">'
+            f'letter-spacing:0.05em;font-family:Fira Sans,sans-serif;">'
             f'{budget["usage_pct"]:.0f}% BUDGET</span>'
         )
 
@@ -426,7 +426,7 @@ def _badge_html(label: str, color: str) -> str:
         f'<span style="background:rgba({r},{g},{b},0.06);color:{color};'
         f'border:1px solid rgba({r},{g},{b},0.20);'
         f'padding:0.1rem 0.4rem;font-size:11px;font-weight:700;'
-        f"letter-spacing:0.05em;font-family:IBM Plex Sans,sans-serif;"
+        f"letter-spacing:0.05em;font-family:Fira Sans,sans-serif;"
         f'">{label}</span>'
     )
 
@@ -585,7 +585,7 @@ def _render_v9_details(result: dict):
     <div style="background:{level_colors.get(level, 'rgba(138,138,138,0.06)')};
          border:1px solid {level_borders.get(level, 'rgba(138,138,138,0.15)')};
          padding:8px 12px; margin:4px 0;">
-        <div style="font-family:IBM Plex Sans,sans-serif; font-size:12px;
+        <div style="font-family:Fira Sans,sans-serif; font-size:12px;
              color:#888; letter-spacing:0.05em; margin-bottom:4px;">
             {level_icons.get(level, '🔥')} V8 GATE · {level.upper()} · score={score:.2f}
         </div>
@@ -637,7 +637,7 @@ def _render_v8_review_card(result: dict):
     <div style="background:rgba(138,138,138,0.04); border:1px solid rgba(138,138,138,0.10);
          padding:8px 12px; margin:4px 0;">
         <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span style="font-family:IBM Plex Sans,sans-serif; font-size:12px;
+            <span style="font-family:Fira Sans,sans-serif; font-size:12px;
                  color:#888; letter-spacing:0.05em;">
                 📝 V8 REVIEW · {"PASS" if passed else "FAIL"}
             </span>
@@ -671,7 +671,7 @@ def _render_agent_cards(agents_used: list, agent_outputs: dict = None):
         })
 
         # All agents in agents_used list have completed
-        status = ('<span style="font-family:IBM Plex Sans,sans-serif;font-size:12px;padding:0.2rem 0.6rem;'
+        status = ('<span style="font-family:Fira Sans,sans-serif;font-size:12px;padding:0.2rem 0.6rem;'
                   'font-weight:700;flex-shrink:0;margin-left:auto;letter-spacing:0.05em;'
                   'background:rgba(255,255,255,0.08);color:#FFFFFF;border:1px solid rgba(255,255,255,0.25);">DONE</span>')
 
@@ -725,7 +725,7 @@ def _render_thinking_timeline(thinking_log: str, total_time: float = 0):
 
             time_m = re.search(r'(\d+\.?\d*)\s*[sS秒]', line)
             time_str = f' `{time_m.group(1)}s`' if time_m else ""
-            st.markdown(f"<span style='color:{color};font-size:8px;'>●</span> <span style='font-family:IBM Plex Sans,sans-serif;font-size:14px;color:#aaa;line-height:1.8;'>{line}</span>{time_str}", unsafe_allow_html=True)
+            st.markdown(f"<span style='color:{color};font-size:8px;'>●</span> <span style='font-family:Fira Sans,sans-serif;font-size:14px;color:#aaa;line-height:1.8;'>{line}</span>{time_str}", unsafe_allow_html=True)
 
 
 def _render_quality_badge(critique: dict):
@@ -754,7 +754,7 @@ def _render_quality_badge(critique: dict):
 
     st.markdown(f"""
     <div style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.35rem 0.7rem;
-         font-family:IBM Plex Sans,sans-serif;font-size:13px;font-weight:700;letter-spacing:0.05em;
+         font-family:Fira Sans,sans-serif;font-size:13px;font-weight:700;letter-spacing:0.05em;
          margin:0.25rem 0;background:{bg};color:{color};border:1px solid {border};">
         <span style="font-size:14px;">{icon}</span>
         <span>{label}</span>
@@ -797,17 +797,17 @@ def _render_hitl_card(hitl_decision: dict):
                 items.append(f"• {t.get('message', t.get('reason', str(t)))}")
             else:
                 items.append(f"• {t}")
-        trig_html = f'<div style="font-family:IBM Plex Sans,sans-serif;font-size:12px;color:#888;text-align:right;flex-shrink:0;">{"<br>".join(items)}</div>'
+        trig_html = f'<div style="font-family:Fira Sans,sans-serif;font-size:12px;color:#888;text-align:right;flex-shrink:0;">{"<br>".join(items)}</div>'
 
     gauge_bg = f"rgba({','.join(str(int(color.lstrip('#')[i:i+2],16)) for i in (0,2,4))},0.10)"
     gauge_border = f"rgba({','.join(str(int(color.lstrip('#')[i:i+2],16)) for i in (0,2,4))},0.35)"
 
     st.markdown(f"""
     <div style="background:#080808;border:1px solid #2f2f2f;padding:1rem 1.2rem;margin:0.8rem 0;display:flex;align-items:center;gap:1rem;">
-        <div style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;font-family:IBM Plex Sans,sans-serif;font-size:15px;font-weight:700;flex-shrink:0;background:{gauge_bg};color:{color};border:2px solid {gauge_border};">{pct}</div>
+        <div style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;font-family:Fira Sans,sans-serif;font-size:15px;font-weight:700;flex-shrink:0;background:{gauge_bg};color:{color};border:2px solid {gauge_border};">{pct}</div>
         <div style="flex:1;">
-            <div style="font-family:IBM Plex Sans,sans-serif;font-size:14px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:{color};">{label}</div>
-            <div style="font-family:IBM Plex Sans,sans-serif;font-size:14px;color:#aaa;margin-top:0.2rem;">{act_text}</div>
+            <div style="font-family:Fira Sans,sans-serif;font-size:14px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:{color};">{label}</div>
+            <div style="font-family:Fira Sans,sans-serif;font-size:14px;color:#aaa;margin-top:0.2rem;">{act_text}</div>
         </div>
         {trig_html}
     </div>""", unsafe_allow_html=True)
@@ -860,31 +860,31 @@ def _render_welcome():
              margin-bottom:12px;">
             <div style="width:5px;height:5px;border-radius:50%;background:#FFFFFF;
                  animation:neon-pulse 2s ease-in-out infinite;"></div>
-            <span style="font-family:IBM Plex Sans,sans-serif;font-size:11px;
+            <span style="font-family:Fira Sans,sans-serif;font-size:11px;
                   font-weight:700;color:#FFFFFF;letter-spacing:0.1em;">AGENT TERMINAL · V10.0</span>
         </div>
-        <div style="font-family:IBM Plex Sans,sans-serif;font-size:1.2rem;font-weight:700;
+        <div style="font-family:Fira Sans,sans-serif;font-size:1.2rem;font-weight:700;
              color:#FFFFFF;letter-spacing:-0.01em;margin-bottom:6px;">
             多智能体销售分析
         </div>
-        <div style="font-family:IBM Plex Sans,sans-serif;font-size:12px;
+        <div style="font-family:Fira Sans,sans-serif;font-size:12px;
              color:#888;letter-spacing:0.02em;">
             // 12维深度分析 · 实时预警 · RLM 递归语言模型
         </div>
         <div style="display:flex;justify-content:center;gap:18px;margin-top:14px;">
             <div style="display:flex;align-items:center;gap:5px;">
                 <span style="color:{SP_GREEN};font-size:12px;">◈</span>
-                <span style="font-family:IBM Plex Sans,sans-serif;font-size:10px;
+                <span style="font-family:Fira Sans,sans-serif;font-size:10px;
                       color:#4a4a4a;letter-spacing:0.08em;">ANALYST</span>
             </div>
             <div style="display:flex;align-items:center;gap:5px;">
                 <span style="color:{SP_RED};font-size:12px;">◆</span>
-                <span style="font-family:IBM Plex Sans,sans-serif;font-size:10px;
+                <span style="font-family:Fira Sans,sans-serif;font-size:10px;
                       color:#4a4a4a;letter-spacing:0.08em;">RISK</span>
             </div>
             <div style="display:flex;align-items:center;gap:5px;">
                 <span style="color:{SP_BLUE};font-size:12px;">◇</span>
-                <span style="font-family:IBM Plex Sans,sans-serif;font-size:10px;
+                <span style="font-family:Fira Sans,sans-serif;font-size:10px;
                       color:#4a4a4a;letter-spacing:0.08em;">STRATEGY</span>
             </div>
         </div>
@@ -901,16 +901,16 @@ def _render_ready_state():
              margin-bottom:20px;">
             <div style="width:6px;height:6px;border-radius:50%;background:#FFFFFF;
                  animation:neon-pulse 2s ease-in-out infinite;"></div>
-            <span style="font-family:IBM Plex Sans,sans-serif;font-size:12px;
+            <span style="font-family:Fira Sans,sans-serif;font-size:12px;
                   font-weight:700;color:#FFFFFF;letter-spacing:0.1em;text-transform:uppercase;">
                 AGENTS READY · V10.0
             </span>
         </div>
-        <div style="font-family:IBM Plex Sans,sans-serif;font-size:1.4rem;font-weight:700;
+        <div style="font-family:Fira Sans,sans-serif;font-size:1.4rem;font-weight:700;
              color:#FFFFFF;letter-spacing:-0.02em;margin-bottom:6px;">
             多智能体分析就绪
         </div>
-        <div style="font-family:IBM Plex Sans,sans-serif;font-size:13px;
+        <div style="font-family:Fira Sans,sans-serif;font-size:13px;
              color:#888;letter-spacing:0.03em;">
             // 在下方输入问题，或点击快捷提问开始分析
         </div>
@@ -918,17 +918,17 @@ def _render_ready_state():
     <div style="display:flex;justify-content:center;gap:24px;margin-bottom:24px;">
         <div style="display:flex;align-items:center;gap:6px;">
             <span style="color:{SP_GREEN};font-size:13px;">◈</span>
-            <span style="font-family:IBM Plex Sans,sans-serif;font-size:11px;
+            <span style="font-family:Fira Sans,sans-serif;font-size:11px;
                   color:#888;letter-spacing:0.05em;">DATA ANALYST</span>
         </div>
         <div style="display:flex;align-items:center;gap:6px;">
             <span style="color:{SP_RED};font-size:13px;">◆</span>
-            <span style="font-family:IBM Plex Sans,sans-serif;font-size:11px;
+            <span style="font-family:Fira Sans,sans-serif;font-size:11px;
                   color:#888;letter-spacing:0.05em;">RISK CONTROL</span>
         </div>
         <div style="display:flex;align-items:center;gap:6px;">
             <span style="color:{SP_BLUE};font-size:13px;">◇</span>
-            <span style="font-family:IBM Plex Sans,sans-serif;font-size:11px;
+            <span style="font-family:Fira Sans,sans-serif;font-size:11px;
                   color:#888;letter-spacing:0.05em;">STRATEGIST</span>
         </div>
     </div>

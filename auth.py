@@ -280,7 +280,7 @@ def _render_login_page():
     <div style="position:fixed; top:20px; right:24px; z-index:100;
          display:flex; align-items:center; gap:8px;">
         <div class="pulse-dot" style="width:6px; height:6px; background:#FFFFFF;"></div>
-        <span style="font-family:'IBM Plex Sans',sans-serif; font-size:10px;
+        <span style="font-family:'Fira Sans',sans-serif; font-size:10px;
               color:#505050; letter-spacing:0.08em; text-transform:uppercase;">
             SYSTEM ONLINE
         </span>

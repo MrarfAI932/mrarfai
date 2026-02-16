@@ -228,11 +228,11 @@ export default function FrontierAudit() {
 
   return (
     <div style={{
-      fontFamily: "'IBM Plex Sans', 'Noto Sans SC', sans-serif",
+      fontFamily: "'Fira Sans', 'Noto Sans SC', sans-serif",
       background: "linear-gradient(160deg, #070b14 0%, #0f172a 50%, #0a101e 100%)",
       color: "#e2e8f0", minHeight: "100vh", padding: "28px 20px",
     }}>
-      <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet" />
+      <link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet" />
       <div style={{ maxWidth: 900, margin: "0 auto" }}>
         <div style={{ marginBottom: 6, display: "flex", alignItems: "baseline", gap: 12 }}>
           <h1 style={{

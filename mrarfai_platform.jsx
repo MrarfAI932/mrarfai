@@ -462,13 +462,13 @@ function AuditRoundTabs() {
               padding: "3px 10px", borderRadius: 4, border: "none", cursor: "pointer",
               background: activeRound === r.id ? r.color + "30" : "rgba(255,255,255,0.04)",
               color: activeRound === r.id ? r.color : "#64748b",
-              fontSize: "0.65rem", fontWeight: 700, fontFamily: "'JetBrains Mono', monospace",
+              fontSize: "0.65rem", fontWeight: 700, fontFamily: "'Fira Code', monospace",
             }}>
               {r.label} ({r.items.length})
             </button>
           ))}
         </div>
-        <span style={{ marginLeft: "auto", fontSize: "0.6rem", color: "#475569", fontFamily: "'JetBrains Mono', monospace" }}>
+        <span style={{ marginLeft: "auto", fontSize: "0.6rem", color: "#475569", fontFamily: "'Fira Code', monospace" }}>
           {totalFindings} 处修正 · {criticalCount} 严重
         </span>
       </div>
@@ -484,7 +484,7 @@ function AuditRoundTabs() {
             <span style={{ color: "#f1f5f9", fontWeight: 600 }}>{item.title}</span>
             <span style={{ color: "#94a3b8", marginLeft: 8 }}>— {item.detail}</span>
             {item.src !== "N/A" && (
-              <code style={{ marginLeft: 8, fontSize: "0.58rem", color: "#475569", fontFamily: "'JetBrains Mono', monospace" }}>
+              <code style={{ marginLeft: 8, fontSize: "0.58rem", color: "#475569", fontFamily: "'Fira Code', monospace" }}>
                 {item.src}
               </code>
             )}
@@ -507,7 +507,7 @@ function FrameworkLandscape() {
     <div style={{ marginBottom: 16, padding: "14px 16px", borderRadius: 10, background: "rgba(167,139,250,0.03)", border: "1px solid rgba(167,139,250,0.1)" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
         <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#a78bfa" }}>2026.2 Agent框架全景</span>
-        <span style={{ fontSize: "0.58rem", color: "#64748b", fontFamily: "'JetBrains Mono', monospace" }}>
+        <span style={{ fontSize: "0.58rem", color: "#64748b", fontFamily: "'Fira Code', monospace" }}>
           Iterathon: 86%企业用agent框架 · 三足鼎立
         </span>
       </div>
@@ -522,11 +522,11 @@ function FrameworkLandscape() {
           }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span style={{ fontWeight: 700, color: "#f1f5f9" }}>{fw.name}</span>
-              <span style={{ fontSize: "0.55rem", color: "#64748b", fontFamily: "'JetBrains Mono', monospace" }}>{fw.version}</span>
+              <span style={{ fontSize: "0.55rem", color: "#64748b", fontFamily: "'Fira Code', monospace" }}>{fw.version}</span>
             </div>
             <div style={{ color: statusColors[fw.status], fontWeight: 600, fontSize: "0.62rem" }}>{fw.statusNote}</div>
             <div style={{ color: "#475569", fontSize: "0.58rem" }}>{fw.desc}</div>
-            <div style={{ color: "#334155", fontSize: "0.52rem", fontFamily: "'JetBrains Mono', monospace" }}>{fw.release}</div>
+            <div style={{ color: "#334155", fontSize: "0.52rem", fontFamily: "'Fira Code', monospace" }}>{fw.release}</div>
           </div>
         ))}
       </div>
@@ -550,7 +550,7 @@ function QualityGateBar({ agent }) {
       <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 4 }}>
         <span style={{ fontSize: "0.55rem", color: "#64748b", fontWeight: 600, letterSpacing: "0.1em" }}>质量门</span>
         <span style={{
-          fontSize: "0.55rem", fontFamily: "'JetBrains Mono', monospace", fontWeight: 700,
+          fontSize: "0.55rem", fontFamily: "'Fira Code', monospace", fontWeight: 700,
           color: passCount === total ? "#22c55e" : passCount >= 3 ? "#f59e0b" : "#ef4444",
         }}>
           {passCount}/{total}
@@ -565,7 +565,7 @@ function QualityGateBar({ agent }) {
               background: pass ? "rgba(34,197,94,0.1)" : "rgba(239,68,68,0.08)",
               color: pass ? "#22c55e" : "#ef4444",
               border: `1px solid ${pass ? "#22c55e" : "#ef4444"}18`,
-              fontFamily: "'JetBrains Mono', monospace",
+              fontFamily: "'Fira Code', monospace",
             }}>
               {gate.icon} {gate.label}
             </span>
@@ -595,7 +595,7 @@ function AuditDetailRow({ item, isOpen, onToggle }) {
         <span style={{
           fontSize: "0.6rem", fontWeight: 700, padding: "2px 7px", borderRadius: 4,
           background: d.color + "18", color: d.color,
-          fontFamily: "'JetBrains Mono', monospace",
+          fontFamily: "'Fira Code', monospace",
         }}>
           {d.label} {item.delta}
         </span>
@@ -621,7 +621,7 @@ function AuditDetailRow({ item, isOpen, onToggle }) {
             <span style={{ color: "#38bdf8", fontWeight: 700 }}>→ </span>
             <span style={{ color: "#e2e8f0" }}>{item.fix}</span>
           </div>
-          <div style={{ fontSize: "0.55rem", color: "#475569", fontFamily: "'JetBrains Mono', monospace" }}>
+          <div style={{ fontSize: "0.55rem", color: "#475569", fontFamily: "'Fira Code', monospace" }}>
             {item.src}
           </div>
         </div>
@@ -641,9 +641,9 @@ function CoreFindings() {
         五轮验证后的核心结论
       </div>
       <div style={{ fontSize: "0.7rem", lineHeight: 1.8, color: "#cbd5e1" }}>
-        <code style={{ background: "#1e293b", padding: "1px 4px", borderRadius: 2, fontSize: "0.62rem", fontFamily: "'JetBrains Mono', monospace" }}>langgraph&gt;=0.3</code>
+        <code style={{ background: "#1e293b", padding: "1px 4px", borderRadius: 2, fontSize: "0.62rem", fontFamily: "'Fira Code', monospace" }}>langgraph&gt;=0.3</code>
         {" + "}
-        <code style={{ background: "#1e293b", padding: "1px 4px", borderRadius: 2, fontSize: "0.62rem", fontFamily: "'JetBrains Mono', monospace" }}>langchain-core&gt;=0.3</code>
+        <code style={{ background: "#1e293b", padding: "1px 4px", borderRadius: 2, fontSize: "0.62rem", fontFamily: "'Fira Code', monospace" }}>langchain-core&gt;=0.3</code>
         {" = "}
         <strong style={{ color: "#f59e0b" }}>落后整整两代</strong>
         <br />
@@ -651,7 +651,7 @@ function CoreFindings() {
         <br />
         CrewAI在代码中import但requirements注释 → <strong style={{ color: "#ef4444" }}>幽灵依赖</strong>
         <br />
-        A2A 5处 <code style={{ background: "#1e293b", padding: "1px 4px", borderRadius: 2, fontSize: "0.62rem", fontFamily: "'JetBrains Mono', monospace" }}>agent.json</code> → 应为 <code style={{ background: "#1e293b", padding: "1px 4px", borderRadius: 2, fontSize: "0.62rem", fontFamily: "'JetBrains Mono', monospace" }}>agent-card.json</code> (A2A v0.3.0)
+        A2A 5处 <code style={{ background: "#1e293b", padding: "1px 4px", borderRadius: 2, fontSize: "0.62rem", fontFamily: "'Fira Code', monospace" }}>agent.json</code> → 应为 <code style={{ background: "#1e293b", padding: "1px 4px", borderRadius: 2, fontSize: "0.62rem", fontFamily: "'Fira Code', monospace" }}>agent-card.json</code> (A2A v0.3.0)
       </div>
     </div>
   );
@@ -700,7 +700,7 @@ export default function PlatformArchitecture() {
       padding: "1.5rem 1rem",
     }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700;900&family=Fira+Code:wght@400;600&display=swap');
         * { box-sizing: border-box; }
         @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
         @keyframes pulse2 { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
@@ -710,7 +710,7 @@ export default function PlatformArchitecture() {
       <div style={{ maxWidth: 960, margin: "0 auto 1.5rem", textAlign: "center" }}>
         <div style={{
           display: "inline-flex", gap: 6, marginBottom: 8,
-          fontSize: "0.6rem", fontFamily: "'JetBrains Mono', monospace",
+          fontSize: "0.6rem", fontFamily: "'Fira Code', monospace",
         }}>
           <span style={{ padding: "3px 10px", borderRadius: 20, background: "rgba(0,255,136,0.1)", color: "#00FF88" }}>V10.0 PLATFORM</span>
           <span style={{ padding: "3px 10px", borderRadius: 20, background: "rgba(188,140,255,0.1)", color: "#bc8cff" }}>MCP 2025-11-25 + A2A v0.3.0</span>
@@ -727,7 +727,7 @@ export default function PlatformArchitecture() {
         <p style={{ color: "#6e7681", fontSize: "0.78rem", margin: "0 0 4px" }}>
           从「销售分析工具」→「多Agent企业智能平台」· 禾苗通讯全业务覆盖
         </p>
-        <p style={{ color: "#475569", fontSize: "0.6rem", margin: 0, fontFamily: "'JetBrains Mono', monospace" }}>
+        <p style={{ color: "#475569", fontSize: "0.6rem", margin: 0, fontFamily: "'Fira Code', monospace" }}>
           LangGraph 1.0 GA · LangChain 1.0 · MCP 2025-11-25 · A2A v0.3.0 · agent-card.json · Pydantic v2
         </p>
       </div>
@@ -761,7 +761,7 @@ export default function PlatformArchitecture() {
             {/* Stats bar */}
             <div style={{
               display: "flex", gap: 16, marginBottom: 12, justifyContent: "center", flexWrap: "wrap",
-              fontSize: "0.7rem", fontFamily: "'JetBrains Mono', monospace",
+              fontSize: "0.7rem", fontFamily: "'Fira Code', monospace",
             }}>
               <span><span style={{ color: "#00FF88" }}>●</span> 已有 {PLATFORM_AGENTS.filter(a => a.status === "live").length}</span>
               <span><span style={{ color: "#FF6B35" }}>●</span> V10新建 {PLATFORM_AGENTS.filter(a => a.status === "new").length}</span>
@@ -808,7 +808,7 @@ export default function PlatformArchitecture() {
                       <span style={{ fontSize: "1.5rem" }}>{agent.icon}</span>
                       <div>
                         <div style={{ fontSize: "0.95rem", fontWeight: 700, color: "#f0f6fc" }}>{agent.nameCn}</div>
-                        <div style={{ fontSize: "0.62rem", fontFamily: "'JetBrains Mono', monospace", color: "#6e7681" }}>{agent.name}</div>
+                        <div style={{ fontSize: "0.62rem", fontFamily: "'Fira Code', monospace", color: "#6e7681" }}>{agent.name}</div>
                       </div>
                     </div>
                     <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 3 }}>
@@ -817,7 +817,7 @@ export default function PlatformArchitecture() {
                         background: `${statusColors[agent.status]}18`,
                         color: statusColors[agent.status],
                         border: `1px solid ${statusColors[agent.status]}30`,
-                        fontFamily: "'JetBrains Mono', monospace", fontWeight: 600,
+                        fontFamily: "'Fira Code', monospace", fontWeight: 600,
                       }}>
                         {agent.statusLabel}
                       </span>
@@ -825,7 +825,7 @@ export default function PlatformArchitecture() {
                         <span style={{
                           fontSize: "0.5rem", padding: "1px 5px", borderRadius: 3,
                           background: "#ef444418", color: "#ef4444",
-                          fontFamily: "'JetBrains Mono', monospace", fontWeight: 700,
+                          fontFamily: "'Fira Code', monospace", fontWeight: 700,
                         }}>
                           审计 {DELTA_MAP[String(agent.auditDelta)]?.label} {agent.auditDelta}
                         </span>
@@ -838,7 +838,7 @@ export default function PlatformArchitecture() {
                   </p>
 
                   {/* MCP Tools count + Effort */}
-                  <div style={{ display: "flex", gap: 10, fontSize: "0.65rem", fontFamily: "'JetBrains Mono', monospace" }}>
+                  <div style={{ display: "flex", gap: 10, fontSize: "0.65rem", fontFamily: "'Fira Code', monospace" }}>
                     <span style={{ color: "#58a6ff" }}>{agent.mcpTools.length} MCP</span>
                     <span style={{ color: "#bc8cff" }}>{agent.a2aSkills.length} A2A</span>
                     <span style={{ color: "#6e7681", marginLeft: "auto" }}>{agent.effort}</span>
@@ -856,7 +856,7 @@ export default function PlatformArchitecture() {
                         background: agent.auditStatus.hitl ? "rgba(34,197,94,0.06)" : "rgba(239,68,68,0.06)",
                         border: `1px solid ${agent.auditStatus.hitl ? "#22c55e" : "#ef4444"}15`,
                         fontSize: "0.62rem", color: agent.auditStatus.hitl ? "#86efac" : "#fca5a5",
-                        fontFamily: "'JetBrains Mono', monospace",
+                        fontFamily: "'Fira Code', monospace",
                       }}>
                         {agent.qualityNote}
                       </div>
@@ -891,7 +891,7 @@ export default function PlatformArchitecture() {
                       {agent.existingFiles.length > 0 && (
                         <div style={{ marginBottom: 10 }}>
                           <div style={{ fontSize: "0.55rem", color: "#00FF88", fontWeight: 600, letterSpacing: "0.1em", marginBottom: 4 }}>已有代码可复用</div>
-                          <div style={{ fontSize: "0.62rem", color: "#3fb950", fontFamily: "'JetBrains Mono', monospace" }}>
+                          <div style={{ fontSize: "0.62rem", color: "#3fb950", fontFamily: "'Fira Code', monospace" }}>
                             {agent.existingFiles.join(" · ")}
                           </div>
                         </div>
@@ -929,7 +929,7 @@ export default function PlatformArchitecture() {
                     flex: v, display: "flex", alignItems: "center", justifyContent: "center",
                     background: d.color + "22",
                     fontSize: "0.6rem", fontWeight: 700, color: d.color,
-                    fontFamily: "'JetBrains Mono', monospace",
+                    fontFamily: "'Fira Code', monospace",
                   }}>
                     {v}{d.label}
                   </div>
@@ -978,7 +978,7 @@ export default function PlatformArchitecture() {
                     <span style={{
                       background: r.c + "20", color: r.c, padding: "2px 6px",
                       borderRadius: 3, fontWeight: 700, fontSize: "0.58rem",
-                      fontFamily: "'JetBrains Mono', monospace",
+                      fontFamily: "'Fira Code', monospace",
                     }}>{r.p}</span>
                     <span style={{ marginLeft: 6, color: "#e2e8f0" }}>{r.t}</span>
                   </div>
@@ -1003,7 +1003,7 @@ export default function PlatformArchitecture() {
         {/* ══════════ ARCHITECTURE VIEW ══════════ */}
         {view === "arch" && (
           <div>
-            <div style={{ textAlign: "center", fontSize: "0.68rem", color: "#6e7681", marginBottom: 16, fontFamily: "'JetBrains Mono', monospace" }}>
+            <div style={{ textAlign: "center", fontSize: "0.68rem", color: "#6e7681", marginBottom: 16, fontFamily: "'Fira Code', monospace" }}>
               用户请求 → Gateway (MCP 2025-11-25) → LangGraph 1.0 Orchestrator → Agent → MCP Tools → 数据源
             </div>
             {ARCH_LAYERS.map((layer, i) => (
@@ -1020,7 +1020,7 @@ export default function PlatformArchitecture() {
                   <span style={{
                     fontSize: "0.58rem", padding: "2px 8px", borderRadius: 4,
                     background: `${layer.color}15`, color: layer.color,
-                    fontFamily: "'JetBrains Mono', monospace", fontWeight: 600,
+                    fontFamily: "'Fira Code', monospace", fontWeight: 600,
                   }}>
                     {layer.name}
                   </span>
@@ -1054,7 +1054,7 @@ export default function PlatformArchitecture() {
               </div>
               <div style={{
                 display: "flex", justifyContent: "center", gap: 24, flexWrap: "wrap",
-                fontSize: "0.72rem", fontFamily: "'JetBrains Mono', monospace",
+                fontSize: "0.72rem", fontFamily: "'Fira Code', monospace",
               }}>
                 <div style={{ textAlign: "center" }}>
                   <div style={{ fontSize: "1.5rem", marginBottom: 4 }}>🔌</div>
@@ -1110,7 +1110,7 @@ export default function PlatformArchitecture() {
                     <span style={{
                       fontSize: "0.65rem", padding: "4px 10px", borderRadius: 6,
                       background: `${phase.color}15`, color: phase.color,
-                      fontFamily: "'JetBrains Mono', monospace", fontWeight: 700,
+                      fontFamily: "'Fira Code', monospace", fontWeight: 700,
                     }}>
                       {phase.phase}
                     </span>
@@ -1119,14 +1119,14 @@ export default function PlatformArchitecture() {
                         fontSize: "0.5rem", padding: "2px 6px", borderRadius: 3,
                         background: phase.priority === "CRITICAL" ? "#ef444420" : phase.priority === "HIGH" ? "#f59e0b20" : "#38bdf820",
                         color: phase.priority === "CRITICAL" ? "#ef4444" : phase.priority === "HIGH" ? "#f59e0b" : "#38bdf8",
-                        fontFamily: "'JetBrains Mono', monospace", fontWeight: 700,
+                        fontFamily: "'Fira Code', monospace", fontWeight: 700,
                       }}>
                         {phase.priority}
                       </span>
                     )}
                     <span style={{ fontSize: "0.95rem", fontWeight: 700, color: "#f0f6fc" }}>{phase.title}</span>
                   </div>
-                  <span style={{ fontSize: "0.7rem", color: "#6e7681", fontFamily: "'JetBrains Mono', monospace" }}>{phase.duration}</span>
+                  <span style={{ fontSize: "0.7rem", color: "#6e7681", fontFamily: "'Fira Code', monospace" }}>{phase.duration}</span>
                 </div>
 
                 {expandedPhase === i && (
@@ -1137,7 +1137,7 @@ export default function PlatformArchitecture() {
                         padding: "6px 0", fontSize: "0.78rem", color: "#c9d1d9",
                         borderBottom: j < phase.tasks.length - 1 ? "1px solid rgba(255,255,255,0.03)" : "none",
                       }}>
-                        <span style={{ color: phase.color, fontSize: "0.65rem", fontFamily: "'JetBrains Mono', monospace" }}>
+                        <span style={{ color: phase.color, fontSize: "0.65rem", fontFamily: "'Fira Code', monospace" }}>
                           {String(j + 1).padStart(2, "0")}
                         </span>
                         {task}
@@ -1162,21 +1162,21 @@ export default function PlatformArchitecture() {
               background: "rgba(255,255,255,0.02)", borderRadius: 10,
               border: "1px solid rgba(255,255,255,0.06)",
             }}>
-              <div style={{ fontSize: "0.6rem", color: "#6e7681", fontFamily: "'JetBrains Mono', monospace", marginBottom: 8 }}>
+              <div style={{ fontSize: "0.6rem", color: "#6e7681", fontFamily: "'Fira Code', monospace", marginBottom: 8 }}>
                 TIMELINE: P0 (1周) → P1 (1周) → P2 (5周) → P3 (6周)
               </div>
               <div style={{ display: "flex", gap: 2, height: 24, borderRadius: 6, overflow: "hidden" }}>
                 <div style={{ flex: 1, background: "#ef444430", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <span style={{ fontSize: "0.55rem", color: "#ef4444", fontFamily: "'JetBrains Mono', monospace", fontWeight: 600 }}>P0: 1w</span>
+                  <span style={{ fontSize: "0.55rem", color: "#ef4444", fontFamily: "'Fira Code', monospace", fontWeight: 600 }}>P0: 1w</span>
                 </div>
                 <div style={{ flex: 1, background: "#f59e0b30", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <span style={{ fontSize: "0.55rem", color: "#f59e0b", fontFamily: "'JetBrains Mono', monospace", fontWeight: 600 }}>P1: 1w</span>
+                  <span style={{ fontSize: "0.55rem", color: "#f59e0b", fontFamily: "'Fira Code', monospace", fontWeight: 600 }}>P1: 1w</span>
                 </div>
                 <div style={{ flex: 5, background: "#38bdf830", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <span style={{ fontSize: "0.55rem", color: "#38bdf8", fontFamily: "'JetBrains Mono', monospace", fontWeight: 600 }}>P2: 5w</span>
+                  <span style={{ fontSize: "0.55rem", color: "#38bdf8", fontFamily: "'Fira Code', monospace", fontWeight: 600 }}>P2: 5w</span>
                 </div>
                 <div style={{ flex: 6, background: "#22c55e30", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <span style={{ fontSize: "0.55rem", color: "#22c55e", fontFamily: "'JetBrains Mono', monospace", fontWeight: 600 }}>P3: 6w</span>
+                  <span style={{ fontSize: "0.55rem", color: "#22c55e", fontFamily: "'Fira Code', monospace", fontWeight: 600 }}>P3: 6w</span>
                 </div>
               </div>
             </div>
@@ -1259,7 +1259,7 @@ export default function PlatformArchitecture() {
       {/* ── Footer ── */}
       <div style={{
         maxWidth: 960, margin: "2rem auto 0", textAlign: "center",
-        fontSize: "0.55rem", color: "#21262d", fontFamily: "'JetBrains Mono', monospace",
+        fontSize: "0.55rem", color: "#21262d", fontFamily: "'Fira Code', monospace",
         lineHeight: 1.6,
       }}>
         MRARFAI V10.0 · R5审计修正 · {PLATFORM_AGENTS.length} Agents · {PLATFORM_AGENTS.reduce((s, a) => s + a.mcpTools.length, 0)} MCP Tools · {PLATFORM_AGENTS.reduce((s, a) => s + a.a2aSkills.length, 0)} A2A Skills

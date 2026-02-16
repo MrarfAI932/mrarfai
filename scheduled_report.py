@@ -192,7 +192,7 @@ class EmailSender:
         html += "h1{color:#FFFFFF;border-bottom:1px solid #333;padding-bottom:8px;}"
         html += "h2{color:#888888;margin-top:24px;}"
         html += "pre{background:#111;padding:12px;border:1px solid #333;overflow-x:auto;font-size:13px;}"
-        html += "code{color:#FFFFFF;font-family:'JetBrains Mono',monospace;}"
+        html += "code{color:#FFFFFF;font-family:'Fira Code',monospace;}"
         html += "blockquote{border-left:3px solid #FFFFFF;padding-left:12px;color:#888;}"
         html += "hr{border:none;border-top:1px solid #333;margin:20px 0;}"
         html += "</style></head><body>"

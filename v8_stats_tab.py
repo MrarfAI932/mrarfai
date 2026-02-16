@@ -47,7 +47,7 @@ def render_v8_stats_tab():
     <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px;">
         <div style="width:8px; height:8px; border-radius:50%; background:{SP_GREEN};
              animation:pulse 2s ease-in-out infinite;"></div>
-        <span style="font-family:'IBM Plex Sans',sans-serif; font-size:15px;
+        <span style="font-family:'Fira Sans',sans-serif; font-size:15px;
               font-weight:700; color:#fff; letter-spacing:0.05em;">
             V8.0 ENGINE · {active}/4 MODULES ACTIVE
         </span>
@@ -71,7 +71,7 @@ def render_v8_stats_tab():
             <div style="background:rgba(138,138,138,0.04); border:1px solid rgba(138,138,138,0.10);
                  padding:8px; text-align:center;">
                 <div style="font-size:1.2rem;">{icon}</div>
-                <div style="font-family:'IBM Plex Sans',sans-serif; font-size:12px;
+                <div style="font-family:'Fira Sans',sans-serif; font-size:12px;
                      color:{color}; letter-spacing:0.05em; margin-top:4px;">
                     {label}
                 </div>
@@ -84,7 +84,7 @@ def render_v8_stats_tab():
     if HAS_V8_GATE and "gate" in stats:
         gate = stats["gate"]
         st.markdown(f"""
-        <div style="font-family:'IBM Plex Sans',sans-serif; font-size:13px;
+        <div style="font-family:'Fira Sans',sans-serif; font-size:13px;
              color:#888; letter-spacing:0.05em; margin-bottom:8px;">
             ⚡ ADAPTIVE GATE DISTRIBUTION
         </div>
@@ -107,7 +107,7 @@ def render_v8_stats_tab():
             st.markdown(f"""
             <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.10);
                  padding:8px 12px; margin:8px 0;">
-                <div style="font-family:'IBM Plex Sans',sans-serif; font-size:11px;
+                <div style="font-family:'Fira Sans',sans-serif; font-size:11px;
                      color:{SP_GREEN}; letter-spacing:0.05em;">
                     💰 SAVINGS: {gate.get('agent_calls_saved', 0)} calls ·
                     ~{gate.get('estimated_tokens_saved', 0):,} tokens ·
@@ -124,7 +124,7 @@ def render_v8_stats_tab():
     if HAS_V8_CTX and "cache" in stats:
         cache = stats["cache"]
         st.markdown(f"""
-        <div style="font-family:'IBM Plex Sans',sans-serif; font-size:13px;
+        <div style="font-family:'Fira Sans',sans-serif; font-size:13px;
              color:#888; letter-spacing:0.05em; margin-bottom:8px;">
             🧠 SEMANTIC CACHE
         </div>
@@ -144,7 +144,7 @@ def render_v8_stats_tab():
     if HAS_V8_MEM and "memory" in stats:
         mem = stats["memory"]
         st.markdown(f"""
-        <div style="font-family:'IBM Plex Sans',sans-serif; font-size:13px;
+        <div style="font-family:'Fira Sans',sans-serif; font-size:13px;
              color:#888; letter-spacing:0.05em; margin-bottom:8px;">
             💾 META-MEMORY GRAPH
         </div>
@@ -173,7 +173,7 @@ def render_v8_stats_tab():
     if HAS_V8_EVO and "eval" in stats:
         ev = stats["eval"]
         st.markdown(f"""
-        <div style="font-family:'IBM Plex Sans',sans-serif; font-size:13px;
+        <div style="font-family:'Fira Sans',sans-serif; font-size:13px;
              color:#888; letter-spacing:0.05em; margin-bottom:8px;">
             🔄 AUTO-EVALUATION
         </div>
@@ -195,7 +195,7 @@ def render_v8_stats_tab():
     if HAS_V8_EVO and "skills" in stats:
         sk = stats["skills"]
         st.markdown(f"""
-        <div style="font-family:'IBM Plex Sans',sans-serif; font-size:13px;
+        <div style="font-family:'Fira Sans',sans-serif; font-size:13px;
              color:#888; letter-spacing:0.05em; margin:16px 0 8px;">
             🎯 SKILL INVENTORY · {sk.get('total_skills', 0)} skills
         </div>
@@ -214,7 +214,7 @@ def render_v8_stats_tab():
     if HAS_V8_CTX and "playbook" in stats:
         pb = stats["playbook"]
         st.markdown(f"""
-        <div style="font-family:'IBM Plex Sans',sans-serif; font-size:13px;
+        <div style="font-family:'Fira Sans',sans-serif; font-size:13px;
              color:#888; letter-spacing:0.05em; margin:16px 0 8px;">
             📋 EVOLVING PLAYBOOK
         </div>
@@ -238,7 +238,7 @@ def render_v8_sidebar():
          margin-top:4px;">
         <div style="width:5px; height:5px; border-radius:50%; background:{V8_PURPLE};
              animation:pulse 2s ease-in-out infinite;"></div>
-        <span style="font-family:'IBM Plex Sans',sans-serif; font-size:11px;
+        <span style="font-family:'Fira Sans',sans-serif; font-size:11px;
               color:#6a6a6a; letter-spacing:0.05em;">V8.0 ENGINE [{active}/4 ACTIVE]</span>
     </div>
     <style>@keyframes pulse {{ 0%,100%{{opacity:1;}} 50%{{opacity:0.3;}} }}</style>

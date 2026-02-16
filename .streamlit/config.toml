@@ -1,5 +1,5 @@
 # MRARFAI v10 — Dark Theme (OLED)
-# IBM Plex Sans + JetBrains Mono (ui-ux-pro-max skill)
+# Fira Sans + Fira Code (ui-ux-pro-max skill)
 
 [server]
 address = "0.0.0.0"
@@ -21,12 +21,12 @@ textColor = "#FAFAFA"
 font = "sans serif"
 
 [[theme.fontFaces]]
-family = "IBM Plex Sans"
-url = "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap"
+family = "Fira Sans"
+url = "https://fonts.googleapis.com/css2?family=Fira+Sans:wght@300;400;500;600;700&display=swap"
 
 [[theme.fontFaces]]
-family = "JetBrains Mono"
-url = "https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+family = "Fira Code"
+url = "https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&display=swap"
 
 [logger]
 level = "warning"

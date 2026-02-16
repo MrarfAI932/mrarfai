@@ -5,8 +5,8 @@ Single Source of Truth for all visual styling.
 
 Generated via ui-ux-pro-max skill design system.
 References: Linear, Vercel, Cursor, Raycast
-Typography: JetBrains Mono (headings/data) + IBM Plex Sans (body)
-Palette: Pure OLED black #000000 + grays + #FAFAFA
+Typography: Fira Code (headings/data) + Fira Sans (body)
+Palette: Pure OLED black #000000 + zinc grays + #FAFAFA
 Style: Dark Mode (OLED) — WCAG AAA
 """
 
@@ -18,18 +18,18 @@ COLORS = {
     # Backgrounds — OLED pure black base (skill: Dark Mode OLED)
     "bg_void":     "#000000",
     "bg_deep":     "#000000",     # skill: --bg-black: #000000
-    "bg_base":     "#0A0A0A",
-    "bg_elevated": "#121212",     # skill: --bg-dark-grey: #121212
+    "bg_base":     "#080808",
+    "bg_elevated": "#111111",     # skill: --bg-dark-grey
     "bg_surface":  "#18181B",     # skill: Primary: #18181B
-    "bg_overlay":  "#1E1E1E",
-    "bg_glass":    "rgba(0,0,0,0.85)",
+    "bg_overlay":  "#1C1C1F",
+    "bg_glass":    "rgba(8,8,8,0.88)",
 
     # Borders
     "border_ghost":   "rgba(255,255,255,0.04)",
-    "border_subtle":  "rgba(255,255,255,0.07)",
-    "border_default": "rgba(255,255,255,0.10)",
-    "border_hover":   "rgba(255,255,255,0.18)",
-    "border_active":  "rgba(255,255,255,0.30)",
+    "border_subtle":  "rgba(255,255,255,0.08)",
+    "border_default": "rgba(255,255,255,0.12)",
+    "border_hover":   "rgba(255,255,255,0.20)",
+    "border_active":  "rgba(255,255,255,0.35)",
 
     # Text — WCAG AAA: 7:1+ contrast on #000000
     "text_primary":   "#FAFAFA",  # skill: Text: #FAFAFA
@@ -41,7 +41,7 @@ COLORS = {
     # Semantic
     "accent":         "#FAFAFA",  # skill: CTA: #F8FAFC
     "accent_dim":     "rgba(255,255,255,0.06)",
-    "accent_glow":    "rgba(255,255,255,0.12)",
+    "accent_glow":    "rgba(255,255,255,0.15)",
     "status_active":  "#FAFAFA",
     "status_ready":   "#71717A",
     "status_warning": "#A1A1AA",
@@ -119,12 +119,13 @@ def _build_main_css() -> str:
     c = COLORS
     return f"""<style>
 /* ================================================================
-   MRARFAI v10 Design System — Major Visual Overhaul
+   MRARFAI v10 Design System — Complete Redesign
    Ref: Linear · Vercel · Cursor · Raycast · Arc
-   Type: JetBrains Mono + IBM Plex Sans
+   Type: Fira Code (data/mono) + Fira Sans (body)
+   Generated: 2026-02-16 via ui-ux-pro-max skill
    ================================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700&display=swap');
 
 /* ── Variables ──────────────────────────────────────────────── */
 :root {{
@@ -147,12 +148,12 @@ def _build_main_css() -> str:
   --t4: {c['text_muted']};
   --t5: {c['text_ghost']};
 
-  --sans: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  --sans: 'Fira Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --mono: 'Fira Code', 'SF Mono', 'Cascadia Code', monospace;
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-out: cubic-bezier(0.33, 1, 0.68, 1);
-  --dur: 200ms;
-  --dur-slow: 300ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur: 180ms;
+  --dur-slow: 280ms;
   color-scheme: dark;
 }}
 
@@ -173,44 +174,46 @@ button[kind="headerNoPadding"] {{
   display: none !important;
 }}
 
-/* ── Base — Noise texture + dot grid ──────────────────────── */
+/* ── Base — Dot grid + subtle noise ──────────────────────── */
 .stApp {{
   background:
-    radial-gradient(rgba(255,255,255,0.035) 1px, transparent 1px),
+    radial-gradient(circle, rgba(255,255,255,0.03) 1px, transparent 1px),
     var(--bg-1) !important;
-  background-size: 24px 24px, auto !important;
+  background-size: 20px 20px, auto !important;
   color: var(--t2) !important;
+  font-family: var(--sans) !important;
 }}
 
 .block-container {{
-  padding: 1rem 2.5rem 4rem !important;
-  max-width: 1400px !important;
+  padding: 1.2rem 2.5rem 4rem !important;
+  max-width: 1440px !important;
 }}
 
-/* ── Typography ────────────────────────────────────────────── */
+/* ── Typography — Fira Sans + Fira Code ──────────────────── */
 .stMarkdown p {{
   font-family: var(--sans) !important;
   color: var(--t2) !important;
-  font-size: 13.5px !important;
-  line-height: 1.65 !important;
-  letter-spacing: -0.01em !important;
+  font-size: 14px !important;
+  line-height: 1.7 !important;
+  letter-spacing: -0.005em !important;
 }}
 
 h1 {{
-  font-family: var(--sans) !important;
+  font-family: var(--mono) !important;
   font-weight: 700 !important;
   color: var(--t1) !important;
-  letter-spacing: -0.04em !important;
-  font-size: 28px !important;
-  line-height: 1.2 !important;
+  letter-spacing: -0.03em !important;
+  font-size: 32px !important;
+  line-height: 1.15 !important;
 }}
 
 h2 {{
-  font-family: var(--sans) !important;
+  font-family: var(--mono) !important;
   font-weight: 600 !important;
   color: var(--t1) !important;
-  letter-spacing: -0.03em !important;
-  font-size: 20px !important;
+  letter-spacing: -0.02em !important;
+  font-size: 22px !important;
+  line-height: 1.25 !important;
 }}
 
 h3, h4 {{
@@ -218,7 +221,7 @@ h3, h4 {{
   font-weight: 500 !important;
   color: var(--t3) !important;
   font-size: 11px !important;
-  letter-spacing: 0.1em !important;
+  letter-spacing: 0.12em !important;
   text-transform: uppercase !important;
 }}
 
@@ -237,17 +240,17 @@ hr, [data-testid="stHorizontalBlock"] + hr {{
   border: none !important;
   height: 1px !important;
   background: linear-gradient(90deg, transparent, var(--b2), transparent) !important;
-  margin: 24px 0 !important;
+  margin: 28px 0 !important;
 }}
 
-/* ── Tabs — Floating pill style ───────────────────────────── */
+/* ── Tabs — Segmented control ────────────────────────────── */
 .stTabs [data-baseweb="tab-list"] {{
   background: var(--bg-2) !important;
   gap: 2px !important;
   border-bottom: none !important;
-  border: 1px solid var(--b1) !important;
+  border: 1px solid var(--b2) !important;
   border-radius: 10px !important;
-  padding: 3px !important;
+  padding: 4px !important;
   overflow-x: auto;
   scrollbar-width: none;
   width: fit-content;
@@ -259,13 +262,14 @@ hr, [data-testid="stHorizontalBlock"] + hr {{
   color: var(--t3) !important;
   border: none !important;
   border-bottom: none !important;
-  border-radius: 8px !important;
-  padding: 8px 16px !important;
-  font-family: var(--sans) !important;
-  font-size: 13px !important;
+  border-radius: 7px !important;
+  padding: 8px 18px !important;
+  font-family: var(--mono) !important;
+  font-size: 12px !important;
   font-weight: 500 !important;
   white-space: nowrap !important;
   transition: all var(--dur) var(--ease) !important;
+  letter-spacing: 0.02em !important;
 }}
 
 .stTabs [data-baseweb="tab"]:hover {{
@@ -278,33 +282,33 @@ hr, [data-testid="stHorizontalBlock"] + hr {{
   color: var(--t1) !important;
   background: var(--bg-4) !important;
   border-bottom: none !important;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04) !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06) !important;
 }}
 
-/* Hide tab highlight bar */
 .stTabs [data-baseweb="tab-highlight"] {{
   display: none !important;
 }}
 
-/* ── Buttons — Glow on hover ──────────────────────────────── */
+/* ── Buttons — Crisp with glow ──────────────────────────── */
 .stButton > button {{
   background: var(--bg-3) !important;
   color: var(--t1) !important;
   border: 1px solid var(--b2) !important;
   border-radius: 8px !important;
-  font-family: var(--sans) !important;
+  font-family: var(--mono) !important;
   font-size: 13px !important;
   font-weight: 500 !important;
-  padding: 8px 18px !important;
+  padding: 10px 20px !important;
   transition: all var(--dur) var(--ease) !important;
   cursor: pointer !important;
   position: relative;
+  letter-spacing: 0.01em !important;
 }}
 
 .stButton > button:hover {{
   background: var(--bg-4) !important;
-  border-color: var(--b3) !important;
-  box-shadow: 0 0 20px rgba(255,255,255,0.04), 0 4px 12px rgba(0,0,0,0.3) !important;
+  border-color: var(--b4) !important;
+  box-shadow: 0 0 24px rgba(255,255,255,0.06), 0 4px 16px rgba(0,0,0,0.4) !important;
   transform: translateY(-1px) !important;
 }}
 
@@ -313,7 +317,7 @@ hr, [data-testid="stHorizontalBlock"] + hr {{
   box-shadow: none !important;
 }}
 
-/* ── Inputs — Glowing focus ───────────────────────────────── */
+/* ── Inputs — Glowing focus ring ────────────────────────── */
 .stTextInput input,
 .stTextArea textarea,
 .stSelectbox > div > div,
@@ -323,7 +327,7 @@ hr, [data-testid="stHorizontalBlock"] + hr {{
   border: 1px solid var(--b1) !important;
   border-radius: 8px !important;
   font-family: var(--sans) !important;
-  font-size: 13px !important;
+  font-size: 14px !important;
   caret-color: var(--t1) !important;
   transition: all var(--dur) var(--ease) !important;
 }}
@@ -331,10 +335,10 @@ hr, [data-testid="stHorizontalBlock"] + hr {{
 .stTextInput input:focus,
 .stTextArea textarea:focus {{
   border-color: var(--b4) !important;
-  box-shadow: 0 0 0 3px rgba(255,255,255,0.06), 0 0 20px rgba(255,255,255,0.03) !important;
+  box-shadow: 0 0 0 3px rgba(255,255,255,0.08), 0 0 24px rgba(255,255,255,0.04) !important;
 }}
 
-/* ── Chat — Refined message cards ─────────────────────────── */
+/* ── Chat — Message cards ────────────────────────────────── */
 [data-testid="stChatInput"] {{
   background: var(--bg-2) !important;
   border-top: 1px solid var(--b1) !important;
@@ -343,7 +347,7 @@ hr, [data-testid="stHorizontalBlock"] + hr {{
 [data-testid="stChatInput"] textarea {{
   background: var(--bg-3) !important;
   color: var(--t1) !important;
-  border: 1px solid var(--b1) !important;
+  border: 1px solid var(--b2) !important;
   border-radius: 10px !important;
   font-family: var(--sans) !important;
   font-size: 14px !important;
@@ -351,8 +355,8 @@ hr, [data-testid="stHorizontalBlock"] + hr {{
 }}
 
 [data-testid="stChatInput"] textarea:focus {{
-  border-color: var(--b3) !important;
-  box-shadow: 0 0 0 3px rgba(255,255,255,0.04) !important;
+  border-color: var(--b4) !important;
+  box-shadow: 0 0 0 3px rgba(255,255,255,0.06) !important;
 }}
 
 [data-testid="stChatMessage"] {{
@@ -364,7 +368,7 @@ hr, [data-testid="stHorizontalBlock"] + hr {{
 }}
 
 @keyframes msg-in {{
-  from {{ opacity: 0; transform: translateY(8px); }}
+  from {{ opacity: 0; transform: translateY(10px); }}
   to {{ opacity: 1; transform: translateY(0); }}
 }}
 
@@ -378,7 +382,7 @@ hr, [data-testid="stHorizontalBlock"] + hr {{
 [data-testid="stChatMessage"] h1,
 [data-testid="stChatMessage"] h2,
 [data-testid="stChatMessage"] h3 {{
-  font-family: var(--sans) !important;
+  font-family: var(--mono) !important;
   color: var(--t1) !important;
 }}
 
@@ -393,11 +397,11 @@ hr, [data-testid="stHorizontalBlock"] + hr {{
   color: var(--t1) !important;
 }}
 
-/* ── Metrics — Elevated cards ─────────────────────────────── */
+/* ── Metrics — Card with top accent line ─────────────────── */
 [data-testid="stMetric"] {{
   background: var(--bg-3) !important;
   border: 1px solid var(--b1) !important;
-  border-radius: 12px !important;
+  border-radius: 10px !important;
   padding: 20px 24px !important;
   transition: all var(--dur) var(--ease) !important;
   position: relative;
@@ -407,23 +411,23 @@ hr, [data-testid="stHorizontalBlock"] + hr {{
 [data-testid="stMetric"]::before {{
   content: '';
   position: absolute;
-  top: 0; left: 0; right: 0;
+  top: 0; left: 20%; right: 20%;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
 }}
 
 [data-testid="stMetric"]:hover {{
   border-color: var(--b3) !important;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.3) !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4) !important;
   transform: translateY(-2px);
 }}
 
 [data-testid="stMetricLabel"],
 [data-testid="stMetric"] label {{
-  font-family: var(--sans) !important;
+  font-family: var(--mono) !important;
   font-size: 11px !important;
   font-weight: 500 !important;
-  letter-spacing: 0.06em !important;
+  letter-spacing: 0.08em !important;
   text-transform: uppercase !important;
   color: var(--t3) !important;
 }}
@@ -433,7 +437,7 @@ hr, [data-testid="stHorizontalBlock"] + hr {{
   font-weight: 700 !important;
   color: var(--t1) !important;
   letter-spacing: -0.02em !important;
-  font-size: 28px !important;
+  font-size: 30px !important;
 }}
 
 [data-testid="stMetricDelta"] {{
@@ -442,7 +446,7 @@ hr, [data-testid="stHorizontalBlock"] + hr {{
   font-weight: 500 !important;
 }}
 
-/* ── Expanders — Sleek ────────────────────────────────────── */
+/* ── Expanders ───────────────────────────────────────────── */
 .streamlit-expanderHeader {{
   font-family: var(--sans) !important;
   font-size: 13px !important;
@@ -461,26 +465,26 @@ hr, [data-testid="stHorizontalBlock"] + hr {{
 
 [data-testid="stExpander"]:hover {{
   border-color: var(--b2) !important;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.2) !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.25) !important;
 }}
 
-/* ── File Uploader ─────────────────────────────────────────── */
+/* ── File Uploader ───────────────────────────────────────── */
 [data-testid="stFileUploader"],
 .stFileUploader {{
   border: 2px dashed var(--b2) !important;
-  border-radius: 12px !important;
+  border-radius: 10px !important;
   transition: all var(--dur) var(--ease) !important;
   background: var(--bg-2) !important;
 }}
 
 [data-testid="stFileUploader"]:hover,
 .stFileUploader:hover {{
-  border-color: var(--b3) !important;
+  border-color: var(--b4) !important;
   background: var(--bg-3) !important;
-  box-shadow: 0 0 30px rgba(255,255,255,0.02) !important;
+  box-shadow: 0 0 40px rgba(255,255,255,0.03) !important;
 }}
 
-/* ── DataFrames ────────────────────────────────────────────── */
+/* ── DataFrames ──────────────────────────────────────────── */
 .stDataFrame {{
   border-radius: 10px !important;
 }}
@@ -490,7 +494,7 @@ hr, [data-testid="stHorizontalBlock"] + hr {{
   border-radius: 10px !important;
 }}
 
-/* ── Status Container ──────────────────────────────────────── */
+/* ── Status Container ────────────────────────────────────── */
 [data-testid="stStatus"] {{
   margin: 8px 0 !important;
 }}
@@ -500,8 +504,8 @@ hr, [data-testid="stHorizontalBlock"] + hr {{
   line-height: 1.6 !important;
 }}
 
-/* ── Scrollbars — Thin and elegant ────────────────────────── */
-::-webkit-scrollbar {{ width: 5px; height: 5px; }}
+/* ── Scrollbars — Ultra thin ─────────────────────────────── */
+::-webkit-scrollbar {{ width: 4px; height: 4px; }}
 ::-webkit-scrollbar-track {{ background: transparent; }}
 ::-webkit-scrollbar-thumb {{ background: var(--b2); border-radius: 4px; }}
 ::-webkit-scrollbar-thumb:hover {{ background: var(--b3); }}
@@ -510,27 +514,27 @@ hr, [data-testid="stHorizontalBlock"] + hr {{
    COMPONENTS
    ================================================================ */
 
-/* ── Top Nav — Frosted glass ──────────────────────────────── */
+/* ── Top Nav — Frosted glass with accent line ────────────── */
 .top-nav {{
   display: flex;
   align-items: center;
   gap: 16px;
-  height: 52px;
-  padding: 0 24px;
-  background: rgba(0,0,0,0.7);
-  backdrop-filter: blur(16px) saturate(1.5);
-  -webkit-backdrop-filter: blur(16px) saturate(1.5);
+  height: 54px;
+  padding: 0 28px;
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(20px) saturate(1.6);
+  -webkit-backdrop-filter: blur(20px) saturate(1.6);
   border-bottom: 1px solid var(--b1);
-  margin: -1rem -2.5rem 28px;
+  margin: -1.2rem -2.5rem 32px;
   position: relative;
 }}
 
 .top-nav::after {{
   content: '';
   position: absolute;
-  bottom: 0; left: 0; right: 0;
+  bottom: -1px; left: 0; right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.08) 50%, transparent 100%);
+  background: linear-gradient(90deg, transparent 5%, rgba(255,255,255,0.1) 30%, rgba(255,255,255,0.1) 70%, transparent 95%);
 }}
 
 .top-nav-brand {{
@@ -538,27 +542,28 @@ hr, [data-testid="stHorizontalBlock"] + hr {{
   font-weight: 700;
   font-size: 14px;
   color: var(--t1);
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
 }}
 
 .top-nav-version {{
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: 10px;
   color: var(--t4);
-  padding: 2px 8px;
+  padding: 3px 10px;
   background: var(--bg-4);
   border-radius: 4px;
   border: 1px solid var(--b1);
+  letter-spacing: 0.04em;
 }}
 
 .top-nav-user {{
   font-family: var(--sans);
-  font-size: 12px;
+  font-size: 13px;
   color: var(--t2);
   margin-left: auto;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }}
 
 .top-nav-role {{
@@ -566,46 +571,46 @@ hr, [data-testid="stHorizontalBlock"] + hr {{
   font-size: 10px;
   font-weight: 600;
   color: var(--t2);
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  padding: 3px 10px;
+  padding: 4px 12px;
   background: var(--bg-4);
   border: 1px solid var(--b2);
   border-radius: 20px;
 }}
 
-/* ── Command Center — Hero with gradient text ─────────────── */
+/* ── Command Center — Hero with gradient headline ────────── */
 .cmd-hero {{
-  padding: 56px 0 40px;
-  max-width: 680px;
+  padding: 48px 0 36px;
+  max-width: 720px;
   position: relative;
 }}
 
 .cmd-title {{
-  font-family: var(--sans) !important;
-  font-size: 36px !important;
+  font-family: var(--mono) !important;
+  font-size: 38px !important;
   font-weight: 700 !important;
   color: transparent !important;
-  background: linear-gradient(135deg, #FFFFFF 0%, #888888 100%) !important;
+  background: linear-gradient(160deg, #FFFFFF 0%, #666666 100%) !important;
   -webkit-background-clip: text !important;
   background-clip: text !important;
   letter-spacing: -0.04em !important;
-  line-height: 1.15 !important;
-  margin: 0 0 12px !important;
+  line-height: 1.1 !important;
+  margin: 0 0 14px !important;
 }}
 
 .cmd-sub {{
   font-family: var(--sans);
   font-size: 15px;
   color: var(--t3);
-  line-height: 1.6;
+  line-height: 1.65;
 }}
 
 .cmd-badge {{
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 14px;
+  padding: 6px 16px;
   background: var(--bg-3);
   border: 1px solid var(--b2);
   border-radius: 20px;
@@ -615,23 +620,25 @@ hr, [data-testid="stHorizontalBlock"] + hr {{
   color: var(--t2);
   margin-top: 20px;
   transition: all var(--dur) var(--ease);
+  letter-spacing: 0.02em;
 }}
 
 .cmd-badge:hover {{
-  border-color: var(--b3);
+  border-color: var(--b4);
   background: var(--bg-4);
+  box-shadow: 0 0 20px rgba(255,255,255,0.04);
 }}
 
-/* ── Section Header — With gradient line ──────────────────── */
+/* ── Section Header — Gradient underline ─────────────────── */
 .sec-hdr {{
   font-family: var(--mono);
   font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--t3);
-  padding-bottom: 10px;
-  margin: 32px 0 16px;
+  padding-bottom: 12px;
+  margin: 36px 0 18px;
   border-bottom: 1px solid var(--b1);
   position: relative;
 }}
@@ -641,17 +648,17 @@ hr, [data-testid="stHorizontalBlock"] + hr {{
   position: absolute;
   bottom: -1px;
   left: 0;
-  width: 60px;
-  height: 1px;
-  background: linear-gradient(90deg, var(--t3), transparent);
+  width: 48px;
+  height: 2px;
+  background: linear-gradient(90deg, var(--t1), transparent);
 }}
 
-/* ── KPI Card — Elevated with gradient top edge ───────────── */
+/* ── KPI Card — With top glow line ──────────────────────── */
 .kpi-card {{
   background: var(--bg-3);
   border: 1px solid var(--b1);
-  border-radius: 12px;
-  padding: 20px 24px;
+  border-radius: 10px;
+  padding: 22px 24px;
   transition: all var(--dur) var(--ease);
   position: relative;
   overflow: hidden;
@@ -660,22 +667,22 @@ hr, [data-testid="stHorizontalBlock"] + hr {{
 .kpi-card::before {{
   content: '';
   position: absolute;
-  top: 0; left: 0; right: 0;
+  top: 0; left: 15%; right: 15%;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.14), transparent);
 }}
 
 .kpi-card:hover {{
   border-color: var(--b3);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  box-shadow: 0 8px 40px rgba(0,0,0,0.35);
   transform: translateY(-2px);
 }}
 
 .kpi-label {{
-  font-family: var(--sans);
+  font-family: var(--mono);
   font-size: 11px;
   font-weight: 500;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--t3);
   margin-bottom: 10px;
@@ -683,7 +690,7 @@ hr, [data-testid="stHorizontalBlock"] + hr {{
 
 .kpi-value {{
   font-family: var(--mono);
-  font-size: 28px;
+  font-size: 30px;
   font-weight: 700;
   color: var(--t1);
   line-height: 1;
@@ -712,14 +719,14 @@ hr, [data-testid="stHorizontalBlock"] + hr {{
 .kpi-up {{ color: var(--t1); }}
 .kpi-down {{ color: var(--t3); }}
 
-/* ── Agent Cards — Glassmorphism with glow ────────────────── */
+/* ── Agent Cards — Glass with subtle glow ────────────────── */
 .ag-card {{
-  background: rgba(18,18,18,0.6);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: rgba(17,17,17,0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--b1);
-  border-radius: 12px;
-  padding: 18px 20px;
+  border-radius: 10px;
+  padding: 18px 22px;
   display: flex;
   align-items: center;
   gap: 14px;
@@ -735,14 +742,14 @@ hr, [data-testid="stHorizontalBlock"] + hr {{
   position: absolute;
   top: 0; left: 0; right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
   opacity: 0;
   transition: opacity var(--dur) var(--ease);
 }}
 
 .ag-card:hover {{
   border-color: var(--b3);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.05);
+  box-shadow: 0 8px 40px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.06);
   transform: translateY(-2px);
 }}
 
@@ -751,15 +758,15 @@ hr, [data-testid="stHorizontalBlock"] + hr {{
 }}
 
 .ag-av {{
-  width: 40px;
-  height: 40px;
+  width: 42px;
+  height: 42px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 18px;
   flex-shrink: 0;
   background: var(--bg-4);
-  border: 1px solid var(--b1);
+  border: 1px solid var(--b2);
   border-radius: 10px;
 }}
 
@@ -781,6 +788,7 @@ hr, [data-testid="stHorizontalBlock"] + hr {{
   font-size: 11px;
   color: var(--t4);
   margin-top: 3px;
+  letter-spacing: 0.02em;
 }}
 
 .ag-desc {{
@@ -808,18 +816,18 @@ hr, [data-testid="stHorizontalBlock"] + hr {{
   font-family: var(--mono);
   font-size: 10px;
   font-weight: 600;
-  padding: 4px 10px;
+  padding: 4px 12px;
   border-radius: 20px;
   flex-shrink: 0;
   margin-left: auto;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
 }}
 
 .ag-st.st-on {{
-  background: rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.1);
   color: var(--t1);
-  border: 1px solid var(--b2);
-  box-shadow: 0 0 12px rgba(255,255,255,0.04);
+  border: 1px solid var(--b3);
+  box-shadow: 0 0 16px rgba(255,255,255,0.05);
 }}
 
 .ag-st.st-run {{
@@ -840,12 +848,12 @@ hr, [data-testid="stHorizontalBlock"] + hr {{
   border: 1px solid rgba(100,100,100,0.15);
 }}
 
-/* ── Status Bar — Gradient border ─────────────────────────── */
+/* ── Status Bar — Accent border ─────────────────────────── */
 .sbar {{
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 16px;
+  padding: 12px 18px;
   background: var(--bg-3);
   border: 1px solid var(--b1);
   border-radius: 10px;
@@ -857,19 +865,19 @@ hr, [data-testid="stHorizontalBlock"] + hr {{
 .sbar::before {{
   content: '';
   position: absolute;
-  top: 0; left: 0; right: 0;
+  top: 0; left: 10%; right: 10%;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent);
 }}
 
 .sbar-dot {{
-  width: 6px;
-  height: 6px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   background: var(--t1);
   flex-shrink: 0;
   animation: pulse 2s ease-in-out infinite;
-  box-shadow: 0 0 8px rgba(255,255,255,0.2);
+  box-shadow: 0 0 10px rgba(255,255,255,0.25);
 }}
 
 .sbar-text {{
@@ -877,7 +885,7 @@ hr, [data-testid="stHorizontalBlock"] + hr {{
   font-size: 11px;
   font-weight: 600;
   color: var(--t1);
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }}
 
@@ -888,27 +896,28 @@ hr, [data-testid="stHorizontalBlock"] + hr {{
   margin-left: auto;
 }}
 
-/* ── Pulse Dot — With glow ────────────────────────────────── */
+/* ── Pulse Dot — With glow ring ─────────────────────────── */
 .pulse-dot {{
-  width: 6px;
-  height: 6px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   background: var(--t1);
   animation: pulse 2s ease-in-out infinite;
-  box-shadow: 0 0 8px rgba(255,255,255,0.2);
+  box-shadow: 0 0 10px rgba(255,255,255,0.25);
   flex-shrink: 0;
 }}
 
-/* ── Badges — Pill style ──────────────────────────────────── */
+/* ── Badges — Pill ──────────────────────────────────────── */
 .badge {{
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 3px 10px;
+  padding: 3px 12px;
   font-family: var(--mono);
   font-size: 11px;
   font-weight: 500;
   border-radius: 20px;
+  letter-spacing: 0.02em;
 }}
 
 .badge-default {{
@@ -918,9 +927,9 @@ hr, [data-testid="stHorizontalBlock"] + hr {{
 }}
 
 .badge-active {{
-  background: rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.1);
   color: var(--t1);
-  border: 1px solid var(--b2);
+  border: 1px solid var(--b3);
 }}
 
 .badge-dim {{
@@ -930,19 +939,19 @@ hr, [data-testid="stHorizontalBlock"] + hr {{
 }}
 
 /* Legacy badge aliases */
-.v-badge {{ display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; font-family: var(--mono); font-size: 11px; font-weight: 500; border-radius: 20px; }}
-.v-badge-white {{ background: rgba(255,255,255,0.08); color: var(--t1); border: 1px solid var(--b2); }}
+.v-badge {{ display: inline-flex; align-items: center; gap: 5px; padding: 3px 12px; font-family: var(--mono); font-size: 11px; font-weight: 500; border-radius: 20px; }}
+.v-badge-white {{ background: rgba(255,255,255,0.1); color: var(--t1); border: 1px solid var(--b3); }}
 .v-badge-gray {{ background: var(--bg-4); color: var(--t2); border: 1px solid var(--b1); }}
 .v-badge-dim {{ background: var(--bg-3); color: var(--t3); border: 1px solid var(--b0); }}
-.v-badge-active {{ background: rgba(255,255,255,0.08); color: var(--t1); border: 1px solid var(--b2); }}
+.v-badge-active {{ background: rgba(255,255,255,0.1); color: var(--t1); border: 1px solid var(--b3); }}
 
-/* ── Workspace Header ──────────────────────────────────────── */
+/* ── Workspace Header ────────────────────────────────────── */
 .ws-header {{
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 14px 0;
-  margin-bottom: 12px;
+  padding: 16px 0;
+  margin-bottom: 14px;
   border-bottom: 1px solid var(--b1);
 }}
 
@@ -962,14 +971,15 @@ hr, [data-testid="stHorizontalBlock"] + hr {{
   font-family: var(--mono);
   font-size: 10px;
   color: var(--t3);
-  padding: 3px 10px;
+  padding: 3px 12px;
   background: var(--bg-4);
   border-radius: 20px;
   border: 1px solid var(--b1);
   margin-left: auto;
+  letter-spacing: 0.04em;
 }}
 
-/* ── AI Response Container ─────────────────────────────────── */
+/* ── AI Response Container ───────────────────────────────── */
 .ai-response-container {{
   display: flex;
   flex-direction: column;
@@ -982,7 +992,7 @@ hr, [data-testid="stHorizontalBlock"] + hr {{
   background: var(--bg-3);
   border: 1px solid var(--b2);
   border-left: 3px solid var(--t1);
-  border-radius: 12px;
+  border-radius: 10px;
   padding: 20px 24px;
   position: relative;
   overflow: hidden;
@@ -993,7 +1003,7 @@ hr, [data-testid="stHorizontalBlock"] + hr {{
   position: absolute;
   top: 0; left: 0; right: 0;
   height: 1px;
-  background: linear-gradient(90deg, rgba(255,255,255,0.15), transparent);
+  background: linear-gradient(90deg, rgba(255,255,255,0.18), transparent);
 }}
 
 .ai-summary-label {{
@@ -1064,7 +1074,7 @@ hr, [data-testid="stHorizontalBlock"] + hr {{
 /* Metric chips */
 .ai-metric-chip {{
   display: inline;
-  padding: 2px 7px;
+  padding: 2px 8px;
   font-family: var(--mono);
   font-weight: 600;
   font-size: inherit;
@@ -1132,7 +1142,7 @@ hr, [data-testid="stHorizontalBlock"] + hr {{
 .ai-expert-card {{
   background: var(--bg-3);
   border: 1px solid var(--b1);
-  border-radius: 12px;
+  border-radius: 10px;
   padding: 16px 20px;
   margin: 8px 0;
   transition: all var(--dur) var(--ease);
@@ -1140,7 +1150,7 @@ hr, [data-testid="stHorizontalBlock"] + hr {{
 
 .ai-expert-card:hover {{
   border-color: var(--b2);
-  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.25);
 }}
 
 .ai-expert-header {{
@@ -1166,7 +1176,7 @@ hr, [data-testid="stHorizontalBlock"] + hr {{
   text-transform: uppercase;
   letter-spacing: 0.06em;
   margin-left: auto;
-  padding: 2px 8px;
+  padding: 2px 10px;
   background: var(--bg-4);
   border-radius: 20px;
   border: 1px solid var(--b1);
@@ -1190,11 +1200,11 @@ hr, [data-testid="stHorizontalBlock"] + hr {{
   margin: 8px 0;
 }}
 
-/* ── Thinking Timeline — Refined ──────────────────────────── */
+/* ── Thinking Timeline ──────────────────────────────────── */
 .tl-container {{
   background: var(--bg-3);
   border: 1px solid var(--b1);
-  border-radius: 12px;
+  border-radius: 10px;
   padding: 16px 20px;
   margin: 10px 0;
 }}
@@ -1242,12 +1252,12 @@ hr, [data-testid="stHorizontalBlock"] + hr {{
   font-weight: 500;
 }}
 
-/* ── Quality / HITL ────────────────────────────────────────── */
+/* ── Quality / HITL ──────────────────────────────────────── */
 .qbadge {{
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 12px;
+  padding: 4px 14px;
   font-family: var(--mono);
   font-size: 11px;
   font-weight: 600;
@@ -1270,7 +1280,7 @@ hr, [data-testid="stHorizontalBlock"] + hr {{
 .hitl-card {{
   background: var(--bg-3);
   border: 1px solid var(--b1);
-  border-radius: 12px;
+  border-radius: 10px;
   padding: 14px 18px;
   margin: 8px 0;
   display: flex;
@@ -1281,7 +1291,7 @@ hr, [data-testid="stHorizontalBlock"] + hr {{
 
 .hitl-card:hover {{
   border-color: var(--b2);
-  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.25);
 }}
 
 .hitl-gauge {{
@@ -1306,12 +1316,12 @@ hr, [data-testid="stHorizontalBlock"] + hr {{
 .hitl-info .hitl-action {{ font-family: var(--sans); font-size: 13px; color: var(--t2); margin-top: 3px; }}
 .hitl-triggers {{ font-family: var(--mono); font-size: 11px; color: var(--t3); text-align: right; flex-shrink: 0; }}
 
-/* ── Trace Bar ─────────────────────────────────────────────── */
+/* ── Trace Bar ──────────────────────────────────────────── */
 .trace-bar {{
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 10px 16px;
+  padding: 10px 18px;
   background: var(--bg-3);
   border: 1px solid var(--b1);
   border-radius: 10px;
@@ -1326,12 +1336,12 @@ hr, [data-testid="stHorizontalBlock"] + hr {{
   font-weight: 600;
 }}
 
-/* ── Welcome / Ready State ─────────────────────────────────── */
+/* ── Welcome / Ready State ──────────────────────────────── */
 .welcome-badge {{
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 5px 14px;
+  padding: 5px 16px;
   background: var(--bg-3);
   border: 1px solid var(--b2);
   border-radius: 20px;
@@ -1339,11 +1349,12 @@ hr, [data-testid="stHorizontalBlock"] + hr {{
   font-size: 11px;
   font-weight: 500;
   color: var(--t2);
+  letter-spacing: 0.02em;
 }}
 
 .welcome-title {{
-  font-family: var(--sans);
-  font-size: 22px;
+  font-family: var(--mono);
+  font-size: 24px;
   font-weight: 700;
   color: var(--t1);
   margin-bottom: 6px;
@@ -1357,14 +1368,14 @@ hr, [data-testid="stHorizontalBlock"] + hr {{
   line-height: 1.6;
 }}
 
-/* ── Upload Zone — With border gradient ───────────────────── */
+/* ── Upload Zone ─────────────────────────────────────────── */
 .upload-zone {{
   max-width: 560px;
   margin: 0 auto;
   padding: 28px;
   background: var(--bg-3);
   border: 1px solid var(--b1);
-  border-radius: 12px;
+  border-radius: 10px;
   position: relative;
   overflow: hidden;
 }}
@@ -1372,18 +1383,18 @@ hr, [data-testid="stHorizontalBlock"] + hr {{
 .upload-zone::before {{
   content: '';
   position: absolute;
-  top: 0; left: 0; right: 0;
+  top: 0; left: 15%; right: 15%;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent);
 }}
 
-/* ── Glass Card — Real glassmorphism ──────────────────────── */
+/* ── Glass Card ──────────────────────────────────────────── */
 .glass-card {{
-  background: rgba(18,18,18,0.6);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: rgba(17,17,17,0.65);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   border: 1px solid var(--b1);
-  border-radius: 12px;
+  border-radius: 10px;
   padding: 18px;
   transition: all var(--dur) var(--ease);
   position: relative;
@@ -1393,20 +1404,20 @@ hr, [data-testid="stHorizontalBlock"] + hr {{
 .glass-card::before {{
   content: '';
   position: absolute;
-  top: 0; left: 0; right: 0;
+  top: 0; left: 10%; right: 10%;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
 }}
 
 .glass-card:hover {{
   border-color: var(--b2);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  box-shadow: 0 8px 40px rgba(0,0,0,0.35);
 }}
 
-/* ── Logo ──────────────────────────────────────────────────── */
+/* ── Logo ─────────────────────────────────────────────────── */
 .logo-mark {{
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 30px;
   background: var(--t1);
   border-radius: 6px;
   display: flex;
@@ -1414,11 +1425,11 @@ hr, [data-testid="stHorizontalBlock"] + hr {{
   justify-content: center;
   font-family: var(--mono);
   font-weight: 700;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--bg-1);
 }}
 
-/* ── Grid Layout ───────────────────────────────────────────── */
+/* ── Grid Layout ─────────────────────────────────────────── */
 .bento-grid {{
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -1432,17 +1443,17 @@ hr, [data-testid="stHorizontalBlock"] + hr {{
 
 @keyframes pulse {{
   0%, 100% {{ opacity: 1; }}
-  50% {{ opacity: 0.3; }}
+  50% {{ opacity: 0.25; }}
 }}
 
 @keyframes fade-in {{
-  from {{ opacity: 0; transform: translateY(6px); }}
+  from {{ opacity: 0; transform: translateY(8px); }}
   to {{ opacity: 1; transform: translateY(0); }}
 }}
 
 @keyframes glow {{
-  0%, 100% {{ box-shadow: 0 0 8px rgba(255,255,255,0.05); }}
-  50% {{ box-shadow: 0 0 20px rgba(255,255,255,0.08); }}
+  0%, 100% {{ box-shadow: 0 0 8px rgba(255,255,255,0.06); }}
+  50% {{ box-shadow: 0 0 24px rgba(255,255,255,0.1); }}
 }}
 
 @keyframes gradient-shift {{
@@ -1475,7 +1486,7 @@ hr, [data-testid="stHorizontalBlock"] + hr {{
 
 .skeleton-card {{
   height: 120px;
-  border-radius: 12px;
+  border-radius: 10px;
 }}
 
 /* ════════════════════════════════════════════════════════════
@@ -1483,7 +1494,7 @@ hr, [data-testid="stHorizontalBlock"] + hr {{
    ════════════════════════════════════════════════════════════ */
 
 *:focus-visible {{
-  outline: 2px solid rgba(255,255,255,0.30) !important;
+  outline: 2px solid rgba(255,255,255,0.35) !important;
   outline-offset: 2px !important;
   border-radius: 4px;
 }}
@@ -1494,7 +1505,7 @@ a:focus-visible,
 input:focus-visible,
 textarea:focus-visible,
 select:focus-visible {{
-  outline: 2px solid rgba(255,255,255,0.30) !important;
+  outline: 2px solid rgba(255,255,255,0.35) !important;
   outline-offset: 2px !important;
 }}
 
@@ -1537,15 +1548,15 @@ a {{
 
 @media (max-width: 768px) {{
   .block-container {{ padding: 0.5rem 1rem 2rem !important; }}
-  .top-nav {{ margin: -0.5rem -1rem 16px; padding: 0 12px; height: 48px; }}
-  .cmd-title {{ font-size: 26px !important; }}
-  .cmd-hero {{ padding: 32px 0 20px; }}
-  .kpi-value {{ font-size: 22px; }}
+  .top-nav {{ margin: -0.5rem -1rem 16px; padding: 0 14px; height: 48px; }}
+  .cmd-title {{ font-size: 28px !important; }}
+  .cmd-hero {{ padding: 28px 0 20px; }}
+  .kpi-value {{ font-size: 24px; }}
 }}
 
 @media (max-width: 480px) {{
   .block-container {{ padding: 0.5rem 0.75rem 1.5rem !important; }}
-  .cmd-title {{ font-size: 22px !important; }}
+  .cmd-title {{ font-size: 24px !important; }}
   .stApp {{ background-image: none !important; }}
 }}
 
@@ -1557,10 +1568,11 @@ a {{
 def _build_login_css() -> str:
     return """<style>
 /* ================================================================
-   MRARFAI v10 — Login
+   MRARFAI v10 — Login Page
+   Fira Code + Fira Sans · OLED Dark
    ================================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700&display=swap');
 
 /* ── Background ── */
 html, body,
@@ -1602,17 +1614,17 @@ header[data-testid="stHeader"],
   margin: 12vh auto 0 auto !important;
   background: #FFFFFF !important;
   border-radius: 12px !important;
-  padding: 40px 32px 32px !important;
-  box-shadow: 0 24px 80px rgba(0,0,0,0.6);
-  animation: card-in 0.3s ease-out;
+  padding: 44px 36px 36px !important;
+  box-shadow: 0 32px 100px rgba(0,0,0,0.7);
+  animation: card-in 0.35s cubic-bezier(0.22, 1, 0.36, 1);
   position: relative;
   z-index: 1;
   overflow: hidden !important;
 }
 
 @keyframes card-in {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(16px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 /* ── Inner wrappers ── */
@@ -1646,9 +1658,9 @@ header[data-testid="stHeader"],
 }
 
 .login-logo-area img.horse-logo {
-  width: 48px;
+  width: 52px;
   height: auto;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
   filter: brightness(0);
 }
 
@@ -1659,44 +1671,45 @@ header[data-testid="stHeader"],
 }
 
 .login-logo-area .brand-name {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'Fira Code', monospace;
   font-weight: 700;
-  font-size: 18px;
+  font-size: 20px;
   letter-spacing: 0.1em;
   color: #0A0A0A;
 }
 
 .login-logo-area .brand-sub {
-  font-family: 'IBM Plex Sans', sans-serif;
+  font-family: 'Fira Sans', sans-serif;
   font-weight: 500;
   font-size: 11px;
   letter-spacing: 0.06em;
-  color: #999;
-  margin-top: 4px;
+  color: #888;
+  margin-top: 6px;
 }
 
 /* ── Divider ── */
 .login-divider {
   height: 1px;
-  background: #EBEBEB;
-  margin: 16px 0 20px;
+  background: linear-gradient(90deg, transparent, #DDD, transparent);
+  margin: 20px 0 24px;
 }
 
 /* ── Labels ── */
 .login-label {
-  font-family: 'IBM Plex Sans', sans-serif;
+  font-family: 'Fira Sans', sans-serif;
   font-weight: 500;
   font-size: 12px;
   color: #555;
   margin: 0 0 6px 0;
-  padding: 12px 0 0 0;
+  padding: 14px 0 0 0;
   line-height: 1;
   display: block;
+  letter-spacing: 0.02em;
 }
 
 /* ── Error ── */
 .login-error {
-  font-family: 'IBM Plex Sans', sans-serif;
+  font-family: 'Fira Sans', sans-serif;
   font-size: 13px;
   color: #E53E3E;
   padding: 10px 14px;
@@ -1743,16 +1756,16 @@ header[data-testid="stHeader"],
 
 [data-testid="stMainBlockContainer"] .stTextInput [data-baseweb="input"] {
   background: #FFFFFF !important;
-  border: 1px solid #E0E0E0 !important;
+  border: 1.5px solid #E0E0E0 !important;
   border-radius: 8px !important;
   padding: 0 !important;
   box-shadow: none !important;
-  transition: border-color 0.15s;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
 
 [data-testid="stMainBlockContainer"] .stTextInput [data-baseweb="input"]:focus-within {
   border-color: #0A0A0A !important;
-  box-shadow: 0 0 0 3px rgba(0,0,0,0.04) !important;
+  box-shadow: 0 0 0 3px rgba(0,0,0,0.06) !important;
 }
 
 [data-testid="stMainBlockContainer"] .stTextInput input {
@@ -1763,9 +1776,9 @@ header[data-testid="stHeader"],
   color: #1A1A1A !important;
   caret-color: #1A1A1A !important;
   -webkit-text-fill-color: #1A1A1A !important;
-  font-family: 'IBM Plex Sans', sans-serif !important;
+  font-family: 'Fira Sans', sans-serif !important;
   font-size: 14px !important;
-  padding: 10px 14px !important;
+  padding: 11px 14px !important;
   height: auto !important;
   width: 100% !important;
 }
@@ -1809,22 +1822,22 @@ header[data-testid="stHeader"],
   width: 100% !important;
   background: #0A0A0A !important;
   color: #FFFFFF !important;
-  font-family: 'IBM Plex Sans', sans-serif !important;
+  font-family: 'Fira Code', monospace !important;
   font-weight: 600 !important;
   font-size: 13px !important;
-  letter-spacing: 0.02em !important;
+  letter-spacing: 0.04em !important;
   border: none !important;
   border-radius: 8px !important;
   padding: 0 !important;
-  margin-top: 16px !important;
+  margin-top: 18px !important;
   cursor: pointer !important;
-  height: 42px !important;
+  height: 44px !important;
   transition: background 0.15s, transform 0.1s !important;
   box-shadow: none !important;
 }
 
 [data-testid="stMainBlockContainer"] .stButton button:hover {
-  background: #222 !important;
+  background: #1A1A1A !important;
 }
 
 [data-testid="stMainBlockContainer"] .stButton button:active {
@@ -1839,8 +1852,8 @@ header[data-testid="stHeader"],
 /* ── Footer ── */
 .login-links-outer {
   text-align: center;
-  margin-top: 20px;
-  font-family: 'IBM Plex Sans', sans-serif;
+  margin-top: 24px;
+  font-family: 'Fira Sans', sans-serif;
   font-size: 12px;
 }
 
@@ -1854,11 +1867,11 @@ header[data-testid="stHeader"],
 .login-links-outer .sep { color: rgba(255,255,255,0.1); margin: 0 10px; }
 
 .login-page-footer-outer {
-  font-family: 'IBM Plex Sans', sans-serif;
+  font-family: 'Fira Sans', sans-serif;
   font-size: 11px;
   color: rgba(255,255,255,0.2);
   text-align: center;
-  margin-top: 12px;
+  margin-top: 14px;
 }
 
 .login-status {
@@ -1866,15 +1879,15 @@ header[data-testid="stHeader"],
   align-items: center;
   justify-content: center;
   gap: 6px;
-  margin-top: 8px;
-  font-family: 'JetBrains Mono', monospace;
+  margin-top: 10px;
+  font-family: 'Fira Code', monospace;
   font-size: 11px;
   color: rgba(255,255,255,0.25);
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
 }
 
 .login-status .pulse-dot-sm {
-  width: 4px; height: 4px;
+  width: 5px; height: 5px;
   border-radius: 50%;
   background: rgba(255,255,255,0.3);
   animation: login-pulse 2s ease-in-out infinite;
@@ -1889,7 +1902,7 @@ header[data-testid="stHeader"],
 @media (max-width: 768px) {
   [data-testid="stMainBlockContainer"] {
     max-width: 90vw !important;
-    padding: 32px 24px 28px !important;
+    padding: 36px 28px 30px !important;
     margin-top: 8vh !important;
   }
 }
