@@ -253,116 +253,249 @@ def is_admin() -> bool:
 SP_GREEN = "#00FF88"
 
 def _render_login_page():
-    """渲染登录页面 — 白色卡片 + 深色背景 (Streamlit 兼容方案)"""
+    """渲染登录页面 — 白色卡片 + 深色背景 (Streamlit 兼容方案)
 
-    # 核心思路: 把 Streamlit 的 .stMainBlockContainer 本身变成白色卡片
-    # 因为 st.markdown 的 HTML 不能跨越 st.text_input 等 widget
+    核心思路:
+    把 [data-testid="stMainBlockContainer"] 当作白色卡片，同时确保其
+    所有内部子容器(stVerticalBlock, stVerticalBlockBorderWrapper,
+    block-container, stElementContainer 等)都是透明背景、零额外 padding，
+    使白色背景从最外层一路穿透到所有 widget。
+    """
+
+    # ── 读取 logo base64 ──
+    _login_logo_b64 = ""
+    try:
+        import os as _os
+        _logo_path = _os.path.join(_os.path.dirname(__file__), "logo_b64.txt")
+        with open(_logo_path, "r") as _lf:
+            _login_logo_b64 = _lf.read().strip()
+    except Exception:
+        pass
+
+    _horse_logo_html = (
+        f'<img class="horse-logo" src="data:image/png;base64,{_login_logo_b64}" />'
+        if _login_logo_b64
+        else '<div class="horse-icon-fallback">&#x1F40E;</div>'
+    )
+
+    # ================================================================
+    # 一次性注入所有 CSS — 这是唯一的 st.markdown(style) 调用
+    # ================================================================
     st.markdown("""<style>
+    /* ============================================================
+       Google Fonts
+       ============================================================ */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
+    /* ============================================================
+       Animation
+       ============================================================ */
     @keyframes fadeInUp {
-        from { opacity: 0; transform: translateY(20px); }
+        from { opacity: 0; transform: translateY(24px); }
         to   { opacity: 1; transform: translateY(0); }
     }
 
-    /* ── 深色背景 ── */
-    [data-testid="stApp"] {
+    /* ============================================================
+       1. 深色背景 + 网格纹
+       ============================================================ */
+    [data-testid="stApp"],
+    [data-testid="stAppViewContainer"],
+    .stApp {
         background: #0a0a0a !important;
     }
     [data-testid="stApp"]::before {
         content: "";
-        position: fixed; inset: 0; z-index: 0; pointer-events: none;
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
         background-image:
             linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
             linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
         background-size: 40px 40px;
     }
 
-    /* ── 隐藏 Streamlit chrome ── */
+    /* ============================================================
+       2. 隐藏 ALL Streamlit chrome
+       ============================================================ */
     [data-testid="stSidebar"],
+    [data-testid="collapsedControl"],
+    [data-testid="stSidebarCollapsedControl"],
     [data-testid="stHeader"],
-    #MainMenu, footer, .stDeployButton,
     [data-testid="stToolbar"],
     [data-testid="stDecoration"],
-    [data-testid="stStatusWidget"] { display: none !important; }
+    [data-testid="stStatusWidget"],
+    [data-testid="stBottom"],
+    #MainMenu,
+    footer,
+    .stDeployButton,
+    header[data-testid="stHeader"] {
+        display: none !important;
+        visibility: hidden !important;
+        height: 0 !important;
+        overflow: hidden !important;
+    }
 
-    /* ── 把主内容区变成白色卡片 ── */
+    /* ============================================================
+       3. 白色卡片 — stMainBlockContainer IS the card
+       关键: 同时锁定所有内部包装器为透明
+       ============================================================ */
     [data-testid="stMainBlockContainer"] {
         max-width: 440px !important;
-        margin: 10vh auto 0 auto !important;
+        margin: 8vh auto 0 auto !important;
         background: #FFFFFF !important;
         border-radius: 16px !important;
-        padding: 48px 44px 36px !important;
+        padding: 48px 44px 36px 44px !important;
         box-shadow: 0 20px 60px rgba(0,0,0,0.5) !important;
         animation: fadeInUp 0.5s ease-out;
         position: relative;
         z-index: 1;
+        overflow: visible !important;
+        min-height: auto !important;
     }
 
-    /* ── Logo 区域 ── */
+    /* ── 3a. 所有内部 Streamlit 包装器: 透明 + 无额外间距 ── */
+    [data-testid="stMainBlockContainer"] .block-container {
+        max-width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        background: transparent !important;
+    }
+    [data-testid="stMainBlockContainer"] [data-testid="stVerticalBlock"],
+    [data-testid="stMainBlockContainer"] [data-testid="stVerticalBlockBorderWrapper"] {
+        background: transparent !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        gap: 0 !important;
+        max-width: 100% !important;
+        width: 100% !important;
+    }
+    [data-testid="stMainBlockContainer"] [data-testid="stElementContainer"] {
+        background: transparent !important;
+        margin: 0 !important;
+    }
+    /* Remove any top padding Streamlit injects on the main view */
+    [data-testid="stAppViewContainer"] > section > div {
+        padding-top: 0 !important;
+    }
+    /* Ensure the main area itself is transparent */
+    [data-testid="stMain"],
+    [data-testid="stAppViewContainer"] {
+        background: transparent !important;
+    }
+
+    /* ============================================================
+       4. Logo 区域
+       ============================================================ */
     .login-logo-area {
-        text-align: center; margin-bottom: 10px;
+        text-align: center;
+        margin-bottom: 10px;
     }
     .login-logo-area img.horse-logo {
-        width: 72px; height: auto; margin-bottom: 16px;
+        width: 72px;
+        height: auto;
+        margin-bottom: 16px;
         filter: brightness(0);
     }
     .login-logo-area .horse-icon-fallback {
-        font-size: 56px; margin-bottom: 8px; line-height: 1;
+        font-size: 56px;
+        margin-bottom: 8px;
+        line-height: 1;
     }
     .login-logo-area .brand-name {
         font-family: 'Inter', -apple-system, sans-serif;
-        font-weight: 900; font-size: 28px;
-        letter-spacing: 0.12em; color: #0a0a0a;
+        font-weight: 900;
+        font-size: 28px;
+        letter-spacing: 0.12em;
+        color: #0a0a0a;
         text-transform: uppercase;
     }
     .login-logo-area .brand-sub {
         font-family: 'Inter', sans-serif;
-        font-weight: 600; font-size: 11px;
-        letter-spacing: 0.18em; color: #888;
-        text-transform: uppercase; margin-top: 4px;
+        font-weight: 600;
+        font-size: 11px;
+        letter-spacing: 0.18em;
+        color: #888;
+        text-transform: uppercase;
+        margin-top: 4px;
     }
 
-    /* ── 分隔线 ── */
+    /* ============================================================
+       5. 分隔线
+       ============================================================ */
     .login-divider {
-        height: 1px; background: #e8e8e8; margin: 20px 0 24px 0;
+        height: 1px;
+        background: #e8e8e8;
+        margin: 20px 0 24px 0;
     }
 
-    /* ── 标签 ── */
+    /* ============================================================
+       6. 字段标签 (USERNAME / PASSWORD)
+       ============================================================ */
     .login-label {
         font-family: 'Inter', sans-serif;
-        font-weight: 700; font-size: 12px;
-        color: #1a1a1a; letter-spacing: 0.06em;
+        font-weight: 700;
+        font-size: 12px;
+        color: #1a1a1a;
+        letter-spacing: 0.06em;
         text-transform: uppercase;
-        margin-bottom: 6px; margin-top: 16px;
+        margin-bottom: 6px;
+        margin-top: 16px;
     }
     .login-label:first-of-type { margin-top: 0; }
 
-    /* ── 错误提示 ── */
+    /* ============================================================
+       7. 错误提示
+       ============================================================ */
     .login-error {
-        font-family: 'Inter', sans-serif; font-size: 13px;
-        color: #dc3545; padding: 10px 14px; margin-top: 12px;
+        font-family: 'Inter', sans-serif;
+        font-size: 13px;
+        color: #dc3545;
+        padding: 10px 14px;
+        margin-top: 12px;
         border: 1px solid rgba(220,53,69,0.2);
         background: rgba(220,53,69,0.06);
-        border-radius: 8px; text-align: center;
+        border-radius: 8px;
+        text-align: center;
     }
 
-    /* ── 底部链接 ── */
+    /* ============================================================
+       8. 底部链接
+       ============================================================ */
     .login-links {
-        text-align: center; margin-top: 24px;
-        font-family: 'Inter', sans-serif; font-size: 13px;
+        text-align: center;
+        margin-top: 24px;
+        font-family: 'Inter', sans-serif;
+        font-size: 13px;
     }
     .login-links a { color: #666; text-decoration: none; }
     .login-links a:hover { color: #0a0a0a; }
     .login-links .sep { color: #ccc; margin: 0 10px; }
 
-    /* ── 页脚 ── */
+    /* ============================================================
+       9. 页脚
+       ============================================================ */
     .login-page-footer {
-        font-family: 'Inter', sans-serif; font-size: 12px;
-        color: #555; text-align: center; margin-top: 20px;
+        font-family: 'Inter', sans-serif;
+        font-size: 12px;
+        color: #555;
+        text-align: center;
+        margin-top: 20px;
     }
 
-    /* ── Streamlit Input 样式覆盖 ── */
+    /* ============================================================
+       10. Streamlit Text Input 样式覆盖
+       ============================================================ */
+    /* 隐藏 Streamlit 原生 label */
+    [data-testid="stMainBlockContainer"] .stTextInput label,
+    [data-testid="stMainBlockContainer"] .stTextInput > label {
+        display: none !important;
+        height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    /* Input field 自身 */
+    [data-testid="stMainBlockContainer"] .stTextInput input,
     [data-testid="stMainBlockContainer"] .stTextInput > div > div > input {
         background: #FFFFFF !important;
         border: 1.5px solid #d0d0d0 !important;
@@ -372,20 +505,27 @@ def _render_login_page():
         border-radius: 10px !important;
         padding: 12px 14px !important;
         transition: border-color 0.2s, box-shadow 0.2s;
+        height: auto !important;
     }
-    [data-testid="stMainBlockContainer"] .stTextInput > div > div > input::placeholder {
+    [data-testid="stMainBlockContainer"] .stTextInput input::placeholder {
         color: #aaa !important;
     }
-    [data-testid="stMainBlockContainer"] .stTextInput > div > div > input:focus {
+    [data-testid="stMainBlockContainer"] .stTextInput input:focus {
         border-color: #0a0a0a !important;
         box-shadow: 0 0 0 3px rgba(10,10,10,0.08) !important;
     }
-    /* 隐藏 Streamlit 自带 label */
-    [data-testid="stMainBlockContainer"] .stTextInput > label { display: none !important; }
+    /* Remove bottom spacing from Streamlit input wrappers */
+    [data-testid="stMainBlockContainer"] [data-testid="stTextInput"] {
+        margin-bottom: 0 !important;
+    }
 
-    /* ── SIGN IN 按钮 ── */
-    [data-testid="stMainBlockContainer"] .stButton > button {
-        width: 100%;
+    /* ============================================================
+       11. SIGN IN 按钮
+       ============================================================ */
+    [data-testid="stMainBlockContainer"] .stButton > button,
+    [data-testid="stMainBlockContainer"] button[kind="primary"],
+    [data-testid="stMainBlockContainer"] [data-testid="stBaseButton-secondary"] {
+        width: 100% !important;
         background: #0a0a0a !important;
         color: #FFFFFF !important;
         font-family: 'Inter', sans-serif !important;
@@ -397,9 +537,11 @@ def _render_login_page():
         border-radius: 10px !important;
         padding: 14px !important;
         margin-top: 8px;
+        cursor: pointer;
         transition: background 0.2s, transform 0.15s, box-shadow 0.15s;
     }
-    [data-testid="stMainBlockContainer"] .stButton > button:hover {
+    [data-testid="stMainBlockContainer"] .stButton > button:hover,
+    [data-testid="stMainBlockContainer"] [data-testid="stBaseButton-secondary"]:hover {
         background: #222 !important;
         transform: translateY(-1px);
         box-shadow: 0 6px 20px rgba(0,0,0,0.3);
@@ -408,61 +550,66 @@ def _render_login_page():
         transform: translateY(0px);
     }
 
-    /* ── 移动端 ── */
+    /* ============================================================
+       12. 移动端适配
+       ============================================================ */
     @media (max-width: 768px) {
         [data-testid="stMainBlockContainer"] {
-            max-width: 90vw !important; padding: 36px 24px 28px !important; margin-top: 6vh !important;
+            max-width: 90vw !important;
+            padding: 36px 24px 28px 24px !important;
+            margin-top: 6vh !important;
         }
         .login-logo-area .brand-name { font-size: 24px; }
     }
     @media (max-width: 480px) {
         [data-testid="stMainBlockContainer"] {
-            max-width: 95vw !important; padding: 28px 20px 24px !important; margin-top: 4vh !important;
+            max-width: 96vw !important;
+            padding: 28px 18px 22px 18px !important;
+            margin-top: 3vh !important;
+            border-radius: 12px !important;
         }
+        .login-logo-area .brand-name { font-size: 22px; }
+        .login-logo-area img.horse-logo { width: 56px; }
     }
     </style>""", unsafe_allow_html=True)
 
-    # 读取 logo base64
-    _login_logo_b64 = ""
-    try:
-        import os as _os
-        _logo_path = _os.path.join(_os.path.dirname(__file__), "logo_b64.txt")
-        with open(_logo_path, "r") as _lf:
-            _login_logo_b64 = _lf.read().strip()
-    except Exception:
-        pass
-
-    _horse_logo = (
-        f'<img class="horse-logo" src="data:image/png;base64,{_login_logo_b64}" />'
-        if _login_logo_b64
-        else '<div class="horse-icon-fallback">\U0001F40E</div>'
-    )
-
-    # ── Logo + 标题 (纯 HTML，自闭合) ──
+    # ================================================================
+    # Logo + 品牌名 + 分隔线
+    # ================================================================
     st.markdown(f"""
     <div class="login-logo-area">
-        {_horse_logo}
+        {_horse_logo_html}
         <div class="brand-name">MRARFAI</div>
-        <div class="brand-sub">Enterprise Agent Platform</div>
+        <div class="brand-sub">\u4f01\u4e1aAgent\u5e73\u53f0</div>
     </div>
     <div class="login-divider"></div>
     """, unsafe_allow_html=True)
 
-    # ── 表单 (Streamlit 原生 widget，会被 CSS 样式化) ──
+    # ================================================================
+    # 表单字段 — Streamlit 原生 widget，CSS 会自动样式化
+    # ================================================================
     st.markdown('<div class="login-label">USERNAME</div>', unsafe_allow_html=True)
-    username = st.text_input("用户名", label_visibility="collapsed", key="login_user",
-                              placeholder="Enter username")
+    username = st.text_input(
+        "用户名", label_visibility="collapsed", key="login_user",
+        placeholder="Enter username",
+    )
 
     st.markdown('<div class="login-label">PASSWORD</div>', unsafe_allow_html=True)
-    password = st.text_input("密码", type="password", label_visibility="collapsed",
-                              key="login_pass", placeholder="Enter password")
+    password = st.text_input(
+        "密码", type="password", label_visibility="collapsed",
+        key="login_pass", placeholder="Enter password",
+    )
 
+    # ── SIGN IN 按钮 ──
     login_clicked = st.button("SIGN IN", key="login_btn", use_container_width=True)
 
+    # ── 登录逻辑 ──
     if login_clicked:
         if not username or not password:
-            st.markdown('<div class="login-error">\u26a0 Please enter username and password</div>',
-                       unsafe_allow_html=True)
+            st.markdown(
+                '<div class="login-error">\u26a0 Please enter username and password</div>',
+                unsafe_allow_html=True,
+            )
         else:
             user = authenticate(username, password)
             if user:
@@ -471,10 +618,14 @@ def _render_login_page():
                 st.session_state["auth_last_activity"] = datetime.now().isoformat()
                 st.rerun()
             else:
-                st.markdown('<div class="login-error">\u26a0 Invalid username or password</div>',
-                           unsafe_allow_html=True)
+                st.markdown(
+                    '<div class="login-error">\u26a0 Invalid username or password</div>',
+                    unsafe_allow_html=True,
+                )
 
-    # ── 底部链接 + 页脚 (在卡片内) ──
+    # ================================================================
+    # 底部链接 + 页脚 (仍然在卡片内)
+    # ================================================================
     st.markdown("""
     <div class="login-links">
         <a href="#">Forgot Password?</a>
