@@ -404,14 +404,15 @@ def _render_login_page():
     /* ── 6. USERNAME / PASSWORD 标签 ── */
     .login-label {
         font-family: 'Inter', sans-serif;
-        font-weight: 700; font-size: 11px;
-        color: #333; letter-spacing: 0.08em;
+        font-weight: 700; font-size: 12px;
+        color: #222; letter-spacing: 0.06em;
         text-transform: uppercase;
-        margin: 14px 0 8px 2px;
+        margin: 16px 0 0 0;
+        padding-bottom: 8px;
         line-height: 1;
         display: block;
         position: relative;
-        z-index: 1;
+        z-index: 2;
     }
 
     /* ── 7. 错误提示 ── */
@@ -438,7 +439,7 @@ def _render_login_page():
         color: #aaa; text-align: center; margin-top: 16px;
     }
 
-    /* ── 10. Input 样式覆盖 (BaseUI 架构) ── */
+    /* ── 10. Input 样式覆盖 (BaseUI + Dark Theme 强制白色) ── */
     /* 隐藏 Streamlit 原生 label */
     [data-testid="stMainBlockContainer"] .stTextInput label,
     [data-testid="stMainBlockContainer"] .stTextInput > label {
@@ -455,9 +456,16 @@ def _render_login_page():
     [data-testid="stMainBlockContainer"] .stTextInput > div {
         width: 100% !important;
     }
-    /* ★ BaseUI input wrapper — 真正的可视边框容器 */
+    /* ★ 核弹级覆盖: stTextInput 内所有 div 强制白色背景
+       (Dark theme 会在 BaseUI 内层多个 div 注入 background-color) */
+    [data-testid="stMainBlockContainer"] .stTextInput div {
+        background-color: #FFFFFF !important;
+        background: #FFFFFF !important;
+    }
+    /* ★ BaseUI input wrapper — 可视边框容器 */
     [data-testid="stMainBlockContainer"] .stTextInput [data-baseweb="input"] {
         background: #FFFFFF !important;
+        background-color: #FFFFFF !important;
         border: 1px solid #e0e0e0 !important;
         border-radius: 8px !important;
         padding: 0 !important;
@@ -470,20 +478,24 @@ def _render_login_page():
         border-color: #0a0a0a !important;
         box-shadow: 0 0 0 3px rgba(10,10,10,0.06) !important;
     }
-    /* 清除 root element wrapper 的额外边框 */
+    /* root element wrapper 重置 */
     [data-testid="stMainBlockContainer"] .stTextInput [data-testid="stTextInputRootElement"] {
         border: none !important;
         box-shadow: none !important;
         outline: none !important;
-        background: transparent !important;
+        background: #FFFFFF !important;
+        background-color: #FFFFFF !important;
     }
-    /* Input 本体 — 无边框 (父容器统一管理) */
+    /* Input 本体 */
     [data-testid="stMainBlockContainer"] .stTextInput input {
         background: transparent !important;
+        background-color: transparent !important;
         border: none !important;
         outline: none !important;
         box-shadow: none !important;
         color: #1a1a1a !important;
+        caret-color: #1a1a1a !important;
+        -webkit-text-fill-color: #1a1a1a !important;
         font-family: 'Inter', sans-serif !important;
         font-size: 14px !important;
         padding: 10px 14px !important;
@@ -493,36 +505,45 @@ def _render_login_page():
     }
     [data-testid="stMainBlockContainer"] .stTextInput input::placeholder {
         color: #bbb !important;
+        -webkit-text-fill-color: #bbb !important;
     }
     [data-testid="stMainBlockContainer"] .stTextInput input:focus {
         border: none !important;
         outline: none !important;
         box-shadow: none !important;
     }
-    /* 密码眼睛按钮 — 完全透明 */
+    /* 密码眼睛按钮 — 白色背景 + 透明视觉 */
     [data-testid="stMainBlockContainer"] .stTextInput button {
-        background: transparent !important;
+        background: #FFFFFF !important;
+        background-color: #FFFFFF !important;
         border: none !important;
         box-shadow: none !important;
         outline: none !important;
-        color: #bbb !important;
-        padding: 2px 8px !important;
+        color: #999 !important;
+        padding: 4px 8px !important;
         min-height: 0 !important;
         height: auto !important;
     }
     [data-testid="stMainBlockContainer"] .stTextInput button svg {
-        fill: #bbb !important;
-        stroke: #bbb !important;
-        width: 16px !important;
-        height: 16px !important;
+        fill: #999 !important;
+        stroke: #999 !important;
+        width: 18px !important;
+        height: 18px !important;
     }
     [data-testid="stMainBlockContainer"] .stTextInput button:hover {
-        background: transparent !important;
-        color: #666 !important;
+        background: #f5f5f5 !important;
+        color: #333 !important;
     }
     [data-testid="stMainBlockContainer"] .stTextInput button:hover svg {
-        fill: #666 !important;
-        stroke: #666 !important;
+        fill: #333 !important;
+        stroke: #333 !important;
+    }
+    /* 自动填充也强制白底黑字 */
+    [data-testid="stMainBlockContainer"] .stTextInput input:-webkit-autofill,
+    [data-testid="stMainBlockContainer"] .stTextInput input:-webkit-autofill:focus {
+        -webkit-box-shadow: 0 0 0 1000px #FFFFFF inset !important;
+        -webkit-text-fill-color: #1a1a1a !important;
+        background-color: #FFFFFF !important;
     }
 
     /* ── 11. SIGN IN 按钮 ── */
