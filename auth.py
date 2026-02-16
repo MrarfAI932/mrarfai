@@ -362,7 +362,7 @@ def _render_login_page():
         background: transparent !important;
         padding: 0 !important;
         margin: 0 !important;
-        gap: 4px !important;
+        gap: 2px !important;
         max-width: 100% !important;
         width: 100% !important;
     }
@@ -411,8 +411,8 @@ def _render_login_page():
         font-weight: 500; font-size: 11px;
         color: #555; letter-spacing: 0.06em;
         text-transform: uppercase;
-        margin: 14px 0 6px 2px;
-        padding: 0;
+        margin: 0 0 0 2px;
+        padding: 18px 0 8px 0;
         line-height: 1;
         display: block;
         position: relative;
@@ -563,17 +563,17 @@ def _render_login_page():
         color: #FFFFFF !important;
         font-family: 'Inter', sans-serif !important;
         font-weight: 600 !important;
-        font-size: 13px !important;
+        font-size: 12px !important;
         letter-spacing: 0.1em !important;
         text-transform: uppercase !important;
         border: none !important;
         border-radius: 8px !important;
         padding: 0 !important;
-        margin-top: 10px;
+        margin-top: 18px;
         cursor: pointer;
         line-height: 1 !important;
         min-height: 0 !important;
-        height: 38px !important;
+        height: 36px !important;
         transition: background 0.2s, transform 0.1s;
     }
     [data-testid="stMainBlockContainer"] .stButton > button:hover {
