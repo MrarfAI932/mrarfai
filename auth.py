@@ -408,10 +408,10 @@ def _render_login_page():
     /* ── 6. USERNAME / PASSWORD 标签 ── */
     .login-label {
         font-family: 'Inter', sans-serif;
-        font-weight: 600; font-size: 13px;
-        color: #1a1a1a; letter-spacing: 0.02em;
+        font-weight: 500; font-size: 11px;
+        color: #555; letter-spacing: 0.06em;
         text-transform: uppercase;
-        margin: 16px 0 8px 0;
+        margin: 14px 0 6px 2px;
         padding: 0;
         line-height: 1;
         display: block;
@@ -428,19 +428,19 @@ def _render_login_page():
         border-radius: 8px; text-align: center;
     }
 
-    /* ── 8. 底部链接 ── */
-    .login-links {
-        text-align: center; margin-top: 22px;
-        font-family: 'Inter', sans-serif; font-size: 13px;
+    /* ── 8. 底部链接 (卡片外 — 深色背景上浅色文字) ── */
+    .login-links-outer {
+        text-align: center; margin-top: 20px;
+        font-family: 'Inter', sans-serif; font-size: 12px;
     }
-    .login-links a { color: #888; text-decoration: none; }
-    .login-links a:hover { color: #0a0a0a; }
-    .login-links .sep { color: #ddd; margin: 0 10px; }
+    .login-links-outer a { color: rgba(255,255,255,0.5); text-decoration: none; }
+    .login-links-outer a:hover { color: rgba(255,255,255,0.8); }
+    .login-links-outer .sep { color: rgba(255,255,255,0.2); margin: 0 10px; }
 
-    /* ── 9. 页脚 ── */
-    .login-page-footer {
+    /* ── 9. 页脚 (卡片外) ── */
+    .login-page-footer-outer {
         font-family: 'Inter', sans-serif; font-size: 11px;
-        color: #aaa; text-align: center; margin-top: 16px;
+        color: rgba(255,255,255,0.3); text-align: center; margin-top: 12px;
     }
 
     /* ── 10. Input 样式覆盖 (BaseUI + Dark Theme 强制白色) ── */
@@ -467,13 +467,23 @@ def _render_login_page():
         background-color: #FFFFFF !important;
         background: #FFFFFF !important;
     }
-    /* ★ 整个 stTextInput 组件加上可见边框 (这才是目标设计里的圆角框) */
-    [data-testid="stMainBlockContainer"] .stTextInput [data-testid="stTextInputRootElement"],
+    /* ★ stTextInputRootElement — 外层 wrapper，不要边框 */
+    [data-testid="stMainBlockContainer"] .stTextInput [data-testid="stTextInputRootElement"] {
+        background: #FFFFFF !important;
+        background-color: #FFFFFF !important;
+        border: none !important;
+        border-radius: 8px !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+        outline: none !important;
+        overflow: hidden !important;
+    }
+    /* ★ [data-baseweb="input"] — 唯一可见边框 */
     [data-testid="stMainBlockContainer"] .stTextInput [data-baseweb="input"] {
         background: #FFFFFF !important;
         background-color: #FFFFFF !important;
-        border: 1px solid #e0e0e0 !important;
-        border-radius: 10px !important;
+        border: 1px solid #d5d5d5 !important;
+        border-radius: 8px !important;
         padding: 0 !important;
         box-shadow: none !important;
         outline: none !important;
@@ -482,9 +492,8 @@ def _render_login_page():
         transition: border-color 0.2s;
     }
     /* 聚焦时边框变深 */
-    [data-testid="stMainBlockContainer"] .stTextInput [data-testid="stTextInputRootElement"]:focus-within,
     [data-testid="stMainBlockContainer"] .stTextInput [data-baseweb="input"]:focus-within {
-        border-color: #bbb !important;
+        border-color: #999 !important;
     }
     /* Input 本体 — 无自身边框 */
     [data-testid="stMainBlockContainer"] .stTextInput input {
@@ -498,7 +507,7 @@ def _render_login_page():
         -webkit-text-fill-color: #1a1a1a !important;
         font-family: 'Inter', sans-serif !important;
         font-size: 14px !important;
-        padding: 12px 14px !important;
+        padding: 10px 14px !important;
         height: auto !important;
         width: 100% !important;
         box-sizing: border-box !important;
@@ -554,17 +563,17 @@ def _render_login_page():
         color: #FFFFFF !important;
         font-family: 'Inter', sans-serif !important;
         font-weight: 600 !important;
-        font-size: 14px !important;
-        letter-spacing: 0.08em !important;
+        font-size: 13px !important;
+        letter-spacing: 0.1em !important;
         text-transform: uppercase !important;
         border: none !important;
-        border-radius: 10px !important;
-        padding: 8px 0 !important;
-        margin-top: 14px;
+        border-radius: 8px !important;
+        padding: 0 !important;
+        margin-top: 10px;
         cursor: pointer;
-        line-height: 1.2 !important;
+        line-height: 1 !important;
         min-height: 0 !important;
-        height: 44px !important;
+        height: 38px !important;
         transition: background 0.2s, transform 0.1s;
     }
     [data-testid="stMainBlockContainer"] .stButton > button:hover {
@@ -645,16 +654,18 @@ def _render_login_page():
                 )
 
     # ================================================================
-    # 底部链接 + 页脚 (仍然在卡片内)
+    # 底部链接 + 页脚 (卡片外 — 用 fixed position 渲染在深色背景上)
     # ================================================================
     st.markdown("""
-    <div class="login-links">
-        <a href="#">Forgot Password?</a>
-        <span class="sep">|</span>
-        <a href="#">Contact Support</a>
-    </div>
-    <div class="login-page-footer">
-        &copy; 2024 MRARFAI &middot; Powered by Multi-Agent Intelligence
+    <div style="position:fixed;bottom:48px;left:0;right:0;z-index:10;pointer-events:auto;">
+        <div class="login-links-outer">
+            <a href="#">Forgot Password?</a>
+            <span class="sep">|</span>
+            <a href="#">Contact Support</a>
+        </div>
+        <div class="login-page-footer-outer">
+            &copy; 2024 MRARFAI &middot; Powered by Multi-Agent Intelligence
+        </div>
     </div>
     """, unsafe_allow_html=True)
 
