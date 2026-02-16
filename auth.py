@@ -362,7 +362,7 @@ def _render_login_page():
         background: transparent !important;
         padding: 0 !important;
         margin: 0 !important;
-        gap: 2px !important;
+        gap: 4px !important;
         max-width: 100% !important;
         width: 100% !important;
     }
@@ -407,8 +407,11 @@ def _render_login_page():
         font-weight: 700; font-size: 11px;
         color: #333; letter-spacing: 0.08em;
         text-transform: uppercase;
-        margin: 12px 0 6px 2px;
+        margin: 14px 0 8px 2px;
         line-height: 1;
+        display: block;
+        position: relative;
+        z-index: 1;
     }
 
     /* ── 7. 错误提示 ── */
@@ -435,24 +438,13 @@ def _render_login_page():
         color: #aaa; text-align: center; margin-top: 16px;
     }
 
-    /* ── 10. Input 样式覆盖 ── */
-    /* 隐藏 Streamlit 原生 label (顶部文字) */
+    /* ── 10. Input 样式覆盖 (BaseUI 架构) ── */
+    /* 隐藏 Streamlit 原生 label */
     [data-testid="stMainBlockContainer"] .stTextInput label,
     [data-testid="stMainBlockContainer"] .stTextInput > label {
         display: none !important; height: 0 !important;
         margin: 0 !important; padding: 0 !important;
         min-height: 0 !important; overflow: hidden !important;
-    }
-    /* 杀掉 Streamlit fieldset/legend 边框 (这是"标签重叠"的根源!) */
-    [data-testid="stMainBlockContainer"] .stTextInput fieldset {
-        border: none !important;
-        padding: 0 !important;
-        margin: 0 !important;
-    }
-    [data-testid="stMainBlockContainer"] .stTextInput legend {
-        display: none !important;
-        height: 0 !important;
-        padding: 0 !important;
     }
     /* TextInput 整体 wrapper */
     [data-testid="stMainBlockContainer"] [data-testid="stTextInput"],
@@ -463,43 +455,74 @@ def _render_login_page():
     [data-testid="stMainBlockContainer"] .stTextInput > div {
         width: 100% !important;
     }
-    /* Input field 本体 */
-    [data-testid="stMainBlockContainer"] .stTextInput input {
+    /* ★ BaseUI input wrapper — 真正的可视边框容器 */
+    [data-testid="stMainBlockContainer"] .stTextInput [data-baseweb="input"] {
         background: #FFFFFF !important;
-        border: 1.5px solid #d0d0d0 !important;
+        border: 1px solid #e0e0e0 !important;
+        border-radius: 8px !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+        outline: none !important;
+        position: relative !important;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    [data-testid="stMainBlockContainer"] .stTextInput [data-baseweb="input"]:focus-within {
+        border-color: #0a0a0a !important;
+        box-shadow: 0 0 0 3px rgba(10,10,10,0.06) !important;
+    }
+    /* 清除 root element wrapper 的额外边框 */
+    [data-testid="stMainBlockContainer"] .stTextInput [data-testid="stTextInputRootElement"] {
+        border: none !important;
+        box-shadow: none !important;
+        outline: none !important;
+        background: transparent !important;
+    }
+    /* Input 本体 — 无边框 (父容器统一管理) */
+    [data-testid="stMainBlockContainer"] .stTextInput input {
+        background: transparent !important;
+        border: none !important;
+        outline: none !important;
+        box-shadow: none !important;
         color: #1a1a1a !important;
         font-family: 'Inter', sans-serif !important;
         font-size: 14px !important;
-        border-radius: 8px !important;
         padding: 10px 14px !important;
         height: auto !important;
         width: 100% !important;
         box-sizing: border-box !important;
-        transition: border-color 0.2s, box-shadow 0.2s;
     }
     [data-testid="stMainBlockContainer"] .stTextInput input::placeholder {
         color: #bbb !important;
     }
     [data-testid="stMainBlockContainer"] .stTextInput input:focus {
-        border-color: #0a0a0a !important;
-        box-shadow: 0 0 0 3px rgba(10,10,10,0.06) !important;
+        border: none !important;
+        outline: none !important;
+        box-shadow: none !important;
     }
-    /* 密码眼睛按钮: 完全透明 + 正确定位 */
-    [data-testid="stMainBlockContainer"] .stTextInput button,
-    [data-testid="stMainBlockContainer"] .stTextInput [data-testid="stTextInputRootElement"] button {
+    /* 密码眼睛按钮 — 完全透明 */
+    [data-testid="stMainBlockContainer"] .stTextInput button {
         background: transparent !important;
         border: none !important;
         box-shadow: none !important;
-        color: #999 !important;
-        padding: 4px !important;
+        outline: none !important;
+        color: #bbb !important;
+        padding: 2px 8px !important;
+        min-height: 0 !important;
+        height: auto !important;
     }
     [data-testid="stMainBlockContainer"] .stTextInput button svg {
-        fill: #999 !important;
-        stroke: #999 !important;
+        fill: #bbb !important;
+        stroke: #bbb !important;
+        width: 16px !important;
+        height: 16px !important;
     }
     [data-testid="stMainBlockContainer"] .stTextInput button:hover {
-        background: rgba(0,0,0,0.04) !important;
-        color: #333 !important;
+        background: transparent !important;
+        color: #666 !important;
+    }
+    [data-testid="stMainBlockContainer"] .stTextInput button:hover svg {
+        fill: #666 !important;
+        stroke: #666 !important;
     }
 
     /* ── 11. SIGN IN 按钮 ── */
@@ -515,12 +538,12 @@ def _render_login_page():
         text-transform: uppercase !important;
         border: none !important;
         border-radius: 8px !important;
-        padding: 10px 0 !important;
-        margin-top: 6px;
+        padding: 8px 0 !important;
+        margin-top: 10px;
         cursor: pointer;
-        line-height: 1.4 !important;
+        line-height: 1.2 !important;
         min-height: 0 !important;
-        height: auto !important;
+        height: 40px !important;
         transition: background 0.2s, transform 0.1s;
     }
     [data-testid="stMainBlockContainer"] .stButton > button:hover {
