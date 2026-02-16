@@ -444,12 +444,16 @@ def _render_login_page():
     }
 
     /* ── 10. Input 样式覆盖 (BaseUI + Dark Theme 强制白色) ── */
-    /* 隐藏 Streamlit 原生 label */
+    /* 隐藏 Streamlit 原生 label — 彻底消除占位 */
     [data-testid="stMainBlockContainer"] .stTextInput label,
-    [data-testid="stMainBlockContainer"] .stTextInput > label {
+    [data-testid="stMainBlockContainer"] .stTextInput > label,
+    [data-testid="stMainBlockContainer"] .stTextInput [data-testid="stWidgetLabel"],
+    [data-testid="stMainBlockContainer"] [data-testid="stWidgetLabel"] {
         display: none !important; height: 0 !important;
         margin: 0 !important; padding: 0 !important;
         min-height: 0 !important; overflow: hidden !important;
+        max-height: 0 !important; line-height: 0 !important;
+        font-size: 0 !important; border: 0 !important;
     }
     /* TextInput 整体 wrapper */
     [data-testid="stMainBlockContainer"] [data-testid="stTextInput"],
@@ -555,11 +559,15 @@ def _render_login_page():
         background-color: #FFFFFF !important;
     }
 
-    /* ── 11. SIGN IN 按钮 ── */
+    /* ── 11. SIGN IN 按钮 — 最高优先级覆盖 ── */
+    [data-testid="stMainBlockContainer"] .stButton button,
     [data-testid="stMainBlockContainer"] .stButton > button,
-    [data-testid="stMainBlockContainer"] [data-testid="stBaseButton-secondary"] {
+    [data-testid="stMainBlockContainer"] button[data-testid="stBaseButton-secondary"],
+    [data-testid="stMainBlockContainer"] button[kind="secondary"],
+    [data-testid="stMainBlockContainer"] .stButton button[kind] {
         width: 100% !important;
         background: #0a0a0a !important;
+        background-color: #0a0a0a !important;
         color: #FFFFFF !important;
         font-family: 'Inter', sans-serif !important;
         font-weight: 600 !important;
@@ -568,21 +576,30 @@ def _render_login_page():
         text-transform: uppercase !important;
         border: none !important;
         border-radius: 8px !important;
-        padding: 0 !important;
-        margin-top: 18px;
-        cursor: pointer;
-        line-height: 1 !important;
+        padding: 8px 0 !important;
+        margin-top: 16px !important;
+        cursor: pointer !important;
+        line-height: 1.2 !important;
         min-height: 0 !important;
-        height: 36px !important;
-        transition: background 0.2s, transform 0.1s;
+        max-height: 40px !important;
+        height: 40px !important;
+        transition: background 0.2s, transform 0.1s !important;
+        box-shadow: none !important;
     }
+    [data-testid="stMainBlockContainer"] .stButton button:hover,
     [data-testid="stMainBlockContainer"] .stButton > button:hover {
         background: #222 !important;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+        background-color: #222 !important;
+        transform: translateY(-1px) !important;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.25) !important;
     }
-    [data-testid="stMainBlockContainer"] .stButton > button:active {
-        transform: translateY(0);
+    [data-testid="stMainBlockContainer"] .stButton button:active {
+        transform: translateY(0) !important;
+    }
+    /* 按钮容器 */
+    [data-testid="stMainBlockContainer"] .stButton,
+    [data-testid="stMainBlockContainer"] [data-testid="stElementContainer"]:has(.stButton) {
+        margin-top: 8px !important;
     }
 
     /* ── 12. 移动端 ── */
