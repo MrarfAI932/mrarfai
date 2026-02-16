@@ -253,49 +253,30 @@ def is_admin() -> bool:
 SP_GREEN = "#00FF88"
 
 def _render_login_page():
-    """渲染登录页面"""
+    """渲染登录页面 — 白色卡片 + 深色背景"""
 
-    # 全屏深色背景 + Command Center 动效
+    # 全屏深色背景 + 白色卡片居中
     st.markdown("""<style>
-    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
-    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
     /* ── Keyframes ── */
     @keyframes fadeInUp {
-        from { opacity: 0; transform: translateY(24px); }
+        from { opacity: 0; transform: translateY(20px); }
         to   { opacity: 1; transform: translateY(0); }
-    }
-    @keyframes glowPulse {
-        0%, 100% { box-shadow: 0 0 0 1px rgba(255,255,255,0.06); }
-        50%      { box-shadow: 0 0 18px rgba(255,255,255,0.10), 0 0 0 1px rgba(255,255,255,0.18); }
-    }
-    @keyframes scanLine {
-        0%   { top: -2px; opacity: 0; }
-        10%  { opacity: 0.6; }
-        90%  { opacity: 0.6; }
-        100% { top: 100%; opacity: 0; }
-    }
-    @keyframes titleShimmer {
-        0%   { background-position: -200% center; }
-        100% { background-position: 200% center; }
-    }
-    @keyframes dotPulse {
-        0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(255,255,255,0.5); }
-        50%      { opacity: 0.7; box-shadow: 0 0 6px 3px rgba(255,255,255,0.2); }
     }
 
     /* ── Base ── */
     [data-testid="stApp"] {
-        background: #080808;
+        background: #0a0a0a !important;
     }
-    /* Grid background overlay */
+    /* 细网格背景 */
     [data-testid="stApp"]::before {
         content: "";
         position: fixed; inset: 0; z-index: 0; pointer-events: none;
         background-image:
-            linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
-        background-size: 60px 60px;
+            linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+        background-size: 40px 40px;
     }
     [data-testid="stSidebar"] { display: none; }
     [data-testid="stHeader"] { display: none; }
@@ -303,122 +284,141 @@ def _render_login_page():
     [data-testid="stToolbar"], [data-testid="stDecoration"],
     [data-testid="stStatusWidget"] { display: none !important; }
 
-    /* ── Login Container ── */
-    .login-container {
-        max-width: 380px; margin: 20vh auto 0 auto; padding: 40px;
-        border: 1px solid rgba(255,255,255,0.06);
-        background: rgba(12,12,12,0.95);
-        animation: fadeInUp 0.6s ease-out, glowPulse 4s ease-in-out 0.6s infinite;
-        position: relative; overflow: hidden;
-    }
-    /* Scan line effect */
-    .login-container::after {
-        content: "";
-        position: absolute; left: 0; right: 0; height: 1px;
-        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
-        animation: scanLine 5s ease-in-out infinite;
-        pointer-events: none;
-    }
-
-    /* ── Logo ── */
-    .login-logo {
-        display: flex; align-items: center; gap: 12px; margin-bottom: 32px;
+    /* ── 白色卡片容器 ── */
+    .login-card {
+        max-width: 420px; margin: 12vh auto 0 auto;
+        padding: 48px 40px 36px;
+        background: #FFFFFF;
+        border-radius: 16px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        animation: fadeInUp 0.5s ease-out;
         position: relative; z-index: 1;
     }
-    .login-logo-box {
-        width: 40px; height: 40px;
-        display: flex; align-items: center; justify-content: center;
+
+    /* ── Logo 区域 (居中) ── */
+    .login-logo-area {
+        text-align: center; margin-bottom: 28px;
     }
-    .login-logo-box img {
-        width: 40px; height: auto;
-        filter: brightness(0) invert(1);
+    .login-logo-area img.horse-logo {
+        width: 72px; height: auto; margin-bottom: 16px;
+        filter: brightness(0);  /* 纯黑色 */
     }
-    .login-title {
-        font-family: 'Space Grotesk', sans-serif; font-weight: 700;
-        font-size: 1.2rem; letter-spacing: 0.08em;
+    /* 纯文字马头 fallback */
+    .login-logo-area .horse-icon-fallback {
+        font-size: 56px; margin-bottom: 8px; line-height: 1;
+    }
+    .login-logo-area .brand-name {
+        font-family: 'Inter', -apple-system, sans-serif;
+        font-weight: 900; font-size: 28px;
+        letter-spacing: 0.12em; color: #0a0a0a;
         text-transform: uppercase;
-        color: #FFFFFF;
-        display: flex; align-items: center; gap: 8px;
     }
-    .login-title img.title-horse {
-        width: 36px; height: auto;
-        filter: brightness(0) invert(1);
-    }
-    .login-subtitle {
-        font-family: 'JetBrains Mono', monospace; font-size: 0.55rem;
-        color: #6a6a6a; letter-spacing: 0.1em; text-transform: uppercase;
+    .login-logo-area .brand-sub {
+        font-family: 'Inter', sans-serif;
+        font-weight: 600; font-size: 11px;
+        letter-spacing: 0.18em; color: #888;
+        text-transform: uppercase; margin-top: 4px;
     }
 
-    /* ── Secure Badge ── */
-    .login-badge {
-        display: flex; align-items: center; gap: 6px;
-        padding: 6px 10px; margin-bottom: 20px;
-        background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.12);
-        font-family: 'JetBrains Mono', monospace; font-size: 0.5rem;
-        color: #6a6a6a; letter-spacing: 0.1em; text-transform: uppercase;
+    /* ── 分隔线 ── */
+    .login-divider {
+        height: 1px; background: #e8e8e8; margin: 24px 0;
+    }
+
+    /* ── 标签 ── */
+    .login-label {
+        font-family: 'Inter', sans-serif;
+        font-weight: 700; font-size: 12px;
+        color: #1a1a1a; letter-spacing: 0.06em;
+        text-transform: uppercase;
+        margin-bottom: 6px;
+    }
+
+    /* ── 错误提示 ── */
+    .login-error {
+        font-family: 'Inter', sans-serif; font-size: 13px;
+        color: #dc3545; padding: 10px 14px; margin-top: 12px;
+        border: 1px solid rgba(220,53,69,0.2);
+        background: rgba(220,53,69,0.06);
+        border-radius: 8px;
+    }
+
+    /* ── 底部链接 ── */
+    .login-links {
+        text-align: center; margin-top: 24px;
+        font-family: 'Inter', sans-serif; font-size: 13px;
+    }
+    .login-links a {
+        color: #666; text-decoration: none;
+        transition: color 0.2s;
+    }
+    .login-links a:hover { color: #0a0a0a; }
+    .login-links .sep {
+        color: #ccc; margin: 0 10px;
+    }
+
+    /* ── 页脚 ── */
+    .login-footer {
+        font-family: 'Inter', sans-serif; font-size: 12px;
+        color: #555; text-align: center; margin-top: 24px;
         position: relative; z-index: 1;
     }
-    .login-badge .badge-dot {
-        width: 5px; height: 5px; border-radius: 50%; background: #FFFFFF;
-        animation: dotPulse 2s ease-in-out infinite;
-    }
 
-    /* ── Labels & Errors ── */
-    .login-label {
-        font-family: 'JetBrains Mono', monospace; font-size: 0.6rem;
-        color: #6a6a6a; letter-spacing: 0.1em; text-transform: uppercase;
-        margin-bottom: 4px; position: relative; z-index: 1;
-    }
-    .login-error {
-        font-family: 'JetBrains Mono', monospace; font-size: 0.65rem;
-        color: #D94040; padding: 8px 12px; margin-top: 12px;
-        border: 1px solid rgba(217,64,64,0.2);
-        background: rgba(217,64,64,0.06);
-    }
-    .login-footer {
-        font-family: 'JetBrains Mono', monospace; font-size: 0.5rem;
-        color: #4a4a4a; text-align: center; margin-top: 32px;
-        letter-spacing: 0.05em; position: relative; z-index: 1;
-    }
-
-    /* ── Streamlit Input Overrides ── */
-    .login-container .stTextInput input {
-        background: #111111 !important; border: 1px solid #2f2f2f !important;
-        color: #FFFFFF !important; font-family: 'JetBrains Mono', monospace !important;
-        font-size: 0.8rem !important; border-radius: 0 !important;
+    /* ── Streamlit Input 覆盖 (白色卡片内) ── */
+    .login-card .stTextInput input {
+        background: #FFFFFF !important;
+        border: 1.5px solid #d0d0d0 !important;
+        color: #1a1a1a !important;
+        font-family: 'Inter', sans-serif !important;
+        font-size: 15px !important;
+        border-radius: 10px !important;
+        padding: 12px 14px !important;
         transition: border-color 0.2s, box-shadow 0.2s;
     }
-    .login-container .stTextInput input:focus {
-        border-color: #FFFFFF !important;
-        box-shadow: 0 0 0 1px rgba(255,255,255,0.25), 0 0 12px rgba(255,255,255,0.08) !important;
+    .login-card .stTextInput input::placeholder {
+        color: #aaa !important;
     }
-    .login-container .stButton button {
-        width: 100%; background: #FFFFFF !important; color: #0C0C0C !important;
-        font-family: 'Space Grotesk', sans-serif !important; font-weight: 700 !important;
-        font-size: 0.75rem !important; letter-spacing: 0.1em !important;
-        text-transform: uppercase !important; border: none !important;
-        border-radius: 0 !important; padding: 10px !important; margin-top: 16px;
-        transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
+    .login-card .stTextInput input:focus {
+        border-color: #0a0a0a !important;
+        box-shadow: 0 0 0 3px rgba(10,10,10,0.08) !important;
+    }
+    /* SIGN IN 按钮 — 黑色 */
+    .login-card .stButton button {
+        width: 100%;
+        background: #0a0a0a !important;
+        color: #FFFFFF !important;
+        font-family: 'Inter', sans-serif !important;
+        font-weight: 700 !important;
+        font-size: 14px !important;
+        letter-spacing: 0.12em !important;
+        text-transform: uppercase !important;
+        border: none !important;
+        border-radius: 10px !important;
+        padding: 14px !important;
+        margin-top: 8px;
+        transition: background 0.2s, transform 0.15s, box-shadow 0.15s;
         position: relative; z-index: 1;
     }
-    .login-container .stButton button:hover {
-        background: #e0e0e0 !important;
+    .login-card .stButton button:hover {
+        background: #222 !important;
         transform: translateY(-1px);
-        box-shadow: 0 4px 16px rgba(255,255,255,0.25);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.3);
     }
-    .login-container .stButton button:active {
+    .login-card .stButton button:active {
         transform: translateY(0px);
-        box-shadow: 0 1px 4px rgba(255,255,255,0.15);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
     }
+    /* 隐藏 Streamlit 默认 label */
+    .login-card .stTextInput label,
+    .login-card .stButton label { display: none !important; }
+
     /* ── 移动端适配 ── */
     @media (max-width: 768px) {
-        .login-container { max-width: 90vw; padding: 24px 20px; margin-top: 10vh; }
-        .login-title { font-size: 1rem; }
-        .login-subtitle { font-size: 0.5rem; }
+        .login-card { max-width: 90vw; padding: 36px 24px 28px; margin-top: 8vh; }
+        .login-logo-area .brand-name { font-size: 24px; }
     }
     @media (max-width: 480px) {
-        .login-container { max-width: 95vw; padding: 20px 16px; margin-top: 6vh; }
-        .login-title { font-size: 0.9rem; }
+        .login-card { max-width: 95vw; padding: 28px 20px 24px; margin-top: 5vh; }
     }
     </style>""", unsafe_allow_html=True)
 
@@ -432,39 +432,39 @@ def _render_login_page():
     except Exception:
         pass
 
-    _horse_img = f'<img class="title-horse" src="data:image/png;base64,{_login_logo_b64}" />' if _login_logo_b64 else ''
+    _horse_logo = (
+        f'<img class="horse-logo" src="data:image/png;base64,{_login_logo_b64}" />'
+        if _login_logo_b64
+        else '<div class="horse-icon-fallback">\U0001F40E</div>'
+    )
 
-    # Login form — 居中容器（只有一个马logo，在MRARFAI旁边）
+    # ── 白色卡片 HTML ──
     st.markdown(f"""
-    <div class="login-container">
-        <div class="login-logo">
-            <div>
-                <div class="login-title">{_horse_img}MRARFAI</div>
-                <div class="login-subtitle">V10.0 · Enterprise Agent Platform</div>
-            </div>
+    <div class="login-card">
+        <div class="login-logo-area">
+            {_horse_logo}
+            <div class="brand-name">MRARFAI</div>
+            <div class="brand-sub">Enterprise Agent Platform</div>
         </div>
-        <div class="login-badge">
-            <span class="badge-dot"></span>
-            SECURE ACCESS · V10.0
-        </div>
+        <div class="login-divider"></div>
     """, unsafe_allow_html=True)
 
-    # 用 columns 居中 input 区域
-    col1, col2, col3 = st.columns([1.2, 1, 1.2])
+    # 用 columns 让输入框在卡片内居中
+    col1, col2, col3 = st.columns([0.6, 2, 0.6])
     with col2:
         st.markdown('<div class="login-label">USERNAME</div>', unsafe_allow_html=True)
         username = st.text_input("用户名", label_visibility="collapsed", key="login_user",
-                                  placeholder="username")
+                                  placeholder="Enter username")
 
         st.markdown('<div class="login-label">PASSWORD</div>', unsafe_allow_html=True)
         password = st.text_input("密码", type="password", label_visibility="collapsed",
-                                  key="login_pass", placeholder="••••••••")
+                                  key="login_pass", placeholder="Enter password")
 
         login_clicked = st.button("SIGN IN", key="login_btn", use_container_width=True)
 
         if login_clicked:
             if not username or not password:
-                st.markdown('<div class="login-error">⚠ 请输入用户名和密码</div>',
+                st.markdown('<div class="login-error">\u26a0 Please enter username and password</div>',
                            unsafe_allow_html=True)
             else:
                 user = authenticate(username, password)
@@ -474,13 +474,22 @@ def _render_login_page():
                     st.session_state["auth_last_activity"] = datetime.now().isoformat()
                     st.rerun()
                 else:
-                    st.markdown('<div class="login-error">⚠ 用户名或密码错误</div>',
+                    st.markdown('<div class="login-error">\u26a0 Invalid username or password</div>',
                                unsafe_allow_html=True)
 
     st.markdown("""
-        <div class="login-footer">
-            © 2026 MRARFAI · Powered by Multi-Agent Intelligence
+        <div class="login-links">
+            <a href="#">Forgot Password?</a>
+            <span class="sep">|</span>
+            <a href="#">Contact Support</a>
         </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # 卡片外页脚
+    st.markdown("""
+    <div class="login-footer">
+        &copy; 2024 MRARFAI &middot; Powered by Multi-Agent Intelligence
     </div>
     """, unsafe_allow_html=True)
 
