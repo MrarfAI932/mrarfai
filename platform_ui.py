@@ -335,7 +335,7 @@ def render_agents(gateway):
     }
     agent_colors = {
         "sales": "#FFFFFF", "risk": "#CCCCCC", "strategist": "#AAAAAA",
-        "procurement": "#999999", "quality": "#BBBBBB", "finance": "#DDDDDD", "market": "#888888",
+        "procurement": "#A1A1AA", "quality": "#BBBBBB", "finance": "#DDDDDD", "market": "#888888",
     }
 
     cols = st.columns(3)

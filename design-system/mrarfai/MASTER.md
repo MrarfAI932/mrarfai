@@ -7,8 +7,8 @@
 ---
 
 **Project:** MRARFAI
-**Generated:** 2026-02-15 23:55:47
-**Category:** Financial Dashboard
+**Generated:** 2026-02-16 00:01:34
+**Category:** Podcast Platform
 
 ---
 
@@ -18,24 +18,24 @@
 
 | Role | Hex | CSS Variable |
 |------|-----|--------------|
-| Primary | `#0F172A` | `--color-primary` |
-| Secondary | `#1E293B` | `--color-secondary` |
-| CTA/Accent | `#22C55E` | `--color-cta` |
-| Background | `#020617` | `--color-background` |
-| Text | `#F8FAFC` | `--color-text` |
+| Primary | `#18181B` | `--color-primary` |
+| Secondary | `#27272A` | `--color-secondary` |
+| CTA/Accent | `#F8FAFC` | `--color-cta` |
+| Background | `#000000` | `--color-background` |
+| Text | `#FAFAFA` | `--color-text` |
 
-**Color Notes:** Dark bg + green positive indicators
+**Color Notes:** Pure black + white contrast
 
 ### Typography
 
-- **Heading Font:** Inter
-- **Body Font:** Inter
-- **Mood:** minimal, clean, swiss, functional, neutral, professional
-- **Google Fonts:** [Inter + Inter](https://fonts.google.com/share?selection.family=Inter:wght@300;400;500;600;700)
+- **Heading Font:** JetBrains Mono
+- **Body Font:** IBM Plex Sans
+- **Mood:** code, developer, technical, precise, functional, hacker
+- **Google Fonts:** [JetBrains Mono + IBM Plex Sans](https://fonts.google.com/share?selection.family=IBM+Plex+Sans:wght@300;400;500;600;700|JetBrains+Mono:wght@400;500;600;700)
 
 **CSS Import:**
 ```css
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 ```
 
 ### Spacing Variables
@@ -68,7 +68,7 @@
 ```css
 /* Primary Button */
 .btn-primary {
-  background: #22C55E;
+  background: #F8FAFC;
   color: white;
   padding: 12px 24px;
   border-radius: 8px;
@@ -85,8 +85,8 @@
 /* Secondary Button */
 .btn-secondary {
   background: transparent;
-  color: #0F172A;
-  border: 2px solid #0F172A;
+  color: #18181B;
+  border: 2px solid #18181B;
   padding: 12px 24px;
   border-radius: 8px;
   font-weight: 600;
@@ -99,7 +99,7 @@
 
 ```css
 .card {
-  background: #020617;
+  background: #000000;
   border-radius: 12px;
   padding: 24px;
   box-shadow: var(--shadow-md);
@@ -125,9 +125,9 @@
 }
 
 .input:focus {
-  border-color: #0F172A;
+  border-color: #18181B;
   outline: none;
-  box-shadow: 0 0 0 3px #0F172A20;
+  box-shadow: 0 0 0 3px #18181B20;
 }
 ```
 
@@ -163,18 +163,18 @@
 
 ### Page Pattern
 
-**Pattern Name:** Minimal Single Column
+**Pattern Name:** App Store Style Landing
 
-- **Conversion Strategy:** Single CTA focus. Large typography. Lots of whitespace. No nav clutter. Mobile-first.
-- **CTA Placement:** Center, large CTA button
-- **Section Order:** 1. Hero headline, 2. Short description, 3. Benefit bullets (3 max), 4. CTA, 5. Footer
+- **Conversion Strategy:** Show real screenshots. Include ratings (4.5+ stars). QR code for mobile. Platform-specific CTAs.
+- **CTA Placement:** Download buttons prominent (App Store + Play Store) throughout
+- **Section Order:** 1. Hero with device mockup, 2. Screenshots carousel, 3. Features with icons, 4. Reviews/ratings, 5. Download CTAs
 
 ---
 
 ## Anti-Patterns (Do NOT Use)
 
-- ❌ Light mode default
-- ❌ Slow rendering
+- ❌ Poor audio player
+- ❌ Cluttered layout
 
 ### Additional Forbidden Patterns
 

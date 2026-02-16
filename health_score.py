@@ -221,7 +221,7 @@ def compute_health_scores(data: dict, results: dict) -> list:
 def _grade_color(grade):
     return {
         'A': '#FFFFFF', 'B': '#CCCCCC',
-        'C': '#AAAAAA', 'D': '#888888', 'F': '#666666',
+        'C': '#AAAAAA', 'D': '#888888', 'F': '#71717A',
     }.get(grade, '#888888')
 
 

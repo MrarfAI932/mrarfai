@@ -26,21 +26,21 @@ BRAND_CONFIG = {
 
     # Theme — Dark + neutral grays
     "colors": {
-        "primary": "#EDEDED",
-        "primary_light": "#999999",
-        "secondary": "#666666",
-        "accent": "#EDEDED",
-        "success": "#EDEDED",
-        "warning": "#999999",
+        "primary": "#FAFAFA",
+        "primary_light": "#A1A1AA",
+        "secondary": "#71717A",
+        "accent": "#FAFAFA",
+        "success": "#FAFAFA",
+        "warning": "#A1A1AA",
         "danger": "#555555",
-        "bg_dark": "#050505",
+        "bg_dark": "#000000",
         "bg_base": "#0A0A0A",
-        "bg_card": "#111111",
+        "bg_card": "#121212",
         "bg_overlay": "#1C1C1C",
-        "text_primary": "#EDEDED",
-        "text_secondary": "#999999",
-        "text_tertiary": "#666666",
-        "text_muted": "#444444",
+        "text_primary": "#FAFAFA",
+        "text_secondary": "#A1A1AA",
+        "text_tertiary": "#71717A",
+        "text_muted": "#52525B",
     },
 
     # 功能开关（SaaS化：不同客户开放不同功能）
@@ -185,7 +185,7 @@ def render_brand_settings():
     <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px;">
         <div style="font-size:24px;">🎨</div>
         <div>
-            <div style="font-size:18px; font-weight:700; color:#FFFFFF; font-family:'Inter',sans-serif;">品牌与白标配置</div>
+            <div style="font-size:18px; font-weight:700; color:#FFFFFF; font-family:'IBM Plex Sans',sans-serif;">品牌与白标配置</div>
             <div style="font-size:14px; color:#707070;">
                 修改品牌信息，一键变成你的产品
             </div>
@@ -238,7 +238,7 @@ def render_brand_settings():
             st.markdown(f"""
             <div style="padding:12px; background:{color}15; border:1px solid {color}30;
                  border-radius:0; text-align:center; cursor:pointer;">
-                <div style="font-size:19px; margin-bottom:4px; font-family:'Inter',sans-serif;">{name}</div>
+                <div style="font-size:19px; margin-bottom:4px; font-family:'IBM Plex Sans',sans-serif;">{name}</div>
                 <div style="width:100%; height:4px; background:{color};"></div>
             </div>
             """, unsafe_allow_html=True)
@@ -256,7 +256,7 @@ def render_brand_settings():
          border:1px solid rgba(255,255,255,0.12);
          border-radius:0;">
         <div style="font-size:21px; font-weight:800; color:{BRAND_CONFIG['colors']['text_primary']};
-             font-family:'Inter',sans-serif;">
+             font-family:'IBM Plex Sans',sans-serif;">
             {BRAND_CONFIG['logo_emoji']} {BRAND_CONFIG['company_name']}
         </div>
         <div style="font-size:14px; color:{BRAND_CONFIG['colors']['text_secondary']};
@@ -266,7 +266,7 @@ def render_brand_settings():
         <div style="margin-top:12px; display:flex; gap:8px;">
             <div style="padding:4px 12px; background:{BRAND_CONFIG['colors']['primary']};
                  border-radius:0; font-size:13px; color:#060606; font-weight:600;
-                 font-family:'Inter',sans-serif; letter-spacing:0.5px;">
+                 font-family:'IBM Plex Sans',sans-serif; letter-spacing:0.5px;">
                 {BRAND_CONFIG['version']}
             </div>
             <div style="padding:4px 12px; background:rgba(255,255,255,0.06);

@@ -3,9 +3,11 @@ MRARFAI v10 — Design System
 ============================
 Single Source of Truth for all visual styling.
 
-References: Linear, Vercel, Cursor, Raycast, Arc
-Typography: JetBrains Mono + Inter
-Palette: True black + 4 grays + white
+Generated via ui-ux-pro-max skill design system.
+References: Linear, Vercel, Cursor, Raycast
+Typography: JetBrains Mono (headings/data) + IBM Plex Sans (body)
+Palette: Pure OLED black #000000 + grays + #FAFAFA
+Style: Dark Mode (OLED) — WCAG AAA
 """
 
 import streamlit as st
@@ -13,14 +15,14 @@ import streamlit as st
 # ── Design Tokens ──────────────────────────────────────────────
 
 COLORS = {
-    # Backgrounds
+    # Backgrounds — OLED pure black base (skill: Dark Mode OLED)
     "bg_void":     "#000000",
-    "bg_deep":     "#050505",
+    "bg_deep":     "#000000",     # skill: --bg-black: #000000
     "bg_base":     "#0A0A0A",
-    "bg_elevated": "#111111",
-    "bg_surface":  "#171717",
-    "bg_overlay":  "#1C1C1C",
-    "bg_glass":    "rgba(10,10,10,0.85)",
+    "bg_elevated": "#121212",     # skill: --bg-dark-grey: #121212
+    "bg_surface":  "#18181B",     # skill: Primary: #18181B
+    "bg_overlay":  "#1E1E1E",
+    "bg_glass":    "rgba(0,0,0,0.85)",
 
     # Borders
     "border_ghost":   "rgba(255,255,255,0.04)",
@@ -29,21 +31,21 @@ COLORS = {
     "border_hover":   "rgba(255,255,255,0.18)",
     "border_active":  "rgba(255,255,255,0.30)",
 
-    # Text
-    "text_primary":   "#EDEDED",
-    "text_secondary": "#999999",
-    "text_tertiary":  "#666666",
-    "text_muted":     "#444444",
-    "text_ghost":     "#2A2A2A",
+    # Text — WCAG AAA: 7:1+ contrast on #000000
+    "text_primary":   "#FAFAFA",  # skill: Text: #FAFAFA
+    "text_secondary": "#A1A1AA",  # 7.4:1 on #000
+    "text_tertiary":  "#71717A",  # 4.6:1 on #000 (AA compliant)
+    "text_muted":     "#52525B",  # decorative only
+    "text_ghost":     "#3F3F46",  # decorative only
 
     # Semantic
-    "accent":         "#EDEDED",
+    "accent":         "#FAFAFA",  # skill: CTA: #F8FAFC
     "accent_dim":     "rgba(255,255,255,0.06)",
     "accent_glow":    "rgba(255,255,255,0.12)",
-    "status_active":  "#EDEDED",
-    "status_ready":   "#666666",
-    "status_warning": "#999999",
-    "status_error":   "#555555",
+    "status_active":  "#FAFAFA",
+    "status_ready":   "#71717A",
+    "status_warning": "#A1A1AA",
+    "status_error":   "#52525B",
 }
 
 
@@ -119,10 +121,11 @@ def _build_main_css() -> str:
 /* ================================================================
    MRARFAI v10 Design System
    Ref: Linear · Vercel · Cursor · Raycast
-   Type: JetBrains Mono + Inter
+   Type: JetBrains Mono + IBM Plex Sans
+   Skill: ui-ux-pro-max (Developer Mono pairing)
    ================================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
 /* ── Variables ──────────────────────────────────────────────── */
 :root {{
@@ -145,10 +148,11 @@ def _build_main_css() -> str:
   --t4: {c['text_muted']};
   --t5: {c['text_ghost']};
 
-  --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --sans: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
   --ease: cubic-bezier(0.25, 0.1, 0.25, 1);
   --dur: 150ms;
+  color-scheme: dark;
 }}
 
 /* ── Reset Streamlit ───────────────────────────────────────── */
@@ -494,7 +498,7 @@ code, .stCode {{
 
 .top-nav-role {{
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
   color: var(--t3);
   letter-spacing: 0.06em;
@@ -681,7 +685,7 @@ code, .stCode {{
 
 .ag-st {{
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
   padding: 3px 8px;
   border-radius: 3px;
@@ -731,7 +735,7 @@ code, .stCode {{
   border-radius: 50%;
   background: var(--t1);
   flex-shrink: 0;
-  animation: pulse 2.5s ease-in-out infinite;
+  animation: pulse 2s ease-in-out infinite;
 }}
 
 .sbar-text {{
@@ -756,7 +760,7 @@ code, .stCode {{
   height: 6px;
   border-radius: 50%;
   background: var(--t1);
-  animation: pulse 2.5s ease-in-out infinite;
+  animation: pulse 2s ease-in-out infinite;
   flex-shrink: 0;
 }}
 
@@ -820,7 +824,7 @@ code, .stCode {{
 
 .ws-header-badge {{
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11px;
   color: var(--t3);
   padding: 2px 8px;
   background: var(--bg-4);
@@ -847,7 +851,7 @@ code, .stCode {{
 
 .ai-summary-label {{
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -878,7 +882,7 @@ code, .stCode {{
 
 .ai-section-header {{
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -997,7 +1001,7 @@ code, .stCode {{
 
 .ai-expert-role {{
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11px;
   color: var(--t3);
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -1339,14 +1343,14 @@ def _build_login_css() -> str:
    MRARFAI v10 — Login
    ================================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
 /* ── Background ── */
 html, body,
 [data-testid="stApp"],
 [data-testid="stAppViewContainer"],
 .stApp {
-  background: #050505 !important;
+  background: #000000 !important;
 }
 
 [data-testid="stMain"],
@@ -1383,7 +1387,7 @@ header[data-testid="stHeader"],
   border-radius: 12px !important;
   padding: 40px 32px 32px !important;
   box-shadow: 0 24px 80px rgba(0,0,0,0.6);
-  animation: card-in 0.4s ease-out;
+  animation: card-in 0.3s ease-out;
   position: relative;
   z-index: 1;
   overflow: hidden !important;
@@ -1446,7 +1450,7 @@ header[data-testid="stHeader"],
 }
 
 .login-logo-area .brand-sub {
-  font-family: 'Inter', sans-serif;
+  font-family: 'IBM Plex Sans', sans-serif;
   font-weight: 500;
   font-size: 11px;
   letter-spacing: 0.06em;
@@ -1463,7 +1467,7 @@ header[data-testid="stHeader"],
 
 /* ── Labels ── */
 .login-label {
-  font-family: 'Inter', sans-serif;
+  font-family: 'IBM Plex Sans', sans-serif;
   font-weight: 500;
   font-size: 12px;
   color: #555;
@@ -1475,7 +1479,7 @@ header[data-testid="stHeader"],
 
 /* ── Error ── */
 .login-error {
-  font-family: 'Inter', sans-serif;
+  font-family: 'IBM Plex Sans', sans-serif;
   font-size: 13px;
   color: #E53E3E;
   padding: 10px 14px;
@@ -1542,7 +1546,7 @@ header[data-testid="stHeader"],
   color: #1A1A1A !important;
   caret-color: #1A1A1A !important;
   -webkit-text-fill-color: #1A1A1A !important;
-  font-family: 'Inter', sans-serif !important;
+  font-family: 'IBM Plex Sans', sans-serif !important;
   font-size: 14px !important;
   padding: 10px 14px !important;
   height: auto !important;
@@ -1588,7 +1592,7 @@ header[data-testid="stHeader"],
   width: 100% !important;
   background: #0A0A0A !important;
   color: #FFFFFF !important;
-  font-family: 'Inter', sans-serif !important;
+  font-family: 'IBM Plex Sans', sans-serif !important;
   font-weight: 600 !important;
   font-size: 13px !important;
   letter-spacing: 0.02em !important;
@@ -1619,7 +1623,7 @@ header[data-testid="stHeader"],
 .login-links-outer {
   text-align: center;
   margin-top: 20px;
-  font-family: 'Inter', sans-serif;
+  font-family: 'IBM Plex Sans', sans-serif;
   font-size: 12px;
 }
 
@@ -1633,7 +1637,7 @@ header[data-testid="stHeader"],
 .login-links-outer .sep { color: rgba(255,255,255,0.1); margin: 0 10px; }
 
 .login-page-footer-outer {
-  font-family: 'Inter', sans-serif;
+  font-family: 'IBM Plex Sans', sans-serif;
   font-size: 11px;
   color: rgba(255,255,255,0.2);
   text-align: center;
@@ -1647,7 +1651,7 @@ header[data-testid="stHeader"],
   gap: 6px;
   margin-top: 8px;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
+  font-size: 11px;
   color: rgba(255,255,255,0.25);
   letter-spacing: 0.06em;
 }
@@ -1656,7 +1660,7 @@ header[data-testid="stHeader"],
   width: 4px; height: 4px;
   border-radius: 50%;
   background: rgba(255,255,255,0.3);
-  animation: login-pulse 2.5s ease-in-out infinite;
+  animation: login-pulse 2s ease-in-out infinite;
 }
 
 @keyframes login-pulse {

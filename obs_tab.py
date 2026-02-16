@@ -78,13 +78,13 @@ def _render_overview(metrics, days):
                      "次", "#CCCCCC")
     with c2:
         avg_s = overview['avg_latency_ms'] / 1000
-        color = "#FFFFFF" if avg_s < 5 else "#CCCCCC" if avg_s < 15 else "#999999"
+        color = "#FFFFFF" if avg_s < 5 else "#CCCCCC" if avg_s < 15 else "#A1A1AA"
         _metric_card("⏱️ 平均延迟", f"{avg_s:.1f}", "秒", color)
     with c3:
         _metric_card("🪙 总成本", f"${overview['total_cost_usd']:.4f}",
                      "USD", "#AAAAAA")
     with c4:
-        err_color = "#FFFFFF" if overview['error_rate'] < 5 else "#999999"
+        err_color = "#FFFFFF" if overview['error_rate'] < 5 else "#A1A1AA"
         _metric_card("❌ 错误率", f"{overview['error_rate']}", "%", err_color)
 
     st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
@@ -199,7 +199,7 @@ def _render_trends(metrics, days):
         errors = item['errors'] or 0
 
         bar_width = min(queries * 5, 100)
-        error_tag = f" <span style='color:#999999'>({errors}错误)</span>" if errors > 0 else ""
+        error_tag = f" <span style='color:#A1A1AA'>({errors}错误)</span>" if errors > 0 else ""
 
         st.markdown(f"""
         <div style="display:flex; align-items:center; margin:3px 0;">
@@ -264,7 +264,7 @@ def _render_trace_detail(metrics, days):
                     icon = {"trace": "🔄", "data_query": "📊", "routing": "🧭",
                             "llm_call": "🤖", "agent": "🧑‍💼", "reporter": "🖊️",
                             "kg_lookup": "📚"}.get(kind, "▪️")
-                    s_color = "#FFFFFF" if sstatus == "ok" else "#999999"
+                    s_color = "#FFFFFF" if sstatus == "ok" else "#A1A1AA"
 
                     tok_str = f" · {stok} tok · ${scost:.4f}" if stok > 0 else ""
 

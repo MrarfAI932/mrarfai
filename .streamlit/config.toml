@@ -1,5 +1,5 @@
-# MRARFAI v10 — Dark Theme
-# Inter + JetBrains Mono
+# MRARFAI v10 — Dark Theme (OLED)
+# IBM Plex Sans + JetBrains Mono (ui-ux-pro-max skill)
 
 [server]
 address = "0.0.0.0"
@@ -14,15 +14,15 @@ gatherUsageStats = false
 
 [theme]
 base = "dark"
-primaryColor = "#EDEDED"
-backgroundColor = "#050505"
-secondaryBackgroundColor = "#111111"
-textColor = "#EDEDED"
+primaryColor = "#FAFAFA"
+backgroundColor = "#000000"
+secondaryBackgroundColor = "#121212"
+textColor = "#FAFAFA"
 font = "sans serif"
 
 [[theme.fontFaces]]
-family = "Inter"
-url = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+family = "IBM Plex Sans"
+url = "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap"
 
 [[theme.fontFaces]]
 family = "JetBrains Mono"
