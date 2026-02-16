@@ -8,6 +8,7 @@ import sys
 import os
 import uuid
 import time
+import tempfile
 from typing import Dict, List, Optional
 
 from fastapi import APIRouter, Depends, UploadFile, File
@@ -199,20 +200,39 @@ async def upload_file(
     ext = file_name.lower().rsplit(".", 1)[-1] if "." in file_name else ""
     if ext in ("xlsx", "xls"):
         try:
-            from analyze_clients_v2 import run_full_analysis
-            # run_full_analysis 需要两个 bytes: revenue + quantity
-            # 简化处理：使用同一个文件
-            data, results, bench, forecast = run_full_analysis(file_bytes, file_bytes)
+            from analyze_clients_v2 import SprocommDataLoaderV2, DeepAnalyzer
+
+            # 保存到临时文件（SprocommDataLoaderV2 需要文件路径）
+            tmp_dir = tempfile.mkdtemp(prefix="mrarfai_")
+            tmp_path = os.path.join(tmp_dir, file_name)
+            with open(tmp_path, "wb") as f:
+                f.write(file_bytes)
+
+            # 用同一个文件同时作为金额和数量报表
+            loader = SprocommDataLoaderV2(tmp_path, tmp_path)
+            data = loader.load_all()
+
+            analyzer = DeepAnalyzer(data)
+            results = analyzer.run_all()
+
             _analysis_cache = {
                 "data": data,
                 "results": results,
-                "bench": bench,
-                "forecast": forecast,
             }
-            analysis_result = f"[Excel] 分析完成，识别到 {len(results.get('客户分级', []))} 个客户分级，{len(results.get('流失预警', []))} 个流失预警。"
+
+            client_count = len(data.get("客户金额", []))
+            module_count = len(data)
+            analysis_result = f"[Excel] 分析完成，加载 {module_count} 个数据模块，识别到 {client_count} 个客户。"
             confidence = 95.2
+
+            # 清理临时文件
+            try:
+                os.remove(tmp_path)
+                os.rmdir(tmp_dir)
+            except OSError:
+                pass
         except Exception as e:
-            analysis_result = f"[Excel] 文件已接收，分析遇到问题: {str(e)[:100]}"
+            analysis_result = f"[Excel] 文件已接收，分析遇到问题: {str(e)[:200]}"
             confidence = 60.0
     else:
         analysis_result = f"[{ext.upper() or '文件'}] 文件已上传，已分配给 {', '.join(assigned_agents)} 进行分析。"
