@@ -119,10 +119,9 @@ def _build_main_css() -> str:
     c = COLORS
     return f"""<style>
 /* ================================================================
-   MRARFAI v10 Design System
-   Ref: Linear · Vercel · Cursor · Raycast
+   MRARFAI v10 Design System — Major Visual Overhaul
+   Ref: Linear · Vercel · Cursor · Raycast · Arc
    Type: JetBrains Mono + IBM Plex Sans
-   Skill: ui-ux-pro-max (Developer Mono pairing)
    ================================================================ */
 
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
@@ -150,8 +149,10 @@ def _build_main_css() -> str:
 
   --sans: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
-  --ease: cubic-bezier(0.25, 0.1, 0.25, 1);
-  --dur: 150ms;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out: cubic-bezier(0.33, 1, 0.68, 1);
+  --dur: 200ms;
+  --dur-slow: 300ms;
   color-scheme: dark;
 }}
 
@@ -172,49 +173,63 @@ button[kind="headerNoPadding"] {{
   display: none !important;
 }}
 
-/* ── Base ──────────────────────────────────────────────────── */
+/* ── Base — Noise texture + dot grid ──────────────────────── */
 .stApp {{
   background: var(--bg-1) !important;
   color: var(--t2) !important;
+  position: relative;
+}}
+
+.stApp::before {{
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-image:
+    radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px);
+  background-size: 24px 24px;
+  pointer-events: none;
+  z-index: 0;
 }}
 
 .block-container {{
   padding: 1rem 2.5rem 4rem !important;
   max-width: 1400px !important;
+  position: relative;
+  z-index: 1;
 }}
 
 /* ── Typography ────────────────────────────────────────────── */
 .stMarkdown p {{
   font-family: var(--sans) !important;
   color: var(--t2) !important;
-  font-size: 13px !important;
-  line-height: 1.6 !important;
+  font-size: 13.5px !important;
+  line-height: 1.65 !important;
   letter-spacing: -0.01em !important;
 }}
 
 h1 {{
   font-family: var(--sans) !important;
-  font-weight: 600 !important;
+  font-weight: 700 !important;
   color: var(--t1) !important;
-  letter-spacing: -0.03em !important;
-  font-size: 24px !important;
-  line-height: 1.3 !important;
+  letter-spacing: -0.04em !important;
+  font-size: 28px !important;
+  line-height: 1.2 !important;
 }}
 
 h2 {{
   font-family: var(--sans) !important;
   font-weight: 600 !important;
   color: var(--t1) !important;
-  letter-spacing: -0.02em !important;
-  font-size: 18px !important;
+  letter-spacing: -0.03em !important;
+  font-size: 20px !important;
 }}
 
 h3, h4 {{
   font-family: var(--mono) !important;
   font-weight: 500 !important;
-  color: var(--t2) !important;
+  color: var(--t3) !important;
   font-size: 11px !important;
-  letter-spacing: 0.08em !important;
+  letter-spacing: 0.1em !important;
   text-transform: uppercase !important;
 }}
 
@@ -228,14 +243,25 @@ code, .stCode {{
   color: var(--t3) !important;
 }}
 
-/* ── Tabs ──────────────────────────────────────────────────── */
+/* ── Dividers ─────────────────────────────────────────────── */
+hr, [data-testid="stHorizontalBlock"] + hr {{
+  border: none !important;
+  height: 1px !important;
+  background: linear-gradient(90deg, transparent, var(--b2), transparent) !important;
+  margin: 24px 0 !important;
+}}
+
+/* ── Tabs — Floating pill style ───────────────────────────── */
 .stTabs [data-baseweb="tab-list"] {{
-  background: transparent !important;
-  gap: 0 !important;
-  border-bottom: 1px solid var(--b1) !important;
-  padding: 0 !important;
+  background: var(--bg-2) !important;
+  gap: 2px !important;
+  border-bottom: none !important;
+  border: 1px solid var(--b1) !important;
+  border-radius: 10px !important;
+  padding: 3px !important;
   overflow-x: auto;
   scrollbar-width: none;
+  width: fit-content;
 }}
 .stTabs [data-baseweb="tab-list"]::-webkit-scrollbar {{ display: none; }}
 
@@ -243,72 +269,83 @@ code, .stCode {{
   background: transparent !important;
   color: var(--t3) !important;
   border: none !important;
-  border-bottom: 1px solid transparent !important;
-  border-radius: 0 !important;
-  padding: 10px 16px !important;
+  border-bottom: none !important;
+  border-radius: 8px !important;
+  padding: 8px 16px !important;
   font-family: var(--sans) !important;
   font-size: 13px !important;
   font-weight: 500 !important;
   white-space: nowrap !important;
-  transition: color var(--dur) var(--ease) !important;
+  transition: all var(--dur) var(--ease) !important;
 }}
 
 .stTabs [data-baseweb="tab"]:hover {{
-  color: var(--t2) !important;
+  color: var(--t1) !important;
+  background: var(--bg-3) !important;
 }}
 
 .stTabs [data-baseweb="tab"][aria-selected="true"],
 .stTabs [aria-selected="true"] {{
   color: var(--t1) !important;
-  border-bottom: 1px solid var(--t1) !important;
-  background: transparent !important;
+  background: var(--bg-4) !important;
+  border-bottom: none !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04) !important;
 }}
 
-/* ── Buttons ───────────────────────────────────────────────── */
+/* Hide tab highlight bar */
+.stTabs [data-baseweb="tab-highlight"] {{
+  display: none !important;
+}}
+
+/* ── Buttons — Glow on hover ──────────────────────────────── */
 .stButton > button {{
   background: var(--bg-3) !important;
   color: var(--t1) !important;
   border: 1px solid var(--b2) !important;
-  border-radius: 6px !important;
+  border-radius: 8px !important;
   font-family: var(--sans) !important;
   font-size: 13px !important;
   font-weight: 500 !important;
-  padding: 8px 16px !important;
+  padding: 8px 18px !important;
   transition: all var(--dur) var(--ease) !important;
   cursor: pointer !important;
+  position: relative;
 }}
 
 .stButton > button:hover {{
   background: var(--bg-4) !important;
   border-color: var(--b3) !important;
+  box-shadow: 0 0 20px rgba(255,255,255,0.04), 0 4px 12px rgba(0,0,0,0.3) !important;
+  transform: translateY(-1px) !important;
 }}
 
 .stButton > button:active {{
-  transform: scale(0.98) !important;
+  transform: translateY(0) scale(0.98) !important;
+  box-shadow: none !important;
 }}
 
-/* ── Inputs ────────────────────────────────────────────────── */
+/* ── Inputs — Glowing focus ───────────────────────────────── */
 .stTextInput input,
 .stTextArea textarea,
 .stSelectbox > div > div,
 .stNumberInput input {{
   background: var(--bg-2) !important;
   color: var(--t1) !important;
-  border: 1px solid var(--b2) !important;
-  border-radius: 6px !important;
+  border: 1px solid var(--b1) !important;
+  border-radius: 8px !important;
   font-family: var(--sans) !important;
   font-size: 13px !important;
   caret-color: var(--t1) !important;
-  transition: border-color var(--dur) var(--ease) !important;
+  transition: all var(--dur) var(--ease) !important;
 }}
 
 .stTextInput input:focus,
 .stTextArea textarea:focus {{
   border-color: var(--b4) !important;
-  box-shadow: 0 0 0 3px rgba(255,255,255,0.04) !important;
+  box-shadow: 0 0 0 3px rgba(255,255,255,0.06), 0 0 20px rgba(255,255,255,0.03) !important;
 }}
 
-/* ── Chat ──────────────────────────────────────────────────── */
+/* ── Chat — Refined message cards ─────────────────────────── */
 [data-testid="stChatInput"] {{
   background: var(--bg-2) !important;
   border-top: 1px solid var(--b1) !important;
@@ -317,27 +354,35 @@ code, .stCode {{
 [data-testid="stChatInput"] textarea {{
   background: var(--bg-3) !important;
   color: var(--t1) !important;
-  border: 1px solid var(--b2) !important;
-  border-radius: 6px !important;
+  border: 1px solid var(--b1) !important;
+  border-radius: 10px !important;
   font-family: var(--sans) !important;
-  font-size: 13px !important;
+  font-size: 14px !important;
+  transition: all var(--dur) var(--ease) !important;
 }}
 
 [data-testid="stChatInput"] textarea:focus {{
-  border-color: var(--b4) !important;
+  border-color: var(--b3) !important;
+  box-shadow: 0 0 0 3px rgba(255,255,255,0.04) !important;
 }}
 
 [data-testid="stChatMessage"] {{
   background: transparent !important;
   border: none !important;
-  padding: 16px 0 !important;
+  padding: 20px 0 !important;
   border-bottom: 1px solid var(--b0) !important;
+  animation: msg-in 0.3s var(--ease-out);
+}}
+
+@keyframes msg-in {{
+  from {{ opacity: 0; transform: translateY(8px); }}
+  to {{ opacity: 1; transform: translateY(0); }}
 }}
 
 [data-testid="stChatMessage"] p {{
   font-family: var(--sans) !important;
   font-size: 14px !important;
-  line-height: 1.7 !important;
+  line-height: 1.75 !important;
   color: var(--t2) !important;
 }}
 
@@ -359,17 +404,29 @@ code, .stCode {{
   color: var(--t1) !important;
 }}
 
-/* ── Metrics ───────────────────────────────────────────────── */
+/* ── Metrics — Elevated cards ─────────────────────────────── */
 [data-testid="stMetric"] {{
   background: var(--bg-3) !important;
   border: 1px solid var(--b1) !important;
-  border-radius: 8px !important;
-  padding: 16px 20px !important;
-  transition: border-color var(--dur) var(--ease) !important;
+  border-radius: 12px !important;
+  padding: 20px 24px !important;
+  transition: all var(--dur) var(--ease) !important;
+  position: relative;
+  overflow: hidden;
+}}
+
+[data-testid="stMetric"]::before {{
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
 }}
 
 [data-testid="stMetric"]:hover {{
-  border-color: var(--b2) !important;
+  border-color: var(--b3) !important;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.3) !important;
+  transform: translateY(-2px);
 }}
 
 [data-testid="stMetricLabel"],
@@ -377,16 +434,17 @@ code, .stCode {{
   font-family: var(--sans) !important;
   font-size: 11px !important;
   font-weight: 500 !important;
-  letter-spacing: 0.04em !important;
+  letter-spacing: 0.06em !important;
   text-transform: uppercase !important;
   color: var(--t3) !important;
 }}
 
 [data-testid="stMetricValue"] {{
   font-family: var(--mono) !important;
-  font-weight: 600 !important;
+  font-weight: 700 !important;
   color: var(--t1) !important;
   letter-spacing: -0.02em !important;
+  font-size: 28px !important;
 }}
 
 [data-testid="stMetricDelta"] {{
@@ -395,7 +453,7 @@ code, .stCode {{
   font-weight: 500 !important;
 }}
 
-/* ── Expanders ─────────────────────────────────────────────── */
+/* ── Expanders — Sleek ────────────────────────────────────── */
 .streamlit-expanderHeader {{
   font-family: var(--sans) !important;
   font-size: 13px !important;
@@ -407,35 +465,40 @@ code, .stCode {{
 [data-testid="stExpander"] {{
   background: var(--bg-3) !important;
   border: 1px solid var(--b1) !important;
-  border-radius: 8px !important;
-  transition: border-color var(--dur) var(--ease) !important;
+  border-radius: 10px !important;
+  transition: all var(--dur) var(--ease) !important;
+  overflow: hidden;
 }}
 
 [data-testid="stExpander"]:hover {{
   border-color: var(--b2) !important;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.2) !important;
 }}
 
 /* ── File Uploader ─────────────────────────────────────────── */
 [data-testid="stFileUploader"],
 .stFileUploader {{
-  border: 1px dashed var(--b2) !important;
-  border-radius: 8px !important;
-  transition: border-color var(--dur) var(--ease) !important;
+  border: 2px dashed var(--b2) !important;
+  border-radius: 12px !important;
+  transition: all var(--dur) var(--ease) !important;
+  background: var(--bg-2) !important;
 }}
 
 [data-testid="stFileUploader"]:hover,
 .stFileUploader:hover {{
   border-color: var(--b3) !important;
+  background: var(--bg-3) !important;
+  box-shadow: 0 0 30px rgba(255,255,255,0.02) !important;
 }}
 
 /* ── DataFrames ────────────────────────────────────────────── */
 .stDataFrame {{
-  border-radius: 8px !important;
+  border-radius: 10px !important;
 }}
 
 .stDataFrame [data-testid="stDataFrameContainer"] {{
   border: 1px solid var(--b1) !important;
-  border-radius: 8px !important;
+  border-radius: 10px !important;
 }}
 
 /* ── Status Container ──────────────────────────────────────── */
@@ -448,42 +511,55 @@ code, .stCode {{
   line-height: 1.6 !important;
 }}
 
-/* ── Scrollbars ────────────────────────────────────────────── */
-::-webkit-scrollbar {{ width: 6px; height: 6px; }}
+/* ── Scrollbars — Thin and elegant ────────────────────────── */
+::-webkit-scrollbar {{ width: 5px; height: 5px; }}
 ::-webkit-scrollbar-track {{ background: transparent; }}
-::-webkit-scrollbar-thumb {{ background: var(--b1); border-radius: 3px; }}
+::-webkit-scrollbar-thumb {{ background: var(--b2); border-radius: 4px; }}
 ::-webkit-scrollbar-thumb:hover {{ background: var(--b3); }}
 
 /* ================================================================
    COMPONENTS
    ================================================================ */
 
-/* ── Top Nav ───────────────────────────────────────────────── */
+/* ── Top Nav — Frosted glass ──────────────────────────────── */
 .top-nav {{
   display: flex;
   align-items: center;
-  gap: 12px;
-  height: 48px;
-  padding: 0 20px;
-  background: var(--bg-2);
+  gap: 16px;
+  height: 52px;
+  padding: 0 24px;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(16px) saturate(1.5);
+  -webkit-backdrop-filter: blur(16px) saturate(1.5);
   border-bottom: 1px solid var(--b1);
-  margin: -1rem -2.5rem 24px;
+  margin: -1rem -2.5rem 28px;
+  position: relative;
+}}
+
+.top-nav::after {{
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.08) 50%, transparent 100%);
 }}
 
 .top-nav-brand {{
   font-family: var(--mono);
   font-weight: 700;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--t1);
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
 }}
 
 .top-nav-version {{
   font-family: var(--mono);
   font-size: 11px;
   color: var(--t4);
-  padding-left: 12px;
-  border-left: 1px solid var(--b1);
+  padding: 2px 8px;
+  background: var(--bg-4);
+  border-radius: 4px;
+  border: 1px solid var(--b1);
 }}
 
 .top-nav-user {{
@@ -493,154 +569,209 @@ code, .stCode {{
   margin-left: auto;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }}
 
 .top-nav-role {{
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
-  color: var(--t3);
-  letter-spacing: 0.06em;
+  color: var(--t2);
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  padding: 2px 8px;
+  padding: 3px 10px;
   background: var(--bg-4);
-  border-radius: 3px;
+  border: 1px solid var(--b2);
+  border-radius: 20px;
 }}
 
-/* ── Command Center ────────────────────────────────────────── */
+/* ── Command Center — Hero with gradient text ─────────────── */
 .cmd-hero {{
-  padding: 48px 0 32px;
-  max-width: 640px;
+  padding: 56px 0 40px;
+  max-width: 680px;
+  position: relative;
 }}
 
 .cmd-title {{
   font-family: var(--sans) !important;
-  font-size: 32px !important;
-  font-weight: 600 !important;
-  color: var(--t1) !important;
-  letter-spacing: -0.03em !important;
-  line-height: 1.2 !important;
-  margin: 0 0 8px !important;
+  font-size: 36px !important;
+  font-weight: 700 !important;
+  color: transparent !important;
+  background: linear-gradient(135deg, #FFFFFF 0%, #888888 100%) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  letter-spacing: -0.04em !important;
+  line-height: 1.15 !important;
+  margin: 0 0 12px !important;
 }}
 
 .cmd-sub {{
   font-family: var(--sans);
-  font-size: 14px;
+  font-size: 15px;
   color: var(--t3);
-  line-height: 1.5;
+  line-height: 1.6;
 }}
 
 .cmd-badge {{
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
+  gap: 8px;
+  padding: 6px 14px;
   background: var(--bg-3);
   border: 1px solid var(--b2);
-  border-radius: 4px;
+  border-radius: 20px;
   font-family: var(--mono);
   font-size: 11px;
   font-weight: 500;
   color: var(--t2);
-  margin-top: 16px;
+  margin-top: 20px;
+  transition: all var(--dur) var(--ease);
 }}
 
-/* ── Section Header ────────────────────────────────────────── */
+.cmd-badge:hover {{
+  border-color: var(--b3);
+  background: var(--bg-4);
+}}
+
+/* ── Section Header — With gradient line ──────────────────── */
 .sec-hdr {{
   font-family: var(--mono);
   font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--t3);
-  padding-bottom: 8px;
-  margin: 24px 0 12px;
+  padding-bottom: 10px;
+  margin: 32px 0 16px;
   border-bottom: 1px solid var(--b1);
+  position: relative;
 }}
 
-/* ── KPI Card ──────────────────────────────────────────────── */
+.sec-hdr::after {{
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 60px;
+  height: 1px;
+  background: linear-gradient(90deg, var(--t3), transparent);
+}}
+
+/* ── KPI Card — Elevated with gradient top edge ───────────── */
 .kpi-card {{
   background: var(--bg-3);
   border: 1px solid var(--b1);
-  border-radius: 8px;
-  padding: 16px 20px;
-  transition: border-color var(--dur) var(--ease);
+  border-radius: 12px;
+  padding: 20px 24px;
+  transition: all var(--dur) var(--ease);
+  position: relative;
+  overflow: hidden;
+}}
+
+.kpi-card::before {{
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent);
 }}
 
 .kpi-card:hover {{
-  border-color: var(--b2);
+  border-color: var(--b3);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  transform: translateY(-2px);
 }}
 
 .kpi-label {{
   font-family: var(--sans);
   font-size: 11px;
   font-weight: 500;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--t3);
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }}
 
 .kpi-value {{
   font-family: var(--mono);
-  font-size: 24px;
-  font-weight: 600;
+  font-size: 28px;
+  font-weight: 700;
   color: var(--t1);
   line-height: 1;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
 }}
 
 .kpi-icon {{
-  font-size: 14px;
-  margin-bottom: 8px;
-  opacity: 0.5;
+  font-size: 16px;
+  margin-bottom: 10px;
+  opacity: 0.4;
 }}
 
 .kpi-sub {{
   font-family: var(--mono);
   font-size: 11px;
   color: var(--t3);
-  margin-top: 6px;
+  margin-top: 8px;
 }}
 
 .kpi-delta {{
   font-family: var(--mono);
   font-size: 12px;
   font-weight: 500;
-  margin-top: 4px;
+  margin-top: 6px;
 }}
 .kpi-up {{ color: var(--t1); }}
 .kpi-down {{ color: var(--t3); }}
 
-/* ── Agent Cards ───────────────────────────────────────────── */
+/* ── Agent Cards — Glassmorphism with glow ────────────────── */
 .ag-card {{
-  background: var(--bg-3);
+  background: rgba(18,18,18,0.6);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   border: 1px solid var(--b1);
-  border-radius: 8px;
-  padding: 16px;
+  border-radius: 12px;
+  padding: 18px 20px;
   display: flex;
   align-items: center;
-  gap: 12px;
-  transition: border-color var(--dur) var(--ease);
+  gap: 14px;
+  transition: all var(--dur) var(--ease);
   cursor: pointer;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
+  position: relative;
+  overflow: hidden;
+}}
+
+.ag-card::before {{
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+  opacity: 0;
+  transition: opacity var(--dur) var(--ease);
 }}
 
 .ag-card:hover {{
   border-color: var(--b3);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.05);
+  transform: translateY(-2px);
+}}
+
+.ag-card:hover::before {{
+  opacity: 1;
 }}
 
 .ag-av {{
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
+  font-size: 18px;
   flex-shrink: 0;
   background: var(--bg-4);
-  border-radius: 8px;
+  border: 1px solid var(--b1);
+  border-radius: 10px;
 }}
 
 .ag-body {{
@@ -653,20 +784,21 @@ code, .stCode {{
   font-size: 14px;
   font-weight: 600;
   color: var(--t1);
+  letter-spacing: -0.01em;
 }}
 
 .ag-role {{
   font-family: var(--mono);
   font-size: 11px;
-  color: var(--t3);
-  margin-top: 2px;
+  color: var(--t4);
+  margin-top: 3px;
 }}
 
 .ag-desc {{
   font-family: var(--sans);
   font-size: 12px;
   color: var(--t3);
-  line-height: 1.4;
+  line-height: 1.5;
   margin-top: 4px;
 }}
 
@@ -685,22 +817,24 @@ code, .stCode {{
 
 .ag-st {{
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
-  padding: 3px 8px;
-  border-radius: 3px;
+  padding: 4px 10px;
+  border-radius: 20px;
   flex-shrink: 0;
   margin-left: auto;
+  letter-spacing: 0.04em;
 }}
 
 .ag-st.st-on {{
-  background: rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.08);
   color: var(--t1);
   border: 1px solid var(--b2);
+  box-shadow: 0 0 12px rgba(255,255,255,0.04);
 }}
 
 .ag-st.st-run {{
-  background: rgba(150,150,150,0.06);
+  background: rgba(150,150,150,0.08);
   color: var(--t2);
   border: 1px solid rgba(150,150,150,0.15);
 }}
@@ -712,21 +846,31 @@ code, .stCode {{
 }}
 
 .ag-st.st-err {{
-  background: rgba(100,100,100,0.06);
+  background: rgba(100,100,100,0.08);
   color: var(--t4);
   border: 1px solid rgba(100,100,100,0.15);
 }}
 
-/* ── Status Bar ────────────────────────────────────────────── */
+/* ── Status Bar — Gradient border ─────────────────────────── */
 .sbar {{
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 14px;
+  gap: 12px;
+  padding: 10px 16px;
   background: var(--bg-3);
   border: 1px solid var(--b1);
-  border-radius: 6px;
-  margin-bottom: 16px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  position: relative;
+  overflow: hidden;
+}}
+
+.sbar::before {{
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
 }}
 
 .sbar-dot {{
@@ -736,6 +880,7 @@ code, .stCode {{
   background: var(--t1);
   flex-shrink: 0;
   animation: pulse 2s ease-in-out infinite;
+  box-shadow: 0 0 8px rgba(255,255,255,0.2);
 }}
 
 .sbar-text {{
@@ -754,26 +899,27 @@ code, .stCode {{
   margin-left: auto;
 }}
 
-/* ── Pulse Dot ─────────────────────────────────────────────── */
+/* ── Pulse Dot — With glow ────────────────────────────────── */
 .pulse-dot {{
   width: 6px;
   height: 6px;
   border-radius: 50%;
   background: var(--t1);
   animation: pulse 2s ease-in-out infinite;
+  box-shadow: 0 0 8px rgba(255,255,255,0.2);
   flex-shrink: 0;
 }}
 
-/* ── Badges ────────────────────────────────────────────────── */
+/* ── Badges — Pill style ──────────────────────────────────── */
 .badge {{
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 2px 8px;
+  gap: 5px;
+  padding: 3px 10px;
   font-family: var(--mono);
   font-size: 11px;
   font-weight: 500;
-  border-radius: 3px;
+  border-radius: 20px;
 }}
 
 .badge-default {{
@@ -783,7 +929,7 @@ code, .stCode {{
 }}
 
 .badge-active {{
-  background: rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.08);
   color: var(--t1);
   border: 1px solid var(--b2);
 }}
@@ -795,40 +941,42 @@ code, .stCode {{
 }}
 
 /* Legacy badge aliases */
-.v-badge {{ display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; font-family: var(--mono); font-size: 11px; font-weight: 500; border-radius: 3px; }}
-.v-badge-white {{ background: rgba(255,255,255,0.06); color: var(--t1); border: 1px solid var(--b2); }}
+.v-badge {{ display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; font-family: var(--mono); font-size: 11px; font-weight: 500; border-radius: 20px; }}
+.v-badge-white {{ background: rgba(255,255,255,0.08); color: var(--t1); border: 1px solid var(--b2); }}
 .v-badge-gray {{ background: var(--bg-4); color: var(--t2); border: 1px solid var(--b1); }}
 .v-badge-dim {{ background: var(--bg-3); color: var(--t3); border: 1px solid var(--b0); }}
-.v-badge-active {{ background: rgba(255,255,255,0.06); color: var(--t1); border: 1px solid var(--b2); }}
+.v-badge-active {{ background: rgba(255,255,255,0.08); color: var(--t1); border: 1px solid var(--b2); }}
 
 /* ── Workspace Header ──────────────────────────────────────── */
 .ws-header {{
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 0;
-  margin-bottom: 8px;
+  gap: 14px;
+  padding: 14px 0;
+  margin-bottom: 12px;
   border-bottom: 1px solid var(--b1);
 }}
 
 .ws-icon, .ws-header-icon {{
-  font-size: 18px;
+  font-size: 20px;
 }}
 
 .ws-title, .ws-header-title {{
   font-family: var(--sans);
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 600;
   color: var(--t1);
+  letter-spacing: -0.02em;
 }}
 
 .ws-header-badge {{
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: 10px;
   color: var(--t3);
-  padding: 2px 8px;
+  padding: 3px 10px;
   background: var(--bg-4);
-  border-radius: 3px;
+  border-radius: 20px;
+  border: 1px solid var(--b1);
   margin-left: auto;
 }}
 
@@ -836,27 +984,37 @@ code, .stCode {{
 .ai-response-container {{
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin: 4px 0 16px;
+  gap: 10px;
+  margin: 8px 0 20px;
   animation: fade-in 0.3s var(--ease);
 }}
 
 .ai-summary {{
   background: var(--bg-3);
   border: 1px solid var(--b2);
-  border-left: 2px solid var(--t1);
-  border-radius: 8px;
-  padding: 16px 20px;
+  border-left: 3px solid var(--t1);
+  border-radius: 12px;
+  padding: 20px 24px;
+  position: relative;
+  overflow: hidden;
+}}
+
+.ai-summary::before {{
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(255,255,255,0.15), transparent);
 }}
 
 .ai-summary-label {{
   font-family: var(--mono);
   font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--t2);
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }}
 
 .ai-summary-text {{
@@ -864,20 +1022,21 @@ code, .stCode {{
   font-size: 14px;
   font-weight: 500;
   color: var(--t1);
-  line-height: 1.7;
+  line-height: 1.75;
 }}
 
 .ai-section {{
   background: var(--bg-2);
   border: 1px solid var(--b1);
-  border-left: 2px solid var(--t4);
-  border-radius: 8px;
-  padding: 12px 16px;
-  transition: border-color var(--dur) var(--ease);
+  border-left: 3px solid var(--t4);
+  border-radius: 10px;
+  padding: 14px 18px;
+  transition: all var(--dur) var(--ease);
 }}
 
 .ai-section:hover {{
   border-color: var(--b2);
+  transform: translateX(2px);
 }}
 
 .ai-section-header {{
@@ -887,8 +1046,8 @@ code, .stCode {{
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--t3);
-  margin-bottom: 6px;
-  padding-bottom: 4px;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
   border-bottom: 1px solid var(--b0);
 }}
 
@@ -901,7 +1060,7 @@ code, .stCode {{
   font-family: var(--sans);
   font-size: 13px;
   color: var(--t2);
-  line-height: 1.7;
+  line-height: 1.75;
 }}
 
 /* Section variants */
@@ -916,28 +1075,28 @@ code, .stCode {{
 /* Metric chips */
 .ai-metric-chip {{
   display: inline;
-  padding: 1px 5px;
+  padding: 2px 7px;
   font-family: var(--mono);
   font-weight: 600;
   font-size: inherit;
-  border-radius: 3px;
+  border-radius: 4px;
 }}
 
 .ai-metric-positive {{
   color: var(--t1);
-  background: rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.08);
   border: 1px solid var(--b2);
 }}
 
 .ai-metric-negative {{
   color: var(--t3);
-  background: rgba(100,100,100,0.06);
+  background: rgba(100,100,100,0.08);
   border: 1px solid rgba(100,100,100,0.15);
 }}
 
 .ai-metric-neutral {{
   color: var(--t2);
-  background: rgba(255,255,255,0.03);
+  background: rgba(255,255,255,0.04);
   border: 1px solid var(--b1);
 }}
 
@@ -945,52 +1104,64 @@ code, .stCode {{
 .ai-action-item {{
   display: flex;
   align-items: flex-start;
-  gap: 10px;
-  padding: 8px 12px;
-  margin: 3px 0;
+  gap: 12px;
+  padding: 10px 14px;
+  margin: 4px 0;
   background: var(--bg-3);
-  border-radius: 6px;
+  border-radius: 8px;
+  transition: background var(--dur) var(--ease);
+}}
+
+.ai-action-item:hover {{
+  background: var(--bg-4);
 }}
 
 .ai-action-num {{
   font-family: var(--mono);
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--t3);
   background: var(--bg-4);
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  border-radius: 4px;
+  border-radius: 6px;
+  border: 1px solid var(--b1);
 }}
 
 .ai-action-text {{
   font-family: var(--sans);
   font-size: 13px;
   color: var(--t2);
-  line-height: 1.6;
+  line-height: 1.65;
 }}
 
 /* Expert cards */
 .ai-expert-card {{
   background: var(--bg-3);
   border: 1px solid var(--b1);
-  border-radius: 8px;
-  padding: 12px 16px;
-  margin: 6px 0;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin: 8px 0;
+  transition: all var(--dur) var(--ease);
+}}
+
+.ai-expert-card:hover {{
+  border-color: var(--b2);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
 }}
 
 .ai-expert-header {{
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 6px;
+  gap: 10px;
+  margin-bottom: 8px;
 }}
 
-.ai-expert-icon {{ font-size: 14px; }}
+.ai-expert-icon {{ font-size: 16px; }}
 
 .ai-expert-name {{
   font-family: var(--sans);
@@ -1001,18 +1172,22 @@ code, .stCode {{
 
 .ai-expert-role {{
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: 10px;
   color: var(--t3);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   margin-left: auto;
+  padding: 2px 8px;
+  background: var(--bg-4);
+  border-radius: 20px;
+  border: 1px solid var(--b1);
 }}
 
 .ai-expert-body {{
   font-family: var(--sans);
   font-size: 13px;
   color: var(--t2);
-  line-height: 1.6;
+  line-height: 1.65;
   max-height: 140px;
   overflow-y: auto;
 }}
@@ -1023,36 +1198,43 @@ code, .stCode {{
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
-  margin: 6px 0;
+  margin: 8px 0;
 }}
 
-/* ── Thinking Timeline ─────────────────────────────────────── */
+/* ── Thinking Timeline — Refined ──────────────────────────── */
 .tl-container {{
   background: var(--bg-3);
   border: 1px solid var(--b1);
-  border-radius: 8px;
-  padding: 12px 16px;
-  margin: 8px 0;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin: 10px 0;
 }}
 
 .tl-step {{
   display: flex;
   align-items: flex-start;
-  gap: 10px;
-  padding: 4px 0;
+  gap: 12px;
+  padding: 6px 0;
   margin-left: 8px;
   border-left: 1px solid var(--b1);
-  padding-left: 16px;
+  padding-left: 18px;
+  transition: border-color var(--dur) var(--ease);
+}}
+
+.tl-step:hover {{
+  border-left-color: var(--b3);
 }}
 
 .tl-dot {{
-  width: 6px;
-  height: 6px;
+  width: 7px;
+  height: 7px;
   flex-shrink: 0;
   margin-top: 6px;
-  margin-left: -19px;
+  margin-left: -22px;
   border-radius: 50%;
   background: var(--t3);
+  border: 1.5px solid var(--bg-3);
+  box-shadow: 0 0 0 1px var(--b2);
 }}
 
 .tl-text {{
@@ -1065,7 +1247,7 @@ code, .stCode {{
 .tl-meta {{
   font-family: var(--mono);
   font-size: 11px;
-  color: var(--t3);
+  color: var(--t4);
   margin-left: auto;
   flex-shrink: 0;
   font-weight: 500;
@@ -1076,22 +1258,22 @@ code, .stCode {{
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 10px;
+  padding: 4px 12px;
   font-family: var(--mono);
   font-size: 11px;
   font-weight: 600;
-  border-radius: 4px;
+  border-radius: 20px;
   margin: 3px 3px 3px 0;
 }}
 
 .qbadge-pass {{
-  background: rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.08);
   color: var(--t1);
   border: 1px solid var(--b2);
 }}
 
 .qbadge-fail {{
-  background: rgba(100,100,100,0.06);
+  background: rgba(100,100,100,0.08);
   color: var(--t3);
   border: 1px solid rgba(100,100,100,0.15);
 }}
@@ -1099,34 +1281,40 @@ code, .stCode {{
 .hitl-card {{
   background: var(--bg-3);
   border: 1px solid var(--b1);
-  border-radius: 8px;
-  padding: 12px 16px;
-  margin: 6px 0;
+  border-radius: 12px;
+  padding: 14px 18px;
+  margin: 8px 0;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
+  transition: all var(--dur) var(--ease);
+}}
+
+.hitl-card:hover {{
+  border-color: var(--b2);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
 }}
 
 .hitl-gauge {{
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: var(--mono);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   flex-shrink: 0;
-  border-radius: 8px;
+  border-radius: 10px;
 }}
 
-.hitl-high {{ background: rgba(255,255,255,0.06); color: var(--t1); border: 1px solid var(--b3); }}
-.hitl-medium {{ background: rgba(150,150,150,0.06); color: var(--t2); border: 1px solid rgba(150,150,150,0.20); }}
-.hitl-low {{ background: rgba(100,100,100,0.06); color: var(--t3); border: 1px solid rgba(100,100,100,0.15); }}
+.hitl-high {{ background: rgba(255,255,255,0.08); color: var(--t1); border: 1px solid var(--b3); }}
+.hitl-medium {{ background: rgba(150,150,150,0.08); color: var(--t2); border: 1px solid rgba(150,150,150,0.20); }}
+.hitl-low {{ background: rgba(100,100,100,0.08); color: var(--t3); border: 1px solid rgba(100,100,100,0.15); }}
 
 .hitl-info {{ flex: 1; }}
 .hitl-info .hitl-level {{ font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--t2); }}
-.hitl-info .hitl-action {{ font-family: var(--sans); font-size: 13px; color: var(--t2); margin-top: 2px; }}
+.hitl-info .hitl-action {{ font-family: var(--sans); font-size: 13px; color: var(--t2); margin-top: 3px; }}
 .hitl-triggers {{ font-family: var(--mono); font-size: 11px; color: var(--t3); text-align: right; flex-shrink: 0; }}
 
 /* ── Trace Bar ─────────────────────────────────────────────── */
@@ -1134,14 +1322,14 @@ code, .stCode {{
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 8px 14px;
+  padding: 10px 16px;
   background: var(--bg-3);
   border: 1px solid var(--b1);
-  border-radius: 6px;
+  border-radius: 10px;
   font-family: var(--mono);
   font-size: 11px;
   color: var(--t3);
-  margin: 8px 0;
+  margin: 10px 0;
 }}
 
 .trace-bar .trace-value {{
@@ -1153,11 +1341,11 @@ code, .stCode {{
 .welcome-badge {{
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 12px;
+  gap: 8px;
+  padding: 5px 14px;
   background: var(--bg-3);
   border: 1px solid var(--b2);
-  border-radius: 4px;
+  border-radius: 20px;
   font-family: var(--mono);
   font-size: 11px;
   font-weight: 500;
@@ -1166,62 +1354,87 @@ code, .stCode {{
 
 .welcome-title {{
   font-family: var(--sans);
-  font-size: 20px;
-  font-weight: 600;
+  font-size: 22px;
+  font-weight: 700;
   color: var(--t1);
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+  letter-spacing: -0.03em;
 }}
 
 .welcome-sub {{
   font-family: var(--sans);
-  font-size: 13px;
+  font-size: 14px;
   color: var(--t3);
+  line-height: 1.6;
 }}
 
-/* ── Upload Zone ───────────────────────────────────────────── */
+/* ── Upload Zone — With border gradient ───────────────────── */
 .upload-zone {{
   max-width: 560px;
   margin: 0 auto;
-  padding: 24px;
+  padding: 28px;
   background: var(--bg-3);
   border: 1px solid var(--b1);
-  border-radius: 8px;
+  border-radius: 12px;
+  position: relative;
+  overflow: hidden;
 }}
 
-/* ── Glass Card ────────────────────────────────────────────── */
+.upload-zone::before {{
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+}}
+
+/* ── Glass Card — Real glassmorphism ──────────────────────── */
 .glass-card {{
-  background: var(--bg-3);
+  background: rgba(18,18,18,0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--b1);
-  border-radius: 8px;
-  padding: 16px;
-  transition: border-color var(--dur) var(--ease);
+  border-radius: 12px;
+  padding: 18px;
+  transition: all var(--dur) var(--ease);
+  position: relative;
+  overflow: hidden;
+}}
+
+.glass-card::before {{
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
 }}
 
 .glass-card:hover {{
   border-color: var(--b2);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
 }}
 
 /* ── Logo ──────────────────────────────────────────────────── */
 .logo-mark {{
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   background: var(--t1);
-  border-radius: 4px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: var(--mono);
   font-weight: 700;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--bg-1);
 }}
 
 /* ── Grid Layout ───────────────────────────────────────────── */
 .bento-grid {{
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 8px;
-  margin: 8px 0;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+  margin: 10px 0;
 }}
 
 /* ════════════════════════════════════════════════════════════
@@ -1230,12 +1443,23 @@ code, .stCode {{
 
 @keyframes pulse {{
   0%, 100% {{ opacity: 1; }}
-  50% {{ opacity: 0.4; }}
+  50% {{ opacity: 0.3; }}
 }}
 
 @keyframes fade-in {{
-  from {{ opacity: 0; transform: translateY(4px); }}
+  from {{ opacity: 0; transform: translateY(6px); }}
   to {{ opacity: 1; transform: translateY(0); }}
+}}
+
+@keyframes glow {{
+  0%, 100% {{ box-shadow: 0 0 8px rgba(255,255,255,0.05); }}
+  50% {{ box-shadow: 0 0 20px rgba(255,255,255,0.08); }}
+}}
+
+@keyframes gradient-shift {{
+  0% {{ background-position: 0% 50%; }}
+  50% {{ background-position: 100% 50%; }}
+  100% {{ background-position: 0% 50%; }}
 }}
 
 /* ════════════════════════════════════════════════════════════
@@ -1248,10 +1472,10 @@ code, .stCode {{
 }}
 
 .skeleton {{
-  background: linear-gradient(90deg, #111111 25%, #1C1C1C 50%, #111111 75%);
+  background: linear-gradient(90deg, var(--bg-3) 25%, var(--bg-4) 50%, var(--bg-3) 75%);
   background-size: 200px 100%;
   animation: shimmer 1.5s infinite;
-  border-radius: 6px;
+  border-radius: 8px;
 }}
 
 .skeleton-text {{
@@ -1262,7 +1486,7 @@ code, .stCode {{
 
 .skeleton-card {{
   height: 120px;
-  border-radius: 8px;
+  border-radius: 12px;
 }}
 
 /* ════════════════════════════════════════════════════════════
@@ -1297,7 +1521,8 @@ select:focus-visible {{
     scroll-behavior: auto !important;
   }}
   .pulse-dot {{ animation: none !important; opacity: 1 !important; }}
-  .skeleton {{ animation: none !important; background: #1C1C1C !important; }}
+  .skeleton {{ animation: none !important; background: var(--bg-4) !important; }}
+  .stApp::before {{ display: none; }}
 }}
 
 /* ════════════════════════════════════════════════════════════
@@ -1311,6 +1536,8 @@ button,
 [data-baseweb="tab"],
 .ag-card,
 .kpi-card,
+.glass-card,
+.hitl-card,
 a {{
   cursor: pointer !important;
 }}
@@ -1321,15 +1548,17 @@ a {{
 
 @media (max-width: 768px) {{
   .block-container {{ padding: 0.5rem 1rem 2rem !important; }}
-  .top-nav {{ margin: -0.5rem -1rem 16px; padding: 0 12px; }}
-  .cmd-title {{ font-size: 24px !important; }}
-  .cmd-hero {{ padding: 24px 0 16px; }}
-  .kpi-value {{ font-size: 20px; }}
+  .top-nav {{ margin: -0.5rem -1rem 16px; padding: 0 12px; height: 48px; }}
+  .cmd-title {{ font-size: 26px !important; }}
+  .cmd-hero {{ padding: 32px 0 20px; }}
+  .kpi-value {{ font-size: 22px; }}
+  .stApp::before {{ background-size: 20px 20px; }}
 }}
 
 @media (max-width: 480px) {{
   .block-container {{ padding: 0.5rem 0.75rem 1.5rem !important; }}
-  .cmd-title {{ font-size: 20px !important; }}
+  .cmd-title {{ font-size: 22px !important; }}
+  .stApp::before {{ display: none; }}
 }}
 
 </style>"""
