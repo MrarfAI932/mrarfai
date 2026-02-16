@@ -522,6 +522,11 @@ class SmartDataQuery:
 7. categories: 业务类别趋势(类别/2024金额/2025金额/增长率)
 8. benchmark: 行业对标(市场定位/竞争对标/结构性风险/战略机会)
 9. forecast: 预测(总营收预测/客户预测/品类预测/风险场景)
+10. targets: 季度目标达成(客户/全年保底目标/实际完成/差异/完成率/Q分布)
+11. sales_team: 销售团队绩效(销售/年度总额/占比/H1/H2/H2增长/峰值月/稳定性)
+12. products: 产品结构(FP功能机/SP智能机/PAD平板/全年计划/实际/完成率/占比)
+13. order_types: 订单模式(CBU/SKD/CKD/数量/占比)
+14. findings: 核心发现(7条可执行洞察)
 """
 
     def __init__(self, data: dict, results: dict, benchmark: dict = None, forecast: dict = None):
@@ -582,6 +587,21 @@ class SmartDataQuery:
 
         # 类别
         index['categories'] = self.results.get('类别趋势', [])
+
+        # 目标达成（V10.2新增）
+        index['targets'] = self.results.get('目标达成', [])
+
+        # 销售绩效（V10.2新增）
+        index['sales_team'] = self.results.get('销售绩效', [])
+
+        # 产品结构（V10.2新增）
+        index['products'] = self.results.get('产品结构', [])
+
+        # 订单模式（V10.2新增）
+        index['order_types'] = self.results.get('订单模式', [])
+
+        # 核心发现（V10.2新增）
+        index['findings'] = self.results.get('核心发现', [])
 
         # 行业对标
         if self.benchmark:
@@ -681,6 +701,21 @@ class SmartDataQuery:
 
             elif dim == 'forecast':
                 result['forecast'] = self._index.get('forecast', {})
+
+            elif dim == 'targets':
+                result['targets'] = self._index.get('targets', [])[:limit]
+
+            elif dim == 'sales_team':
+                result['sales_team'] = self._index.get('sales_team', [])[:limit]
+
+            elif dim == 'products':
+                result['products'] = self._index.get('products', [])
+
+            elif dim == 'order_types':
+                result['order_types'] = self._index.get('order_types', [])
+
+            elif dim == 'findings':
+                result['findings'] = self._index.get('findings', [])
 
         if not result:
             result = self._index.get('overview', {})
@@ -794,6 +829,16 @@ filters 可选键：customer_name, tier(A/B/C), level(high/medium/low), top_n
             dims.append('benchmark')
         if any(k in q for k in ['预测', '2026', '未来', '前景', '下季']):
             dims.append('forecast')
+        if any(k in q for k in ['目标', '达成', '完成率', '保底', '缺口', '差距']):
+            dims.append('targets')
+        if any(k in q for k in ['销售', '团队', '绩效', '业绩', '负责人', '谁负责', '排名']):
+            dims.append('sales_team')
+        if any(k in q for k in ['产品', '功能机', '智能机', '平板', 'pad', 'fp', 'sp', '结构']):
+            dims.append('products')
+        if any(k in q for k in ['订单', 'ckd', 'skd', 'cbu', '模式']):
+            dims.append('order_types')
+        if any(k in q for k in ['总结', '核心', '要点', '发现', '概况', '汇报']):
+            dims.append('findings')
 
         # 客户名精确匹配
         for cname in self._index.get('customers', {}).get('by_name', {}).keys():
@@ -868,13 +913,19 @@ AGENT_PROFILES = {
             "你在消费电子ODM行业有15年数据分析经验，曾服务华勤、闻泰等头部企业。"
             "你以数据驱动著称，每个结论必须有数字支撑。"
             "你擅长发现月度波动规律、客户集中度风险、同比环比异常。"
-            "你的分析风格：精准、客观、量化。先给结论，再给数据。"
+            "你的分析风格：精准、客观、量化。"
+            "\n\n回答规范："
+            "\n1. 先用一句话给出核心结论"
+            "\n2. 引用精确数字（金额精确到万元，比例精确到小数点后1位）"
+            "\n3. 对比维度：同比/环比/H1vsH2/目标vs实际"
+            "\n4. 如果数据里有该客户的月度明细，指出峰值月和低谷月"
+            "\n5. 结尾给1-2条可执行建议"
         ),
         "keywords": [
             "营收", "收入", "金额", "出货", "数量", "客户", "分级",
             "ABC", "排名", "top", "占比", "集中", "月度", "季度",
             "同比", "环比", "趋势", "总览", "概览", "多少",
-            "产品", "结构", "区域",
+            "产品", "结构", "区域", "目标", "达成", "完成",
         ],
         "model_tier": "standard",  # v7.0: 模型路由
     },
@@ -1212,7 +1263,7 @@ class ParallelAgentExecutor:
                 f"禾苗销售数据：\n{context_data}"
                 f"{memory_section}"
                 f"{tool_hint}\n\n"
-                f"200字内回答。数据必须精确引用。"
+                f"回答要求：\n1. 所有数字必须直接引用上方数据，禁止编造\n2. 金额单位统一为万元，保留1位小数\n3. 先给结论（1句话），再展开分析（150-300字）\n4. 如有风险或异常，明确标注⚠️并给出建议"
             )
 
             # v4.0: 优先使用 Tool-Augmented 调用
@@ -2762,7 +2813,7 @@ def node_experts(state: AgentState) -> dict:
             f"{tool_hint}"
             f"{reasoning_hint}"
             f"{memory_hint}\n\n"
-            f"200字内回答。数据必须精确引用。"
+            f"回答要求：\n1. 所有数字必须直接引用上方数据，禁止编造\n2. 金额单位统一为万元，保留1位小数\n3. 先给结论（1句话），再展开分析（150-300字）\n4. 如有风险或异常，明确标注⚠️并给出建议"
         )
 
         output = _call_llm(

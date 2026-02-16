@@ -253,23 +253,22 @@ def is_admin() -> bool:
 SP_GREEN = "#00FF88"
 
 def _render_login_page():
-    """渲染登录页面 — 白色卡片 + 深色背景"""
+    """渲染登录页面 — 白色卡片 + 深色背景 (Streamlit 兼容方案)"""
 
-    # 全屏深色背景 + 白色卡片居中
+    # 核心思路: 把 Streamlit 的 .stMainBlockContainer 本身变成白色卡片
+    # 因为 st.markdown 的 HTML 不能跨越 st.text_input 等 widget
     st.markdown("""<style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
-    /* ── Keyframes ── */
     @keyframes fadeInUp {
         from { opacity: 0; transform: translateY(20px); }
         to   { opacity: 1; transform: translateY(0); }
     }
 
-    /* ── Base ── */
+    /* ── 深色背景 ── */
     [data-testid="stApp"] {
         background: #0a0a0a !important;
     }
-    /* 细网格背景 */
     [data-testid="stApp"]::before {
         content: "";
         position: fixed; inset: 0; z-index: 0; pointer-events: none;
@@ -278,32 +277,36 @@ def _render_login_page():
             linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
         background-size: 40px 40px;
     }
-    [data-testid="stSidebar"] { display: none; }
-    [data-testid="stHeader"] { display: none; }
+
+    /* ── 隐藏 Streamlit chrome ── */
+    [data-testid="stSidebar"],
+    [data-testid="stHeader"],
     #MainMenu, footer, .stDeployButton,
-    [data-testid="stToolbar"], [data-testid="stDecoration"],
+    [data-testid="stToolbar"],
+    [data-testid="stDecoration"],
     [data-testid="stStatusWidget"] { display: none !important; }
 
-    /* ── 白色卡片容器 ── */
-    .login-card {
-        max-width: 420px; margin: 12vh auto 0 auto;
-        padding: 48px 40px 36px;
-        background: #FFFFFF;
-        border-radius: 16px;
-        box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    /* ── 把主内容区变成白色卡片 ── */
+    [data-testid="stMainBlockContainer"] {
+        max-width: 440px !important;
+        margin: 10vh auto 0 auto !important;
+        background: #FFFFFF !important;
+        border-radius: 16px !important;
+        padding: 48px 44px 36px !important;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.5) !important;
         animation: fadeInUp 0.5s ease-out;
-        position: relative; z-index: 1;
+        position: relative;
+        z-index: 1;
     }
 
-    /* ── Logo 区域 (居中) ── */
+    /* ── Logo 区域 ── */
     .login-logo-area {
-        text-align: center; margin-bottom: 28px;
+        text-align: center; margin-bottom: 10px;
     }
     .login-logo-area img.horse-logo {
         width: 72px; height: auto; margin-bottom: 16px;
-        filter: brightness(0);  /* 纯黑色 */
+        filter: brightness(0);
     }
-    /* 纯文字马头 fallback */
     .login-logo-area .horse-icon-fallback {
         font-size: 56px; margin-bottom: 8px; line-height: 1;
     }
@@ -322,7 +325,7 @@ def _render_login_page():
 
     /* ── 分隔线 ── */
     .login-divider {
-        height: 1px; background: #e8e8e8; margin: 24px 0;
+        height: 1px; background: #e8e8e8; margin: 20px 0 24px 0;
     }
 
     /* ── 标签 ── */
@@ -331,8 +334,9 @@ def _render_login_page():
         font-weight: 700; font-size: 12px;
         color: #1a1a1a; letter-spacing: 0.06em;
         text-transform: uppercase;
-        margin-bottom: 6px;
+        margin-bottom: 6px; margin-top: 16px;
     }
+    .login-label:first-of-type { margin-top: 0; }
 
     /* ── 错误提示 ── */
     .login-error {
@@ -340,7 +344,7 @@ def _render_login_page():
         color: #dc3545; padding: 10px 14px; margin-top: 12px;
         border: 1px solid rgba(220,53,69,0.2);
         background: rgba(220,53,69,0.06);
-        border-radius: 8px;
+        border-radius: 8px; text-align: center;
     }
 
     /* ── 底部链接 ── */
@@ -348,24 +352,18 @@ def _render_login_page():
         text-align: center; margin-top: 24px;
         font-family: 'Inter', sans-serif; font-size: 13px;
     }
-    .login-links a {
-        color: #666; text-decoration: none;
-        transition: color 0.2s;
-    }
+    .login-links a { color: #666; text-decoration: none; }
     .login-links a:hover { color: #0a0a0a; }
-    .login-links .sep {
-        color: #ccc; margin: 0 10px;
-    }
+    .login-links .sep { color: #ccc; margin: 0 10px; }
 
     /* ── 页脚 ── */
-    .login-footer {
+    .login-page-footer {
         font-family: 'Inter', sans-serif; font-size: 12px;
-        color: #555; text-align: center; margin-top: 24px;
-        position: relative; z-index: 1;
+        color: #555; text-align: center; margin-top: 20px;
     }
 
-    /* ── Streamlit Input 覆盖 (白色卡片内) ── */
-    .login-card .stTextInput input {
+    /* ── Streamlit Input 样式覆盖 ── */
+    [data-testid="stMainBlockContainer"] .stTextInput > div > div > input {
         background: #FFFFFF !important;
         border: 1.5px solid #d0d0d0 !important;
         color: #1a1a1a !important;
@@ -375,15 +373,18 @@ def _render_login_page():
         padding: 12px 14px !important;
         transition: border-color 0.2s, box-shadow 0.2s;
     }
-    .login-card .stTextInput input::placeholder {
+    [data-testid="stMainBlockContainer"] .stTextInput > div > div > input::placeholder {
         color: #aaa !important;
     }
-    .login-card .stTextInput input:focus {
+    [data-testid="stMainBlockContainer"] .stTextInput > div > div > input:focus {
         border-color: #0a0a0a !important;
         box-shadow: 0 0 0 3px rgba(10,10,10,0.08) !important;
     }
-    /* SIGN IN 按钮 — 黑色 */
-    .login-card .stButton button {
+    /* 隐藏 Streamlit 自带 label */
+    [data-testid="stMainBlockContainer"] .stTextInput > label { display: none !important; }
+
+    /* ── SIGN IN 按钮 ── */
+    [data-testid="stMainBlockContainer"] .stButton > button {
         width: 100%;
         background: #0a0a0a !important;
         color: #FFFFFF !important;
@@ -397,28 +398,27 @@ def _render_login_page():
         padding: 14px !important;
         margin-top: 8px;
         transition: background 0.2s, transform 0.15s, box-shadow 0.15s;
-        position: relative; z-index: 1;
     }
-    .login-card .stButton button:hover {
+    [data-testid="stMainBlockContainer"] .stButton > button:hover {
         background: #222 !important;
         transform: translateY(-1px);
         box-shadow: 0 6px 20px rgba(0,0,0,0.3);
     }
-    .login-card .stButton button:active {
+    [data-testid="stMainBlockContainer"] .stButton > button:active {
         transform: translateY(0px);
-        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
     }
-    /* 隐藏 Streamlit 默认 label */
-    .login-card .stTextInput label,
-    .login-card .stButton label { display: none !important; }
 
-    /* ── 移动端适配 ── */
+    /* ── 移动端 ── */
     @media (max-width: 768px) {
-        .login-card { max-width: 90vw; padding: 36px 24px 28px; margin-top: 8vh; }
+        [data-testid="stMainBlockContainer"] {
+            max-width: 90vw !important; padding: 36px 24px 28px !important; margin-top: 6vh !important;
+        }
         .login-logo-area .brand-name { font-size: 24px; }
     }
     @media (max-width: 480px) {
-        .login-card { max-width: 95vw; padding: 28px 20px 24px; margin-top: 5vh; }
+        [data-testid="stMainBlockContainer"] {
+            max-width: 95vw !important; padding: 28px 20px 24px !important; margin-top: 4vh !important;
+        }
     }
     </style>""", unsafe_allow_html=True)
 
@@ -438,57 +438,50 @@ def _render_login_page():
         else '<div class="horse-icon-fallback">\U0001F40E</div>'
     )
 
-    # ── 白色卡片 HTML ──
+    # ── Logo + 标题 (纯 HTML，自闭合) ──
     st.markdown(f"""
-    <div class="login-card">
-        <div class="login-logo-area">
-            {_horse_logo}
-            <div class="brand-name">MRARFAI</div>
-            <div class="brand-sub">Enterprise Agent Platform</div>
-        </div>
-        <div class="login-divider"></div>
-    """, unsafe_allow_html=True)
-
-    # 用 columns 让输入框在卡片内居中
-    col1, col2, col3 = st.columns([0.6, 2, 0.6])
-    with col2:
-        st.markdown('<div class="login-label">USERNAME</div>', unsafe_allow_html=True)
-        username = st.text_input("用户名", label_visibility="collapsed", key="login_user",
-                                  placeholder="Enter username")
-
-        st.markdown('<div class="login-label">PASSWORD</div>', unsafe_allow_html=True)
-        password = st.text_input("密码", type="password", label_visibility="collapsed",
-                                  key="login_pass", placeholder="Enter password")
-
-        login_clicked = st.button("SIGN IN", key="login_btn", use_container_width=True)
-
-        if login_clicked:
-            if not username or not password:
-                st.markdown('<div class="login-error">\u26a0 Please enter username and password</div>',
-                           unsafe_allow_html=True)
-            else:
-                user = authenticate(username, password)
-                if user:
-                    st.session_state["auth_user"] = user
-                    st.session_state["auth_login_time"] = datetime.now().isoformat()
-                    st.session_state["auth_last_activity"] = datetime.now().isoformat()
-                    st.rerun()
-                else:
-                    st.markdown('<div class="login-error">\u26a0 Invalid username or password</div>',
-                               unsafe_allow_html=True)
-
-    st.markdown("""
-        <div class="login-links">
-            <a href="#">Forgot Password?</a>
-            <span class="sep">|</span>
-            <a href="#">Contact Support</a>
-        </div>
+    <div class="login-logo-area">
+        {_horse_logo}
+        <div class="brand-name">MRARFAI</div>
+        <div class="brand-sub">Enterprise Agent Platform</div>
     </div>
+    <div class="login-divider"></div>
     """, unsafe_allow_html=True)
 
-    # 卡片外页脚
+    # ── 表单 (Streamlit 原生 widget，会被 CSS 样式化) ──
+    st.markdown('<div class="login-label">USERNAME</div>', unsafe_allow_html=True)
+    username = st.text_input("用户名", label_visibility="collapsed", key="login_user",
+                              placeholder="Enter username")
+
+    st.markdown('<div class="login-label">PASSWORD</div>', unsafe_allow_html=True)
+    password = st.text_input("密码", type="password", label_visibility="collapsed",
+                              key="login_pass", placeholder="Enter password")
+
+    login_clicked = st.button("SIGN IN", key="login_btn", use_container_width=True)
+
+    if login_clicked:
+        if not username or not password:
+            st.markdown('<div class="login-error">\u26a0 Please enter username and password</div>',
+                       unsafe_allow_html=True)
+        else:
+            user = authenticate(username, password)
+            if user:
+                st.session_state["auth_user"] = user
+                st.session_state["auth_login_time"] = datetime.now().isoformat()
+                st.session_state["auth_last_activity"] = datetime.now().isoformat()
+                st.rerun()
+            else:
+                st.markdown('<div class="login-error">\u26a0 Invalid username or password</div>',
+                           unsafe_allow_html=True)
+
+    # ── 底部链接 + 页脚 (在卡片内) ──
     st.markdown("""
-    <div class="login-footer">
+    <div class="login-links">
+        <a href="#">Forgot Password?</a>
+        <span class="sep">|</span>
+        <a href="#">Contact Support</a>
+    </div>
+    <div class="login-page-footer">
         &copy; 2024 MRARFAI &middot; Powered by Multi-Agent Intelligence
     </div>
     """, unsafe_allow_html=True)
