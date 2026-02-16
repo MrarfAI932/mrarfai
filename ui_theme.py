@@ -175,27 +175,16 @@ button[kind="headerNoPadding"] {{
 
 /* ── Base — Noise texture + dot grid ──────────────────────── */
 .stApp {{
-  background: var(--bg-1) !important;
+  background:
+    radial-gradient(rgba(255,255,255,0.035) 1px, transparent 1px),
+    var(--bg-1) !important;
+  background-size: 24px 24px, auto !important;
   color: var(--t2) !important;
-  position: relative;
-}}
-
-.stApp::before {{
-  content: '';
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background-image:
-    radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px);
-  background-size: 24px 24px;
-  pointer-events: none;
-  z-index: 0;
 }}
 
 .block-container {{
   padding: 1rem 2.5rem 4rem !important;
   max-width: 1400px !important;
-  position: relative;
-  z-index: 1;
 }}
 
 /* ── Typography ────────────────────────────────────────────── */
@@ -1522,7 +1511,7 @@ select:focus-visible {{
   }}
   .pulse-dot {{ animation: none !important; opacity: 1 !important; }}
   .skeleton {{ animation: none !important; background: var(--bg-4) !important; }}
-  .stApp::before {{ display: none; }}
+  .stApp {{ background-image: none !important; }}
 }}
 
 /* ════════════════════════════════════════════════════════════
@@ -1552,13 +1541,12 @@ a {{
   .cmd-title {{ font-size: 26px !important; }}
   .cmd-hero {{ padding: 32px 0 20px; }}
   .kpi-value {{ font-size: 22px; }}
-  .stApp::before {{ background-size: 20px 20px; }}
 }}
 
 @media (max-width: 480px) {{
   .block-container {{ padding: 0.5rem 0.75rem 1.5rem !important; }}
   .cmd-title {{ font-size: 22px !important; }}
-  .stApp::before {{ display: none; }}
+  .stApp {{ background-image: none !important; }}
 }}
 
 </style>"""
