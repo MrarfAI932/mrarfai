@@ -282,294 +282,245 @@ def _render_login_page():
     # 一次性注入所有 CSS — 这是唯一的 st.markdown(style) 调用
     # ================================================================
     st.markdown("""<style>
-    /* ============================================================
-       Google Fonts
-       ============================================================ */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
-
-    /* ============================================================
-       Animation
-       ============================================================ */
     @keyframes fadeInUp {
-        from { opacity: 0; transform: translateY(24px); }
-        to   { opacity: 1; transform: translateY(0); }
+        from { opacity:0; transform:translateY(24px); }
+        to   { opacity:1; transform:translateY(0); }
     }
 
-    /* ============================================================
-       1. 深色背景 + 网格纹
-       ============================================================ */
+    /* ── 1. 全局深色背景 ── */
+    html, body,
     [data-testid="stApp"],
     [data-testid="stAppViewContainer"],
     .stApp {
         background: #0a0a0a !important;
     }
     [data-testid="stApp"]::before {
-        content: "";
-        position: fixed;
-        inset: 0;
-        z-index: 0;
-        pointer-events: none;
+        content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
         background-image:
             linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
             linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
         background-size: 40px 40px;
     }
+    [data-testid="stMain"],
+    [data-testid="stAppViewContainer"] {
+        background: transparent !important;
+    }
 
-    /* ============================================================
-       2. 隐藏 ALL Streamlit chrome
-       ============================================================ */
+    /* ── 2. 彻底隐藏 Streamlit 所有 chrome ── */
     [data-testid="stSidebar"],
     [data-testid="collapsedControl"],
     [data-testid="stSidebarCollapsedControl"],
     [data-testid="stHeader"],
+    header[data-testid="stHeader"],
     [data-testid="stToolbar"],
     [data-testid="stDecoration"],
     [data-testid="stStatusWidget"],
     [data-testid="stBottom"],
-    #MainMenu,
-    footer,
-    .stDeployButton,
-    header[data-testid="stHeader"] {
+    #MainMenu, footer, .stDeployButton {
         display: none !important;
         visibility: hidden !important;
         height: 0 !important;
         overflow: hidden !important;
     }
+    /* 顶部留白也消除 */
+    [data-testid="stAppViewContainer"] > section > div {
+        padding-top: 0 !important;
+    }
 
-    /* ============================================================
-       3. 白色卡片 — stMainBlockContainer IS the card
-       关键: 同时锁定所有内部包装器为透明
-       ============================================================ */
+    /* ── 3. 白色卡片 = stMainBlockContainer ── */
     [data-testid="stMainBlockContainer"] {
-        max-width: 440px !important;
+        max-width: 420px !important;
         margin: 8vh auto 0 auto !important;
         background: #FFFFFF !important;
         border-radius: 16px !important;
-        padding: 48px 44px 36px 44px !important;
+        padding: 48px 40px 36px 40px !important;
         box-shadow: 0 20px 60px rgba(0,0,0,0.5) !important;
         animation: fadeInUp 0.5s ease-out;
         position: relative;
         z-index: 1;
-        overflow: visible !important;
-        min-height: auto !important;
+        overflow: hidden !important;
     }
 
-    /* ── 3a. 所有内部 Streamlit 包装器: 透明 + 无额外间距 ── */
-    [data-testid="stMainBlockContainer"] .block-container {
+    /* ── 3a. 穿透所有内部 Streamlit 包装器 ── */
+    [data-testid="stMainBlockContainer"] .block-container,
+    [data-testid="stMainBlockContainer"] .stMainBlockContainer {
         max-width: 100% !important;
+        width: 100% !important;
         padding: 0 !important;
         margin: 0 !important;
         background: transparent !important;
     }
-    [data-testid="stMainBlockContainer"] [data-testid="stVerticalBlock"],
     [data-testid="stMainBlockContainer"] [data-testid="stVerticalBlockBorderWrapper"] {
         background: transparent !important;
         padding: 0 !important;
         margin: 0 !important;
-        gap: 0 !important;
+        max-width: 100% !important;
+        width: 100% !important;
+    }
+    [data-testid="stMainBlockContainer"] [data-testid="stVerticalBlock"] {
+        background: transparent !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        gap: 4px !important;
         max-width: 100% !important;
         width: 100% !important;
     }
     [data-testid="stMainBlockContainer"] [data-testid="stElementContainer"] {
         background: transparent !important;
         margin: 0 !important;
-    }
-    /* Remove any top padding Streamlit injects on the main view */
-    [data-testid="stAppViewContainer"] > section > div {
-        padding-top: 0 !important;
-    }
-    /* Ensure the main area itself is transparent */
-    [data-testid="stMain"],
-    [data-testid="stAppViewContainer"] {
-        background: transparent !important;
+        width: 100% !important;
     }
 
-    /* ============================================================
-       4. Logo 区域
-       ============================================================ */
+    /* ── 4. Logo 区域 ── */
     .login-logo-area {
-        text-align: center;
-        margin-bottom: 10px;
+        text-align: center; margin-bottom: 10px;
     }
     .login-logo-area img.horse-logo {
-        width: 72px;
-        height: auto;
-        margin-bottom: 16px;
+        width: 64px; height: auto; margin-bottom: 14px;
         filter: brightness(0);
     }
     .login-logo-area .horse-icon-fallback {
-        font-size: 56px;
-        margin-bottom: 8px;
-        line-height: 1;
+        font-size: 52px; margin-bottom: 8px; line-height: 1;
     }
     .login-logo-area .brand-name {
         font-family: 'Inter', -apple-system, sans-serif;
-        font-weight: 900;
-        font-size: 28px;
-        letter-spacing: 0.12em;
-        color: #0a0a0a;
-        text-transform: uppercase;
+        font-weight: 900; font-size: 26px;
+        letter-spacing: 0.12em; color: #0a0a0a;
     }
     .login-logo-area .brand-sub {
         font-family: 'Inter', sans-serif;
-        font-weight: 600;
-        font-size: 11px;
-        letter-spacing: 0.18em;
-        color: #888;
-        text-transform: uppercase;
+        font-weight: 600; font-size: 11px;
+        letter-spacing: 0.15em; color: #999;
         margin-top: 4px;
     }
 
-    /* ============================================================
-       5. 分隔线
-       ============================================================ */
+    /* ── 5. 分隔线 ── */
     .login-divider {
-        height: 1px;
-        background: #e8e8e8;
-        margin: 20px 0 24px 0;
+        height: 1px; background: #e8e8e8;
+        margin: 18px auto 20px auto; width: 75%;
     }
 
-    /* ============================================================
-       6. 字段标签 (USERNAME / PASSWORD)
-       ============================================================ */
+    /* ── 6. USERNAME / PASSWORD 标签 ── */
     .login-label {
         font-family: 'Inter', sans-serif;
-        font-weight: 700;
-        font-size: 12px;
-        color: #1a1a1a;
-        letter-spacing: 0.06em;
+        font-weight: 700; font-size: 11px;
+        color: #333; letter-spacing: 0.08em;
         text-transform: uppercase;
-        margin-bottom: 6px;
-        margin-top: 16px;
+        margin: 14px 0 4px 2px;
     }
-    .login-label:first-of-type { margin-top: 0; }
 
-    /* ============================================================
-       7. 错误提示
-       ============================================================ */
+    /* ── 7. 错误提示 ── */
     .login-error {
-        font-family: 'Inter', sans-serif;
-        font-size: 13px;
-        color: #dc3545;
-        padding: 10px 14px;
-        margin-top: 12px;
+        font-family: 'Inter', sans-serif; font-size: 13px;
+        color: #dc3545; padding: 10px 14px; margin-top: 10px;
         border: 1px solid rgba(220,53,69,0.2);
         background: rgba(220,53,69,0.06);
-        border-radius: 8px;
-        text-align: center;
+        border-radius: 8px; text-align: center;
     }
 
-    /* ============================================================
-       8. 底部链接
-       ============================================================ */
+    /* ── 8. 底部链接 ── */
     .login-links {
-        text-align: center;
-        margin-top: 24px;
-        font-family: 'Inter', sans-serif;
-        font-size: 13px;
+        text-align: center; margin-top: 22px;
+        font-family: 'Inter', sans-serif; font-size: 13px;
     }
-    .login-links a { color: #666; text-decoration: none; }
+    .login-links a { color: #888; text-decoration: none; }
     .login-links a:hover { color: #0a0a0a; }
-    .login-links .sep { color: #ccc; margin: 0 10px; }
+    .login-links .sep { color: #ddd; margin: 0 10px; }
 
-    /* ============================================================
-       9. 页脚
-       ============================================================ */
+    /* ── 9. 页脚 ── */
     .login-page-footer {
-        font-family: 'Inter', sans-serif;
-        font-size: 12px;
-        color: #555;
-        text-align: center;
-        margin-top: 20px;
+        font-family: 'Inter', sans-serif; font-size: 11px;
+        color: #aaa; text-align: center; margin-top: 16px;
     }
 
-    /* ============================================================
-       10. Streamlit Text Input 样式覆盖
-       ============================================================ */
-    /* 隐藏 Streamlit 原生 label */
+    /* ── 10. Input 样式覆盖 ── */
+    /* 隐藏 Streamlit label */
     [data-testid="stMainBlockContainer"] .stTextInput label,
     [data-testid="stMainBlockContainer"] .stTextInput > label {
-        display: none !important;
-        height: 0 !important;
-        margin: 0 !important;
-        padding: 0 !important;
+        display: none !important; height: 0 !important;
+        margin: 0 !important; padding: 0 !important;
+        min-height: 0 !important;
     }
-    /* Input field 自身 */
-    [data-testid="stMainBlockContainer"] .stTextInput input,
-    [data-testid="stMainBlockContainer"] .stTextInput > div > div > input {
+    /* 整个 TextInput wrapper: 限制宽度 */
+    [data-testid="stMainBlockContainer"] [data-testid="stTextInput"],
+    [data-testid="stMainBlockContainer"] .stTextInput {
+        width: 100% !important;
+        margin-bottom: 0 !important;
+    }
+    [data-testid="stMainBlockContainer"] .stTextInput > div {
+        width: 100% !important;
+    }
+    /* Input field 本体 */
+    [data-testid="stMainBlockContainer"] .stTextInput input {
         background: #FFFFFF !important;
         border: 1.5px solid #d0d0d0 !important;
         color: #1a1a1a !important;
         font-family: 'Inter', sans-serif !important;
-        font-size: 15px !important;
-        border-radius: 10px !important;
-        padding: 12px 14px !important;
-        transition: border-color 0.2s, box-shadow 0.2s;
+        font-size: 14px !important;
+        border-radius: 8px !important;
+        padding: 10px 12px !important;
         height: auto !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        transition: border-color 0.2s, box-shadow 0.2s;
     }
     [data-testid="stMainBlockContainer"] .stTextInput input::placeholder {
-        color: #aaa !important;
+        color: #bbb !important;
     }
     [data-testid="stMainBlockContainer"] .stTextInput input:focus {
         border-color: #0a0a0a !important;
-        box-shadow: 0 0 0 3px rgba(10,10,10,0.08) !important;
+        box-shadow: 0 0 0 3px rgba(10,10,10,0.06) !important;
     }
-    /* Remove bottom spacing from Streamlit input wrappers */
-    [data-testid="stMainBlockContainer"] [data-testid="stTextInput"] {
-        margin-bottom: 0 !important;
+    /* 密码眼睛按钮: 收进输入框内 */
+    [data-testid="stMainBlockContainer"] .stTextInput button {
+        right: 4px !important;
+        background: transparent !important;
+        border: none !important;
     }
 
-    /* ============================================================
-       11. SIGN IN 按钮
-       ============================================================ */
+    /* ── 11. SIGN IN 按钮 ── */
     [data-testid="stMainBlockContainer"] .stButton > button,
-    [data-testid="stMainBlockContainer"] button[kind="primary"],
     [data-testid="stMainBlockContainer"] [data-testid="stBaseButton-secondary"] {
         width: 100% !important;
         background: #0a0a0a !important;
         color: #FFFFFF !important;
         font-family: 'Inter', sans-serif !important;
         font-weight: 700 !important;
-        font-size: 14px !important;
-        letter-spacing: 0.12em !important;
+        font-size: 13px !important;
+        letter-spacing: 0.1em !important;
         text-transform: uppercase !important;
         border: none !important;
-        border-radius: 10px !important;
-        padding: 14px !important;
-        margin-top: 8px;
+        border-radius: 8px !important;
+        padding: 12px 0 !important;
+        margin-top: 6px;
         cursor: pointer;
-        transition: background 0.2s, transform 0.15s, box-shadow 0.15s;
+        transition: background 0.2s, transform 0.1s;
     }
-    [data-testid="stMainBlockContainer"] .stButton > button:hover,
-    [data-testid="stMainBlockContainer"] [data-testid="stBaseButton-secondary"]:hover {
+    [data-testid="stMainBlockContainer"] .stButton > button:hover {
         background: #222 !important;
         transform: translateY(-1px);
-        box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        box-shadow: 0 4px 16px rgba(0,0,0,0.25);
     }
     [data-testid="stMainBlockContainer"] .stButton > button:active {
-        transform: translateY(0px);
+        transform: translateY(0);
     }
 
-    /* ============================================================
-       12. 移动端适配
-       ============================================================ */
+    /* ── 12. 移动端 ── */
     @media (max-width: 768px) {
         [data-testid="stMainBlockContainer"] {
             max-width: 90vw !important;
-            padding: 36px 24px 28px 24px !important;
-            margin-top: 6vh !important;
+            padding: 36px 28px 28px 28px !important;
+            margin-top: 5vh !important;
         }
-        .login-logo-area .brand-name { font-size: 24px; }
     }
     @media (max-width: 480px) {
         [data-testid="stMainBlockContainer"] {
             max-width: 96vw !important;
-            padding: 28px 18px 22px 18px !important;
+            padding: 28px 20px 22px 20px !important;
             margin-top: 3vh !important;
             border-radius: 12px !important;
         }
-        .login-logo-area .brand-name { font-size: 22px; }
-        .login-logo-area img.horse-logo { width: 56px; }
     }
     </style>""", unsafe_allow_html=True)
 
