@@ -407,8 +407,8 @@ def _render_login_page():
         font-weight: 700; font-size: 12px;
         color: #222; letter-spacing: 0.06em;
         text-transform: uppercase;
-        margin: 16px 0 0 0;
-        padding-bottom: 8px;
+        margin: 10px 0 2px 2px;
+        padding: 0;
         line-height: 1;
         display: block;
         position: relative;
