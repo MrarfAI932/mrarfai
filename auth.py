@@ -371,6 +371,10 @@ def _render_login_page():
         margin: 0 !important;
         width: 100% !important;
     }
+    /* login-label 所在的 stElementContainer — 确保标签和下方输入框之间有间距 */
+    [data-testid="stMainBlockContainer"] [data-testid="stElementContainer"]:has(.login-label) {
+        margin-bottom: 2px !important;
+    }
 
     /* ── 4. Logo 区域 ── */
     .login-logo-area {
@@ -404,10 +408,10 @@ def _render_login_page():
     /* ── 6. USERNAME / PASSWORD 标签 ── */
     .login-label {
         font-family: 'Inter', sans-serif;
-        font-weight: 700; font-size: 12px;
-        color: #222; letter-spacing: 0.06em;
+        font-weight: 700; font-size: 11px;
+        color: #333; letter-spacing: 0.08em;
         text-transform: uppercase;
-        margin: 10px 0 2px 2px;
+        margin: 12px 0 6px 2px;
         padding: 0;
         line-height: 1;
         display: block;
@@ -452,6 +456,8 @@ def _render_login_page():
     [data-testid="stMainBlockContainer"] .stTextInput {
         width: 100% !important;
         margin-bottom: 0 !important;
+        margin-top: 0 !important;
+        padding-top: 0 !important;
     }
     [data-testid="stMainBlockContainer"] .stTextInput > div {
         width: 100% !important;
